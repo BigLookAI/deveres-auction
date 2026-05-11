@@ -1,0 +1,82 @@
+[
+  {
+    "lot_id": "LOT-2026-001",
+    "title": "Untitled Abstract No. 7",
+    "category": "painting",
+    "estimate_low": 3500,
+    "estimate_high": 5000,
+    "reserve_price": 3000,
+    "auction_date": "2026-06-15T14:00:00Z",
+    "description": "Large-format oil on canvas, abstract expressionist style, 120x90cm"
+  },
+  {
+    "lot_id": "LOT-2026-002",
+    "title": "Bronze Figure Study II",
+    "category": "sculpture",
+    "estimate_low": 8000,
+    "estimate_high": 12000,
+    "reserve_price": 7000,
+    "auction_date": "2026-06-15T14:30:00Z",
+    "description": "Cast bronze figurative sculpture, edition 3/8, 45cm height"
+  },
+  {
+    "lot_id": "LOT-2026-003",
+    "title": "Coastal Landscape, Kerry",
+    "category": "painting",
+    "estimate_low": 1200,
+    "estimate_high": 1800,
+    "reserve_price": 900,
+    "auction_date": "2026-06-15T15:00:00Z",
+    "description": "Watercolour on paper, framed, 60x40cm, signed lower right"
+  },
+  {
+    "lot_id": "LOT-2026-004",
+    "title": "Etching Series: Dublin Quays IV",
+    "category": "print",
+    "estimate_low": 400,
+    "estimate_high": 650,
+    "reserve_price": 300,
+    "auction_date": "2026-06-15T15:30:00Z",
+    "description": "Original etching, edition 12/25, hand-signed, 30x20cm"
+  },
+  {
+    "lot_id": "LOT-2026-005",
+    "title": "Portrait of a Young Woman",
+    "category": "painting",
+    "estimate_low": 15000,
+    "estimate_high": 22000,
+    "reserve_price": 14000,
+    "auction_date": "2026-06-16T14:00:00Z",
+    "description": "Oil on canvas, 19th century Irish school, provenance documented"
+  },
+  {
+    "lot_id": "LOT-2026-006",
+    "title": "Ceramic Vessel, Ochre Glaze",
+    "category": "ceramic",
+    "estimate_low": 600,
+    "estimate_high": 900,
+    "reserve_price": 500,
+    "auction_date": "2026-06-16T14:30:00Z",
+    "description": "Studio ceramic, hand-thrown stoneware, signed base, 28cm height"
+  },
+  {
+    "lot_id": "LOT-2026-007",
+    "title": "Contemporary Mixed Media Triptych",
+    "category": "painting",
+    "estimate_low": 4500,
+    "estimate_high": 7000,
+    "reserve_price": 4000,
+    "auction_date": "2026-06-16T15:00:00Z",
+    "description": "Mixed media on board, three panels each 50x70cm, gallery represented artist"
+  },
+  {
+    "lot_id": "LOT-2026-008",
+    "title": "Photographic Print: The Burren Series",
+    "category": "photography",
+    "estimate_low": 800,
+    "estimate_high": 1200,
+    "reserve_price": 700,
+    "auction_date": "2026-06-16T15:30:00Z",
+    "description": "Archival pigment print, edition 2/10, 80x60cm, framed"
+  }
+]

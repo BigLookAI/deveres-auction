@@ -1,0 +1,68 @@
+[
+  {
+    "bidder_id": "BDR-001",
+    "name": "Margaret O'Sullivan",
+    "email": "margaret.osullivan@example.ie",
+    "country": "Ireland",
+    "bids": [
+      {"bid_id": "B001", "lot_id": "LOT-2025-012", "bid_amount": 4200, "timestamp": "2025-03-10T11:00:00Z", "outcome": "won", "hammer_price": 4200},
+      {"bid_id": "B002", "lot_id": "LOT-2025-018", "bid_amount": 3100, "timestamp": "2025-04-22T14:00:00Z", "outcome": "lost", "hammer_price": null},
+      {"bid_id": "B003", "lot_id": "LOT-2025-025", "bid_amount": 5500, "timestamp": "2025-06-14T15:30:00Z", "outcome": "won", "hammer_price": 5800},
+      {"bid_id": "B004", "lot_id": "LOT-2025-031", "bid_amount": 6200, "timestamp": "2025-09-05T10:00:00Z", "outcome": "lost", "hammer_price": null},
+      {"bid_id": "B005", "lot_id": "LOT-2025-040", "bid_amount": 7100, "timestamp": "2025-11-18T13:00:00Z", "outcome": "won", "hammer_price": 7400},
+      {"bid_id": "B006", "lot_id": "LOT-2025-048", "bid_amount": 5800, "timestamp": "2026-01-22T14:30:00Z", "outcome": "won", "hammer_price": 6100},
+      {"bid_id": "B007", "lot_id": "LOT-2025-055", "bid_amount": 8200, "timestamp": "2026-03-15T11:00:00Z", "outcome": "lost", "hammer_price": null},
+      {"bid_id": "B008", "lot_id": "LOT-2025-060", "bid_amount": 9500, "timestamp": "2026-04-28T15:00:00Z", "outcome": "won", "hammer_price": 9800}
+    ]
+  },
+  {
+    "bidder_id": "BDR-002",
+    "name": "Seán Fitzpatrick",
+    "email": "sean.fitzpatrick@example.ie",
+    "country": "Ireland",
+    "bids": [
+      {"bid_id": "B009", "lot_id": "LOT-2025-005", "bid_amount": 800, "timestamp": "2025-02-10T10:00:00Z", "outcome": "lost", "hammer_price": null},
+      {"bid_id": "B010", "lot_id": "LOT-2025-010", "bid_amount": 650, "timestamp": "2025-04-15T14:00:00Z", "outcome": "lost", "hammer_price": null},
+      {"bid_id": "B011", "lot_id": "LOT-2025-015", "bid_amount": 400, "timestamp": "2025-06-20T11:30:00Z", "outcome": "lost", "hammer_price": null}
+    ]
+  },
+  {
+    "bidder_id": "BDR-003",
+    "name": "Claire Brennan",
+    "email": "claire.brennan@example.ie",
+    "country": "Ireland",
+    "bids": [
+      {"bid_id": "B012", "lot_id": "LOT-2024-088", "bid_amount": 12000, "timestamp": "2024-09-12T14:00:00Z", "outcome": "won", "hammer_price": 14500},
+      {"bid_id": "B013", "lot_id": "LOT-2024-095", "bid_amount": 9500, "timestamp": "2024-11-20T11:00:00Z", "outcome": "won", "hammer_price": 9500},
+      {"bid_id": "B014", "lot_id": "LOT-2025-022", "bid_amount": 18000, "timestamp": "2025-03-18T13:30:00Z", "outcome": "won", "hammer_price": 21000},
+      {"bid_id": "B015", "lot_id": "LOT-2025-035", "bid_amount": 15500, "timestamp": "2025-07-08T15:00:00Z", "outcome": "lost", "hammer_price": null},
+      {"bid_id": "B016", "lot_id": "LOT-2025-044", "bid_amount": 22000, "timestamp": "2025-10-15T10:00:00Z", "outcome": "won", "hammer_price": 25000},
+      {"bid_id": "B017", "lot_id": "LOT-2025-058", "bid_amount": 19000, "timestamp": "2026-01-30T14:00:00Z", "outcome": "lost", "hammer_price": null},
+      {"bid_id": "B018", "lot_id": "LOT-2025-065", "bid_amount": 28000, "timestamp": "2026-04-10T11:00:00Z", "outcome": "won", "hammer_price": 31000}
+    ]
+  },
+  {
+    "bidder_id": "BDR-004",
+    "name": "Patrick Doyle",
+    "email": "patrick.doyle@example.ie",
+    "country": "Ireland",
+    "bids": [
+      {"bid_id": "B019", "lot_id": "LOT-2025-008", "bid_amount": 2200, "timestamp": "2025-05-10T10:00:00Z", "outcome": "won", "hammer_price": 2400},
+      {"bid_id": "B020", "lot_id": "LOT-2025-019", "bid_amount": 1800, "timestamp": "2025-06-22T14:30:00Z", "outcome": "lost", "hammer_price": null},
+      {"bid_id": "B021", "lot_id": "LOT-2025-028", "bid_amount": 3100, "timestamp": "2025-08-18T11:00:00Z", "outcome": "won", "hammer_price": 3200},
+      {"bid_id": "B022", "lot_id": "LOT-2025-036", "bid_amount": 2700, "timestamp": "2025-10-05T15:00:00Z", "outcome": "lost", "hammer_price": null},
+      {"bid_id": "B023", "lot_id": "LOT-2025-047", "bid_amount": 4100, "timestamp": "2025-12-12T10:00:00Z", "outcome": "won", "hammer_price": 4300},
+      {"bid_id": "B024", "lot_id": "LOT-2025-057", "bid_amount": 3800, "timestamp": "2026-02-28T14:00:00Z", "outcome": "lost", "hammer_price": null},
+      {"bid_id": "B025", "lot_id": "LOT-2025-062", "bid_amount": 4900, "timestamp": "2026-05-05T11:30:00Z", "outcome": "won", "hammer_price": 5100}
+    ]
+  },
+  {
+    "bidder_id": "BDR-005",
+    "name": "Aoife Murphy",
+    "email": "aoife.murphy@example.ie",
+    "country": "Ireland",
+    "bids": [
+      {"bid_id": "B026", "lot_id": "LOT-2024-070", "bid_amount": 500, "timestamp": "2024-06-10T10:00:00Z", "outcome": "won", "hammer_price": 550}
+    ]
+  }
+]
