@@ -113,10 +113,19 @@ def _format_lot_list(result: EvaluationResult) -> str:
 
 
 def _fill_template(template: str, result: EvaluationResult, lot_lines: str) -> str:
-    """Simple placeholder substitution for dry_run / fallback."""
+    """Simple placeholder substitution for dry_run / fallback.
+    Strips metadata header (everything before the first --- separator)."""
+    # Strip YAML-like header / instruction block before the email body
+    if "---" in template:
+        parts = template.split("---")
+        # Take the last non-empty section as the actual email body
+        body = next((p.strip() for p in reversed(parts) if p.strip()), template)
+    else:
+        body = template.strip()
+
     first_name = result.bidder_name.split()[0]
     return (
-        template
+        body
         .replace("{first_name}", first_name)
         .replace("{full_name}", result.bidder_name)
         .replace("{matched_lots}", lot_lines)
