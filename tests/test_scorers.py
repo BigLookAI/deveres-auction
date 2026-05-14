@@ -22,11 +22,12 @@ def make_bid(bid_id, lot_id, amount, outcome="won", ts="2026-01-15T10:00:00Z", h
         hammer_price=hammer,
     )
 
-def make_lot(lot_id, reserve=1000, est_low=1000, est_high=2000):
+def make_lot(lot_id, reserve=1000, est_low=1000, est_high=2000, artist="Test Artist"):
     return Lot(
         lot_id=lot_id, title="Test Lot", category="painting",
         estimate_low=est_low, estimate_high=est_high,
         reserve_price=reserve, auction_date="2026-06-15T14:00:00Z",
+        artist=artist,
     )
 
 

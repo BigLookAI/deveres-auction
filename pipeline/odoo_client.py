@@ -176,21 +176,8 @@ class OdooClient:
 # Local JSON loader (used when Odoo is not yet available)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def load_from_json(
-    lots_path:    str,
-    bidders_path: str,
-) -> tuple[list[Lot], list[BidderProfile]]:
-    """
-    Load lots and bidder profiles from local JSON files.
-    Used for development / testing before Odoo integration is live.
-    """
-    import json
-    from pathlib import Path
-
-    lots_raw    = json.loads(Path(lots_path).read_text())
-    bidders_raw = json.loads(Path(bidders_path).read_text())
-
-    lots = [
+def _parse_lots(lots_raw: list[dict]) -> list[Lot]:
+    return [
         Lot(
             lot_id        = r["lot_id"],
             title         = r["title"],
@@ -200,9 +187,48 @@ def load_from_json(
             reserve_price = float(r["reserve_price"]),
             auction_date  = r["auction_date"],
             description   = r.get("description", ""),
+            artist        = r.get("artist", ""),
         )
         for r in lots_raw
     ]
+
+
+def load_past_lots(past_lots_path: str) -> list[Lot]:
+    """
+    Load historical past lots from a local JSON file.
+    Used to build the artist index for per-lot scoring.
+    """
+    import json
+    from pathlib import Path
+    raw = json.loads(Path(past_lots_path).read_text())
+    return _parse_lots(raw)
+
+
+def load_from_json(
+    lots_path:      str,
+    bidders_path:   str,
+    past_lots_path: str | None = None,
+) -> tuple[list[Lot], list[BidderProfile], list[Lot]]:
+    """
+    Load upcoming lots, bidder profiles, and optionally past lots from local JSON files.
+    Used for development / testing before Odoo integration is live.
+
+    Returns:
+        (upcoming_lots, profiles, past_lots)
+        past_lots is empty list if past_lots_path is None.
+    """
+    import json
+    from pathlib import Path
+
+    lots_raw    = json.loads(Path(lots_path).read_text())
+    bidders_raw = json.loads(Path(bidders_path).read_text())
+
+    lots = _parse_lots(lots_raw)
+
+    past_lots: list[Lot] = []
+    if past_lots_path:
+        past_lots_raw = json.loads(Path(past_lots_path).read_text())
+        past_lots = _parse_lots(past_lots_raw)
 
     profiles: list[BidderProfile] = []
     for bidder in bidders_raw:
@@ -225,4 +251,4 @@ def load_from_json(
             bids      = bids,
             country   = bidder.get("country", ""),
         ))
-    return lots, profiles
+    return lots, profiles, past_lots

@@ -2,6 +2,7 @@
   {
     "lot_id": "LOT-2026-001",
     "title": "Untitled Abstract No. 7",
+    "artist": "Séamus Ó Colmáin",
     "category": "painting",
     "estimate_low": 3500,
     "estimate_high": 5000,
@@ -12,6 +13,7 @@
   {
     "lot_id": "LOT-2026-002",
     "title": "Bronze Figure Study II",
+    "artist": "Niamh Fitzgerald",
     "category": "sculpture",
     "estimate_low": 8000,
     "estimate_high": 12000,
@@ -22,6 +24,7 @@
   {
     "lot_id": "LOT-2026-003",
     "title": "Coastal Landscape, Kerry",
+    "artist": "Ronan Delaney",
     "category": "painting",
     "estimate_low": 1200,
     "estimate_high": 1800,
@@ -32,6 +35,7 @@
   {
     "lot_id": "LOT-2026-004",
     "title": "Etching Series: Dublin Quays IV",
+    "artist": "Aoibhinn Walsh",
     "category": "print",
     "estimate_low": 400,
     "estimate_high": 650,
@@ -42,6 +46,7 @@
   {
     "lot_id": "LOT-2026-005",
     "title": "Portrait of a Young Woman",
+    "artist": "William Leech",
     "category": "painting",
     "estimate_low": 15000,
     "estimate_high": 22000,
@@ -52,6 +57,7 @@
   {
     "lot_id": "LOT-2026-006",
     "title": "Ceramic Vessel, Ochre Glaze",
+    "artist": "Siobhán Ní Bhriain",
     "category": "ceramic",
     "estimate_low": 600,
     "estimate_high": 900,
@@ -62,6 +68,7 @@
   {
     "lot_id": "LOT-2026-007",
     "title": "Contemporary Mixed Media Triptych",
+    "artist": "Séamus Ó Colmáin",
     "category": "painting",
     "estimate_low": 4500,
     "estimate_high": 7000,
@@ -72,6 +79,7 @@
   {
     "lot_id": "LOT-2026-008",
     "title": "Photographic Print: The Burren Series",
+    "artist": "Ciarán McGrath",
     "category": "photography",
     "estimate_low": 800,
     "estimate_high": 1200,

@@ -1,14 +1,17 @@
 """Tests for the aggregator: end-to-end evaluation + recommendation thresholds."""
 import pytest
 from pipeline.models import Bid, BidOutcome, BidderProfile, Lot, Recommendation, PriceBandTrajectory
-from pipeline.aggregator import evaluate_bidder, evaluate_all, APPROVE_THRESHOLD, REVIEW_THRESHOLD
+from pipeline.aggregator import (
+    evaluate_bidder, evaluate_all, APPROVE_THRESHOLD, REVIEW_THRESHOLD,
+    build_artist_index, build_upcoming_artist_map, get_bidder_artists,
+)
 
 
-def make_lot(lot_id, reserve=1000, est_low=1000, est_high=2000, upcoming=True):
+def make_lot(lot_id, reserve=1000, est_low=1000, est_high=2000, upcoming=True, artist="Aoife Ní Fhaoláin"):
     date = "2026-06-15T14:00:00Z" if upcoming else "2024-01-01T14:00:00Z"
     return Lot(lot_id=lot_id, title=f"Lot {lot_id}", category="painting",
                estimate_low=est_low, estimate_high=est_high,
-               reserve_price=reserve, auction_date=date)
+               reserve_price=reserve, auction_date=date, artist=artist)
 
 
 def make_bid(bid_id, lot_id, amount, outcome="won", ts="2026-01-15T10:00:00Z", hammer=None):
@@ -145,3 +148,115 @@ def test_custom_weights():
     assert r_default.recommendation == Recommendation.APPROVE
     assert r_custom.recommendation  == Recommendation.APPROVE
     assert r_default.score != r_custom.score
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Artist index and per-lot scoring tests
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_build_artist_index():
+    lots = [
+        make_lot("P001", upcoming=False, artist="Alice Burke"),
+        make_lot("P002", upcoming=False, artist="Bob Ó Murchú"),
+        make_lot("P003", upcoming=False, artist=""),  # no artist
+    ]
+    idx = build_artist_index(lots)
+    assert idx["P001"] == "Alice Burke"
+    assert idx["P002"] == "Bob Ó Murchú"
+    assert "P003" not in idx  # empty artist excluded
+
+
+def test_build_upcoming_artist_map():
+    lots = [
+        make_lot("U001", upcoming=True, artist="Alice Burke"),
+        make_lot("U002", upcoming=True, artist="Alice Burke"),
+        make_lot("U003", upcoming=True, artist="Bob Ó Murchú"),
+    ]
+    art_map = build_upcoming_artist_map(lots)
+    assert len(art_map["Alice Burke"]) == 2
+    assert len(art_map["Bob Ó Murchú"]) == 1
+
+
+def test_get_bidder_artists():
+    bids = [
+        Bid(bid_id="B1", bidder_id="BDR-T", lot_id="P001",
+            bid_amount=1000, timestamp="2025-01-01T10:00:00Z",
+            outcome=BidOutcome.WON, hammer_price=1100),
+        Bid(bid_id="B2", bidder_id="BDR-T", lot_id="P002",
+            bid_amount=1200, timestamp="2025-06-01T10:00:00Z",
+            outcome=BidOutcome.LOST, hammer_price=None),
+        Bid(bid_id="B3", bidder_id="BDR-T", lot_id="P999",  # not in index
+            bid_amount=500, timestamp="2025-09-01T10:00:00Z",
+            outcome=BidOutcome.LOST, hammer_price=None),
+    ]
+    artist_index = {"P001": "Alice Burke", "P002": "Alice Burke"}
+    by_artist = get_bidder_artists(bids, artist_index)
+    assert "Alice Burke" in by_artist
+    assert len(by_artist["Alice Burke"]) == 2
+    assert "P999" not in str(by_artist)  # unknown lot excluded
+
+
+def test_per_lot_scores_populated_with_past_lots():
+    """Bidder with past bids on same artist as upcoming lot gets per_lot_scores."""
+    past_lots = [
+        make_lot("P001", upcoming=False, artist="Alice Burke", reserve=800, est_low=1000, est_high=2000),
+        make_lot("P002", upcoming=False, artist="Alice Burke", reserve=900, est_low=1200, est_high=2200),
+    ]
+    upcoming = [
+        make_lot("U001", upcoming=True, artist="Alice Burke", reserve=1000, est_low=1500, est_high=3000),
+    ]
+    bids = [
+        Bid(bid_id="B1", bidder_id="BDR-T", lot_id="P001",
+            bid_amount=1500, timestamp="2025-06-01T10:00:00Z",
+            outcome=BidOutcome.WON, hammer_price=1600),
+        Bid(bid_id="B2", bidder_id="BDR-T", lot_id="P002",
+            bid_amount=1800, timestamp="2025-09-01T10:00:00Z",
+            outcome=BidOutcome.WON, hammer_price=1900),
+    ]
+    profile = BidderProfile(bidder_id="BDR-T", name="Test Bidder",
+                            email="t@test.ie", bids=bids)
+    result = evaluate_bidder(profile, upcoming, past_lots=past_lots)
+    assert len(result.per_lot_scores) == 1
+    ls = result.per_lot_scores[0]
+    assert ls.lot_id == "U001"
+    assert ls.artist == "Alice Burke"
+    assert 0.0 <= ls.score <= 1.0
+    assert ls.recommendation in (Recommendation.APPROVE, Recommendation.REVIEW, Recommendation.REJECT)
+
+
+def test_no_artist_overlap_gets_no_match():
+    """Bidder whose past lots have a different artist than upcoming gets no per_lot_scores."""
+    past_lots = [
+        make_lot("P001", upcoming=False, artist="Different Artist"),
+    ]
+    upcoming = [
+        make_lot("U001", upcoming=True, artist="Alice Burke"),
+    ]
+    bids = [
+        Bid(bid_id="B1", bidder_id="BDR-T", lot_id="P001",
+            bid_amount=1000, timestamp="2025-01-01T10:00:00Z",
+            outcome=BidOutcome.WON, hammer_price=1100),
+    ]
+    profile = BidderProfile(bidder_id="BDR-T", name="Test Bidder",
+                            email="t@test.ie", bids=bids)
+    result = evaluate_bidder(profile, upcoming, past_lots=past_lots)
+    assert len(result.per_lot_scores) == 0
+    assert len(result.matched_lots) == 0
+
+
+def test_evaluate_all_with_past_lots():
+    """evaluate_all passes past_lots to each evaluate_bidder call."""
+    past_lots = [make_lot("P001", upcoming=False, artist="Aoife Ní Fhaoláin")]
+    upcoming  = [make_lot("U001", upcoming=True,  artist="Aoife Ní Fhaoláin")]
+    bids = [
+        Bid(bid_id="B1", bidder_id="BDR-T", lot_id="P001",
+            bid_amount=1500, timestamp="2026-01-01T10:00:00Z",
+            outcome=BidOutcome.WON, hammer_price=1600),
+        Bid(bid_id="B2", bidder_id="BDR-T", lot_id="P001",
+            bid_amount=1200, timestamp="2025-08-01T10:00:00Z",
+            outcome=BidOutcome.WON, hammer_price=1250),
+    ]
+    profile = BidderProfile(bidder_id="BDR-T", name="Test", email="t@t.ie", bids=bids)
+    results = evaluate_all([profile], upcoming, past_lots=past_lots)
+    assert len(results) == 1
+    assert len(results[0].per_lot_scores) == 1

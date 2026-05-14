@@ -1,0 +1,55 @@
+version: "3.9"
+
+# Deviours Auction — Docker Compose
+#
+# Quick start:
+#   docker compose up
+#
+# Then open: http://localhost:8003/
+#
+# With a local Ollama LLM server for email drafting:
+#   VLLM_URL=http://host.docker.internal:11434/api/generate docker compose up
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: deviours-auction:latest
+    container_name: deviours-auction
+    ports:
+      - "${PORT:-8003}:8003"
+    environment:
+      # LLM endpoint for email drafting (optional — leave blank for dry-run mode)
+      VLLM_URL: "${VLLM_URL:-}"
+      # Odoo integration (optional — leave blank to use bundled JSON data)
+      ODOO_URL: "${ODOO_URL:-}"
+      ODOO_DB: "${ODOO_DB:-}"
+      ODOO_USERNAME: "${ODOO_USERNAME:-}"
+      ODOO_PASSWORD: "${ODOO_PASSWORD:-}"
+    volumes:
+      # Persist generated reports and emails outside the container
+      - ./output:/app/output
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c",
+             "import urllib.request; urllib.request.urlopen('http://localhost:8003/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+# Optional: add a local Ollama service for LLM-powered email drafting
+#
+#  ollama:
+#    image: ollama/ollama:latest
+#    container_name: ollama
+#    ports:
+#      - "11434:11434"
+#    volumes:
+#      - ollama_data:/root/.ollama
+#    # Uncomment to pull a model on startup:
+#    # entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 5 && ollama pull gemma2:2b && wait"]
+#
+# volumes:
+#   ollama_data:

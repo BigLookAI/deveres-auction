@@ -38,6 +38,7 @@ class Lot:
     reserve_price:  float              # EUR
     auction_date:   str                # ISO 8601 date string
     description:    str = ""
+    artist:         str = ""           # Artist name — used for per-lot matching
 
 
 @dataclass
@@ -103,11 +104,32 @@ class ScoreBreakdown:
 class MatchedLot:
     lot_id:       str
     title:        str
+    artist:       str
     category:     str
     estimate_low: float
     estimate_high: float
     auction_date: str
-    match_reason: str    # e.g. "price band match", "preferred category"
+    match_reason: str    # e.g. "artist match", "price band match"
+
+
+@dataclass
+class LotScore:
+    """
+    Per-lot score for a bidder — computed against artist-specific bid history.
+    This is the primary recommendation unit: each LotScore answers
+    "should we invite this bidder for this specific upcoming lot?"
+    """
+    lot_id:         str
+    title:          str
+    artist:         str
+    category:       str
+    estimate_low:   float
+    estimate_high:  float
+    auction_date:   str
+    score:          float           # weighted score for this specific lot
+    recommendation: Recommendation  # APPROVE/REVIEW/REJECT for this lot
+    breakdown:      ScoreBreakdown  # dimension scores computed from artist-specific bids
+    artist_bids:    int = 0         # number of past bids on this artist's lots
 
 
 @dataclass
@@ -115,9 +137,10 @@ class EvaluationResult:
     bidder_id:      str
     bidder_name:    str
     bidder_email:   str
-    score:          float
-    recommendation: Recommendation
+    score:          float           # best per-lot score (or overall if no artist matches)
+    recommendation: Recommendation  # derived from best per-lot score
     breakdown:      ScoreBreakdown
     matched_lots:   list[MatchedLot] = field(default_factory=list)
+    per_lot_scores: list[LotScore]   = field(default_factory=list)
     rejection_reasons: list[str]     = field(default_factory=list)
     evaluated_at:   str              = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())

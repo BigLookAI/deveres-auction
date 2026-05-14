@@ -25,11 +25,12 @@ from .recommender import generate_all_reports, generate_summary_table
 
 
 def run(
-    lots_path:    str | None = None,
-    bidders_path: str | None = None,
-    output_dir:   str = "output",
-    use_odoo:     bool = False,
-    dry_run:      bool = False,
+    lots_path:      str | None = None,
+    bidders_path:   str | None = None,
+    past_lots_path: str | None = None,
+    output_dir:     str = "output",
+    use_odoo:       bool = False,
+    dry_run:        bool = False,
 ) -> dict:
     """
     Full pipeline run.
@@ -40,19 +41,21 @@ def run(
 
     # ── Load data ─────────────────────────────────────────────────────────────
     if use_odoo:
-        client   = OdooClient()
-        lots     = client.fetch_upcoming_lots()
-        profiles = client.fetch_bidder_profiles()
+        client     = OdooClient()
+        lots       = client.fetch_upcoming_lots()
+        profiles   = client.fetch_bidder_profiles()
+        past_lots  = []
     else:
-        data_dir  = Path(lots_path).parent if lots_path else Path("data")
-        lots_file = lots_path    or str(data_dir / "sample_upcoming_lots.json")
-        bids_file = bidders_path or str(data_dir / "sample_bidding_history.json")
-        lots, profiles = load_from_json(lots_file, bids_file)
+        data_dir       = Path(lots_path).parent if lots_path else Path("data")
+        lots_file      = lots_path      or str(data_dir / "sample_upcoming_lots.json")
+        bids_file      = bidders_path   or str(data_dir / "sample_bidding_history.json")
+        past_lots_file = past_lots_path or str(data_dir / "sample_past_lots.json")
+        lots, profiles, past_lots = load_from_json(lots_file, bids_file, past_lots_file)
 
-    print(f"Loaded {len(lots)} lots, {len(profiles)} bidder profiles")
+    print(f"Loaded {len(lots)} upcoming lots, {len(past_lots)} past lots, {len(profiles)} bidder profiles")
 
     # ── Evaluate all bidders ──────────────────────────────────────────────────
-    results = evaluate_all(profiles, lots)
+    results = evaluate_all(profiles, lots, past_lots=past_lots if past_lots else None)
 
     approved = [r for r in results if r.recommendation.value == "approve"]
     reviewed = [r for r in results if r.recommendation.value == "review"]
@@ -102,11 +105,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     summary = run(
-        lots_path    = str(Path(args.data_dir) / "sample_upcoming_lots.json"),
-        bidders_path = str(Path(args.data_dir) / "sample_bidding_history.json"),
-        output_dir   = args.output_dir,
-        use_odoo     = args.odoo,
-        dry_run      = args.dry_run,
+        lots_path      = str(Path(args.data_dir) / "sample_upcoming_lots.json"),
+        bidders_path   = str(Path(args.data_dir) / "sample_bidding_history.json"),
+        past_lots_path = str(Path(args.data_dir) / "sample_past_lots.json"),
+        output_dir     = args.output_dir,
+        use_odoo       = args.odoo,
+        dry_run        = args.dry_run,
     )
     print("\nPipeline complete:")
     for k, v in summary.items():

@@ -1,11 +1,17 @@
 """
 Deviours Auction — Personalised Outreach Email Drafter
-Uses Gemma4 on DGX (vLLM at :8000) to draft personalised emails for APPROVED bidders.
-Email tone and template are controlled by Shelly-editable Markdown skill files —
-no Python changes needed to adjust voice, greeting style, or CTA.
+Uses an LLM inference server (vLLM / Ollama / any OpenAI-compatible endpoint)
+to draft personalised emails for APPROVED bidders.
+
+Email tone and template are controlled by editable Markdown skill files in
+skills/outreach-email/ — no Python changes needed to adjust voice or CTA.
+
+Set VLLM_URL in your .env to point at a local or remote inference server.
+If VLLM_URL is not set, dry_run mode is used automatically.
 """
 from __future__ import annotations
 
+import os
 import re
 import json
 from pathlib import Path
@@ -14,11 +20,15 @@ from typing import Optional
 from .models import EvaluationResult, Recommendation
 
 
-# ── Skill template location (Shelly-editable) ────────────────────────────────
+# ── Skill template location ───────────────────────────────────────────────────
 SKILLS_DIR = Path(__file__).resolve().parent.parent / "skills" / "outreach-email"
 
-# ── DGX vLLM endpoint ────────────────────────────────────────────────────────
-VLLM_URL = "http://100.101.39.73:8000/generate"
+# ── LLM inference endpoint (configurable via environment variable) ────────────
+# Set VLLM_URL in .env to point at any vLLM / Ollama / OpenAI-compatible server.
+# Example: VLLM_URL=http://localhost:11434/api/generate  (Ollama)
+#          VLLM_URL=http://localhost:8000/generate        (vLLM)
+# Leave unset to use dry-run mode (template fill, no LLM call).
+VLLM_URL = os.environ.get("VLLM_URL", "")
 
 
 def load_skill_template() -> dict:
@@ -38,7 +48,7 @@ def load_skill_template() -> dict:
 
 def draft_email(
     result: EvaluationResult,
-    vllm_url: str = VLLM_URL,
+    vllm_url: str = "",
     dry_run: bool = False,
 ) -> dict:
     """
@@ -64,7 +74,9 @@ def draft_email(
     lot_lines = _format_lot_list(result)
     subject   = f"Preview Invitation — Upcoming Auction Lots Selected for You"
 
-    if dry_run:
+    # Auto dry-run if no LLM URL is configured
+    effective_url = vllm_url or VLLM_URL
+    if dry_run or not effective_url:
         body = _fill_template(skill["template"], result, lot_lines)
         return {
             "bidder_id":    result.bidder_id,
@@ -75,7 +87,7 @@ def draft_email(
         }
 
     prompt = _build_prompt(skill, result, lot_lines)
-    body   = _call_gemma4(prompt, vllm_url)
+    body   = _call_llm(prompt, effective_url)
 
     return {
         "bidder_id":    result.bidder_id,
@@ -88,7 +100,7 @@ def draft_email(
 
 def draft_all_emails(
     results: list[EvaluationResult],
-    vllm_url: str = VLLM_URL,
+    vllm_url: str = "",
     dry_run: bool = False,
 ) -> list[dict]:
     """Draft emails for all APPROVED bidders. REVIEW/REJECT bidders are skipped."""
@@ -160,7 +172,7 @@ Do NOT mention their score or that they were algorithmically evaluated.
 Maximum 200 words. Return only the email body text, no subject line."""
 
 
-def _call_gemma4(prompt: str, url: str) -> str:
+def _call_llm(prompt: str, url: str) -> str:
     try:
         import requests
         r = requests.post(
