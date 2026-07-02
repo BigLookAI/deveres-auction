@@ -1,4 +1,4 @@
-# Deviours Auction — Dockerfile
+# deVeres Auction — Dockerfile
 # Multi-stage build for a lean production image.
 # Runs on x86_64 and ARM64 (Apple Silicon M1/M2/M3).
 
@@ -14,9 +14,9 @@ RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 # ── Runtime stage ─────────────────────────────────────────────────────────────
 FROM python:3.13-slim
 
-LABEL org.opencontainers.image.title="Deviours Auction"
+LABEL org.opencontainers.image.title="deVeres Auction"
 LABEL org.opencontainers.image.description="Bidder evaluation and invitation intelligence platform"
-LABEL org.opencontainers.image.source="https://github.com/santosh-biglook/deviours-auction"
+LABEL org.opencontainers.image.source="https://github.com/santosh-biglook/deveres-auction"
 
 WORKDIR /app
 
