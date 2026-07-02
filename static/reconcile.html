@@ -167,8 +167,12 @@
       <div class="big">⬆️</div>
       <h2>Drop the Blue Cubes export here</h2>
       <p>or click to choose a <code>.csv</code> file</p>
+      <p class="muted" style="font-size:12px">Spreadsheets must be exported as CSV first — Apple Numbers: <i>File → Export To → CSV…</i></p>
       <input type="file" id="file" accept=".csv" class="hidden"/>
     </div>
+    <p class="muted" style="font-size:12.5px;margin-top:12px">No file to hand?
+      <a href="/reconcile/sample-csv">Download the synthetic sample export</a> (fake data —
+      new clients, typos, format noise, manual-review cases) and upload it to see every pathway.</p>
   </section>
 
   <!-- PROCESSING -->
@@ -183,7 +187,7 @@
       <div class="chips" id="stateChips"></div>
       <div class="spacer"></div>
       <select id="sessionSel" title="Switch reconciliation session"></select>
-      <input type="search" id="search" placeholder="Search name / buyer no.…"/>
+      <input type="search" id="search" placeholder="🔍 Search name, email, phone, town, buyer no.…" style="min-width:280px"/>
       <select id="sort">
         <option value="confidence">Sort: Confidence</option>
         <option value="state">Sort: Workflow state</option>
@@ -269,7 +273,7 @@ function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
 
 // ── restore last session on load (survives refresh / server restart) ──
 (async()=>{try{const sess=await jget('/reconcile/session');
-  state.summary=sess.summary;renderDash(sess.summary);await refreshAll();loadSessions();show('results');
+  state.summary=sess.summary;renderDash(sess.summary,sess);await refreshAll();loadSessions();show('results');
 }catch(e){/* no session yet — stay on upload */}})();
 
 // ── upload ──
@@ -289,8 +293,10 @@ async function doUpload(f){
     const d=await r.json();
     if(!r.ok)throw new Error(d.detail||'Upload failed');
     state.summary=d.summary;state.page=1;state.chip='all';state.chipKind='all';state.q='';
-    renderDash(d.summary);await refreshAll();loadSessions();show('results');
-  }catch(e){alert('Error: '+e.message);show('upload');}
+    renderDash(d.summary,d);await refreshAll();loadSessions();show('results');
+    if(d.summary.new>0)toast(`✅ ${d.summary.new} NEW client(s) detected in this upload`);
+    if(d.shared_buyer_number_contacts)toast(`⚠ ${d.shared_buyer_number_contacts} contact(s) shared a buyer number with a different person — split into separate records`);
+  }catch(e){alert('Upload failed: '+e.message);show('upload');}
 }
 
 function show(v){for(const k of['upload','proc','results'])$('#view-'+k).classList.toggle('hidden',k!==v);}
@@ -322,8 +328,9 @@ async function refreshProgress(){
 }
 
 // ── dashboard note + chips ──
-function renderDash(s){
-  $('#dqNote').innerHTML=`<b>Reconciliation of ${s.incoming_rows} uploaded contacts</b> against ${s.master_records.toLocaleString()} canonical clients in ${s.processing_ms} ms. `
+function renderDash(s,meta){
+  const fresh=meta&&meta.filename?`<b>${esc(meta.filename)}</b>${meta.uploaded_at?` · processed ${new Date(meta.uploaded_at).toLocaleString()}`:''} — `:'';
+  $('#dqNote').innerHTML=fresh+`<b>Reconciliation of ${s.incoming_rows} uploaded contacts</b> against ${s.master_records.toLocaleString()} canonical clients in ${s.processing_ms} ms. `
     +`Cosmetic differences (case, spacing, dialing codes, address abbreviations, Eircode formatting) are ignored — only substantive changes are flagged. `
     +`Approvals write to the <b>staging dataset</b> (pending changes); the staging file is the only payload pushed to Odoo. `
     +`<b>Colour stripes:</b> <span style="color:var(--ready)">■ staged/ready</span> · <span style="color:var(--edited)">■ edited</span> · <span style="color:var(--pushed)">■ pushed</span> · <span style="color:var(--rejected)">■ rejected</span> — rows you have acted on are identifiable at a glance.`;
@@ -434,7 +441,7 @@ async function loadSessions(){
       await jpost('/reconcile/sessions/'+encodeURIComponent(sel.value)+'/activate');
       const sess=await jget('/reconcile/session');
       state.summary=sess.summary;state.page=1;state.chip='all';state.chipKind='all';
-      renderDash(sess.summary);await refreshAll();
+      renderDash(sess.summary,sess);await refreshAll();
     };
   }catch(e){}
 }

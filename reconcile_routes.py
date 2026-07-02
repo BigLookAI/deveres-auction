@@ -153,6 +153,7 @@ def _save_session() -> None:
         payload = {
             "filename": _state["filename"], "kind": _state["kind"],
             "session_id": _state.get("session_id"),
+            "uploaded_at": _state.get("uploaded_at"),
             "summary": _state["summary"].to_dict() if hasattr(_state["summary"], "to_dict") else _state["summary"],
             "results": [r.to_dict(full=True) for r in _state["results"]],
         }
@@ -180,6 +181,7 @@ def _restore_session() -> None:
             _state["filename"] = payload.get("filename")
             _state["kind"] = payload.get("kind")
             _state["session_id"] = payload.get("session_id") or payload.get("filename")
+            _state["uploaded_at"] = payload.get("uploaded_at")
             log.info("reconcile: restored session '%s' (%d results)",
                      _state["filename"], len(_state["results"]))
     except Exception as exc:
@@ -286,7 +288,21 @@ def session():
     summary = _state["summary"]
     return {"summary": summary.to_dict() if hasattr(summary, "to_dict") else summary,
             "filename": _state["filename"], "kind": _state["kind"],
-            "session_id": _state.get("session_id")}
+            "session_id": _state.get("session_id"),
+            "uploaded_at": _state.get("uploaded_at")}
+
+
+@router.get("/sample-csv")
+def sample_csv():
+    """Synthetic Blue Cubes export (fake data only) for demos and training:
+    includes new clients, typos, format noise and all three manual-review cases.
+    Upload it to see every workflow pathway populated."""
+    p = BASE_DIR / "tests" / "fixtures" / "bluecube_test_export.csv"
+    if not p.exists():
+        raise HTTPException(404, "Sample dataset not present on this server.")
+    return Response(p.read_text(encoding="utf-8"), media_type="text/csv",
+                    headers={"Content-Disposition":
+                             "attachment; filename=bluecube-sample-export.csv"})
 
 
 # ── Upload + process ────────────────────────────────────────────────────────
@@ -306,13 +322,17 @@ async def upload(file: UploadFile = File(...), user: str = Depends(require_edito
     results, summary = _get_engine().run(incoming)
     sid = time.strftime("%Y%m%d-%H%M%S") + "-" + "".join(
         c if c.isalnum() else "-" for c in file.filename)[:60]
+    uploaded_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     _state.update(results=results, summary=summary, filename=file.filename,
-                  kind=kind, session_id=sid)
+                  kind=kind, session_id=sid, uploaded_at=uploaded_at)
     _save_session()
     _audit("upload", filename=file.filename, kind=kind, contacts=len(results),
            session=sid, actor=user)
     log.info("reconcile: processed '%s' (%s, %d contacts)", file.filename, kind, len(results))
-    return {"summary": summary.to_dict(), "filename": file.filename, "kind": kind, "session": sid}
+    return {"summary": summary.to_dict(), "filename": file.filename, "kind": kind,
+            "session": sid, "uploaded_at": uploaded_at,
+            "shared_buyer_number_contacts": sum(1 for i in incoming
+                                                if i.get("shared_buyer_number"))}
 
 
 # ── Results (paginated / filtered / sorted) ───────────────────────────────────
@@ -334,8 +354,17 @@ def results(status: str = Query("all"), state: str = Query("all"),
             filt = [r for r in filt if r.state.value == state]
     if q:
         ql = q.lower()
-        filt = [r for r in filt if ql in r.incoming_name.lower()
-                or ql in (r.master_name or "").lower() or ql in r.buyer_number.lower()]
+
+        def _hit(r) -> bool:
+            if (ql in r.incoming_name.lower() or ql in (r.master_name or "").lower()
+                    or ql in r.buyer_number.lower()):
+                return True
+            for rec in (r.incoming, r.master):
+                for f in ("email", "phone", "mobile", "company", "town", "county"):
+                    if ql in (rec.get(f, "") or "").lower():
+                        return True
+            return False
+        filt = [r for r in filt if _hit(r)]
     key = {"confidence": lambda r: r.confidence,
            "name": lambda r: r.incoming_name.lower(),
            "status": lambda r: r.classification.value,

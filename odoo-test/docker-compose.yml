@@ -1,0 +1,34 @@
+# deVeres — DISPOSABLE Odoo sandbox for reconciliation push testing ONLY.
+# Completely separate from any other Odoo instance. Not started automatically —
+# bring it up deliberately when you want a push target before De Veres share
+# their real Postgres:
+#
+#   cd odoo-test && docker compose up -d
+#   docker compose run --rm odoo odoo -i base -d deveres_test --stop-after-init
+#   # then: ODOO_URL=http://localhost:8071 ODOO_DB=deveres_test \
+#   #       ODOO_USERNAME=admin ODOO_PASSWORD=admin \
+#   #       python3 scripts/odoo_push_test.py
+#
+# Tear down (data gone, deliberately): docker compose down -v
+services:
+  db:
+    image: postgres:16
+    container_name: deveres-odoo-test-db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo_test_2026
+    volumes: [deveres-odoo-test-db:/var/lib/postgresql/data]
+  odoo:
+    image: odoo:17
+    container_name: deveres-odoo-test
+    depends_on: [db]
+    ports: ["8071:8069"]
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo_test_2026
+    volumes: [deveres-odoo-test-data:/var/lib/odoo]
+volumes:
+  deveres-odoo-test-db:
+  deveres-odoo-test-data:

@@ -62,16 +62,38 @@ def load_incoming(text_or_path, is_path: bool = True) -> list[dict]:
     The export is per-LOT (a buyer repeats across the lots they won), so we group
     by Buyer Number, take the first non-empty value for each contact field, and
     collect the buyer's lots + winning bids for context.
+
+    IDENTITY GUARD (2-Jul afternoon demo): a hand-added row that reuses an
+    existing Buyer Number but clearly belongs to a DIFFERENT PERSON (different
+    normalised name) must not be silently merged into that buyer — it becomes
+    its own contact (flagged `shared_buyer_number`). This is exactly what
+    happened when a new test contact was pasted under a copied buyer number and
+    the tool reported "0 new".
     """
+    from . import normalize as N
     raw = _rows(text_or_path, is_path)
-    by_buyer: dict[str, dict] = {}
+    by_key: dict[str, dict] = {}
+    per_buyer_names: dict[str, dict[str, str]] = {}   # bn -> name_key -> bucket key
     for r in raw:
         m = _map_row(r, INCOMING_MAP)
-        key = m.get("buyer_number") or f"row-{len(by_buyer)}"
-        rec = by_buyer.setdefault(key, {
-            "buyer_number": key,
+        bn = m.get("buyer_number") or f"row-{len(by_key)}"
+        nk = N.name_key(m.get("first_name", ""), m.get("last_name", ""))
+        names = per_buyer_names.setdefault(bn, {})
+        if nk and names and nk not in names and "" not in names:
+            # same buyer number, conflicting identity → separate contact
+            key = f"{bn}#{len(names) + 1}"
+        elif nk in names:
+            key = names[nk]
+        elif names:
+            key = next(iter(names.values()))          # nameless rows join the first bucket
+        else:
+            key = bn
+        names.setdefault(nk, key)
+        rec = by_key.setdefault(key, {
+            "buyer_number": bn,
             **{f: "" for f in _CANON_CONTACT_FIELDS},
             "lots": [],
+            "shared_buyer_number": "#" in key,
         })
         for f in _CANON_CONTACT_FIELDS:
             if not rec.get(f) and m.get(f):
@@ -82,7 +104,7 @@ def load_incoming(text_or_path, is_path: bool = True) -> list[dict]:
                 "lot_title": m.get("lot_title", ""),
                 "winning_bid": m.get("winning_bid", ""),
             })
-    return list(by_buyer.values())
+    return list(by_key.values())
 
 
 def detect_format(text_or_path, is_path: bool = True) -> str:
@@ -118,6 +140,15 @@ def load_upload(text: str) -> tuple[str, list[dict]]:
     """Auto-detect an uploaded export's format and parse it accordingly.
     Returns (kind, records) where kind ∈ {'buyers','sellers'}. Raises ValueError
     on an unrecognised header row, listing what we expected."""
+    head = (text or "")[:8]
+    # Binary uploads: Apple Numbers/modern Excel are zip archives ("PK…"); old
+    # Excel and other binaries decode to replacement chars. Say so plainly —
+    # this exact confusion derailed the 2-Jul live demo.
+    if head.startswith("PK\x03\x04") or "�" in head:
+        raise ValueError(
+            "This file is an Apple Numbers / Excel spreadsheet, not a CSV. "
+            "In Numbers: File → Export To → CSV… (in Excel: Save As → CSV), "
+            "then upload the exported .csv file.")
     kind = detect_format(text, is_path=False)
     if kind == "buyers":
         return kind, load_incoming(text, is_path=False)

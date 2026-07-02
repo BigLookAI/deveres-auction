@@ -326,6 +326,62 @@ class TestOdooPayload:
         header = r.text.splitlines()[0]
         assert header.startswith("matched_on,key,count")
 
+
+# ── 2-Jul afternoon demo fixes ────────────────────────────────────────────────
+class TestDemoFixes:
+    def test_new_contact_with_reused_buyer_number_is_detected(self, client):
+        """THE demo bug: a hand-added contact reusing an existing Buyer Number
+        must surface as its own NEW record, not be merged away silently."""
+        import csv, io
+        with open(FIX / "bluecube_test_export.csv", encoding="utf-8") as f:
+            rows = list(csv.reader(f))
+        hdr = rows[0]
+        new_row = list(rows[1])                       # copy buyer 9001's row
+        for col, val in (("First Name", "Gerard"), ("Last Name", "Newperson"),
+                         ("Email", "gerard.newperson@example.test"),
+                         ("Phone", "+353 89 111 2222")):
+            new_row[hdr.index(col)] = val
+        buf = io.StringIO(); csv.writer(buf).writerows(rows[:2] + [new_row] + rows[2:])
+        r = client.post("/reconcile/upload",
+                        files={"file": ("edited.csv", buf.getvalue(), "text/csv")},
+                        headers=ADMIN)
+        assert r.status_code == 200
+        assert r.json()["shared_buyer_number_contacts"] == 1
+        found = client.get("/reconcile/results?q=Newperson&state=all&page_size=10",
+                           headers=ADMIN).json()
+        assert found["total"] == 1
+        assert found["rows"][0]["classification"] == "new"
+
+    def test_numbers_file_gets_actionable_error(self, client):
+        binary = b"PK\x03\x04" + b"\x00" * 64
+        r = client.post("/reconcile/upload",
+                        files={"file": ("Design April.csv", binary, "text/csv")},
+                        headers=ADMIN)
+        assert r.status_code == 400
+        assert "Numbers" in r.json()["detail"] and "Export" in r.json()["detail"]
+
+    def test_search_matches_email_phone_and_town(self, client):
+        _upload(client)
+        by_email = client.get("/reconcile/results?q=aoife.samples@example.test&state=all",
+                              headers=ADMIN).json()
+        assert by_email["total"] >= 1
+        by_town = client.get("/reconcile/results?q=greystones&state=all",
+                             headers=ADMIN).json()
+        assert by_town["total"] >= 1
+
+    def test_sample_csv_download_and_roundtrip(self, client):
+        r = client.get("/reconcile/sample-csv", headers=ADMIN)
+        assert r.status_code == 200 and "Buyer Number" in r.text.splitlines()[0]
+        up = client.post("/reconcile/upload",
+                         files={"file": ("sample.csv", r.text, "text/csv")},
+                         headers=ADMIN)
+        assert up.status_code == 200 and up.json()["summary"]["total"] >= 13
+
+    def test_session_reports_upload_timestamp(self, client):
+        _upload(client)
+        s = client.get("/reconcile/session", headers=ADMIN).json()
+        assert s["uploaded_at"] and s["filename"]
+
     def test_high_value_flags_id_check(self, client):
         _upload(client)
         rows = client.get("/reconcile/results?page_size=100&state=all", headers=ADMIN).json()["rows"]
