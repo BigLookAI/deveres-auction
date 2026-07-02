@@ -45,6 +45,14 @@ PARTNER_FIELD_MAP = {
     "postcode": "zip",
 }
 
+# Fields that map to res.partner RELATIONS and need a name→id lookup at execute
+# time (county → state_id, country → country_id). Default convention pending
+# Fintan's confirmation; unresolved names fall back into the comment, never lost.
+LOOKUP_FIELD_MAP = {
+    "county":  "__state_name",     # resolved to res.partner.state_id
+    "country": "__country_name",   # resolved to res.partner.country_id
+}
+
 
 def _full_name(rec: dict) -> str:
     name = f"{rec.get('first_name', '')} {rec.get('last_name', '')}".strip()
@@ -105,6 +113,9 @@ def plan_from_staging(entries: list[dict], source_file: str = "") -> list[Import
             for cf, pf in PARTNER_FIELD_MAP.items():
                 if approved.get(cf):
                     values[pf] = approved[cf]
+            for cf, pseudo in LOOKUP_FIELD_MAP.items():
+                if approved.get(cf):
+                    values[pseudo] = approved[cf]
             ops.append(ImportOp("create", "approved new client (staged)", values["ref"],
                                 values["name"], values, high_value))
         else:  # update
@@ -113,11 +124,14 @@ def plan_from_staging(entries: list[dict], source_file: str = "") -> list[Import
                 pf = PARTNER_FIELD_MAP.get(cf)
                 if pf and approved.get(cf):
                     values[pf] = approved[cf]
-            # county/country have no direct res.partner text field (state_id /
-            # country_id are lookups — mapping pending confirmation). Never drop
-            # them silently: surface them in the op so the reviewer sees them.
+                pseudo = LOOKUP_FIELD_MAP.get(cf)
+                if pseudo and approved.get(cf):
+                    values[pseudo] = approved[cf]   # resolved to an id at execute time
+            # Any remaining field with no mapping at all (currently: company) is
+            # surfaced in the op reason — never silently dropped.
             unmapped = {cf: approved.get(cf, "") for cf in changed
-                        if cf not in PARTNER_FIELD_MAP and approved.get(cf)}
+                        if cf not in PARTNER_FIELD_MAP and cf not in LOOKUP_FIELD_MAP
+                        and approved.get(cf)}
             ref = str(e.get("master_ref") or "")
             if values:
                 if high_value:
@@ -132,8 +146,7 @@ def plan_from_staging(entries: list[dict], source_file: str = "") -> list[Import
                 reason = "staged update has no Odoo-mappable field changes"
                 if unmapped:
                     reason += (" (unmapped: "
-                               + ", ".join(f"{k}={v}" for k, v in unmapped.items())
-                               + " — needs county/country → state_id/country_id mapping)")
+                               + ", ".join(f"{k}={v}" for k, v in unmapped.items()) + ")")
                 ops.append(ImportOp("skip", reason,
                                     ref, e.get("name") or _full_name(approved), {}, high_value))
     return ops
@@ -204,6 +217,35 @@ class OdooImporter:
             ids = self._search_partner([[["email", "=ilike", op.values["email"]]]])
         return ids[0] if ids else None
 
+    def _resolve_lookups(self, op: ImportOp) -> None:
+        """Turn the __country_name/__state_name pseudo-fields into country_id /
+        state_id via name lookup. An unresolved name is appended to the comment
+        (audit-visible) rather than dropped or guessed."""
+        country_name = op.values.pop("__country_name", None)
+        state_name = op.values.pop("__state_name", None)
+        unresolved = []
+        country_id = None
+        if country_name:
+            ids = self.client._execute("res.country", "search",
+                                       [[["name", "=ilike", country_name]]], limit=1)
+            if ids:
+                country_id = ids[0]
+                op.values["country_id"] = country_id
+            else:
+                unresolved.append(f"country={country_name}")
+        if state_name:
+            domain = [["name", "=ilike", state_name]]
+            if country_id:
+                domain.append(["country_id", "=", country_id])
+            ids = self.client._execute("res.country.state", "search", [domain], limit=1)
+            if ids:
+                op.values["state_id"] = ids[0]
+            else:
+                unresolved.append(f"county/state={state_name}")
+        if unresolved:
+            extra = "Unresolved location values (set manually): " + ", ".join(unresolved)
+            op.values["comment"] = (op.values.get("comment", "") + " " + extra).strip()
+
     def execute(self, ops: list[ImportOp], dry_run: bool = True) -> dict:
         if not dry_run and os.environ.get("RECON_ALLOW_ODOO_WRITE") != "1":
             raise PermissionError(
@@ -219,6 +261,8 @@ class OdooImporter:
             if op.op == "create" and partner_id:
                 # already exists (previous import) → idempotent write instead
                 op.op, op.reason = "write", "already imported previously — updating"
+            if not dry_run:
+                self._resolve_lookups(op)   # county/country name → state_id/country_id
             if dry_run:
                 results.append(op.to_dict())
                 created += 1 if op.op == "create" else 0

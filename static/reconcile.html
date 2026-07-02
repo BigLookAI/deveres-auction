@@ -69,6 +69,19 @@
   th{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);position:sticky;top:0;background:var(--card2);cursor:pointer;white-space:nowrap}
   tbody tr{cursor:pointer} tbody tr:hover{background:var(--card2)}
   tbody tr:last-child td{border-bottom:0}
+  /* colour-coded workflow stripes: any row a reviewer has acted on gets a
+     left stripe + tint so fresh updates are identifiable at a glance */
+  tbody tr td:first-child{border-left:3px solid transparent}
+  tr.rw-staged td:first-child{border-left-color:var(--ready)}
+  tr.rw-staged{background:rgba(74,222,128,.045)}
+  tr.rw-edited td:first-child{border-left-color:var(--edited)}
+  tr.rw-edited{background:rgba(251,146,60,.05)}
+  tr.rw-pushed td:first-child{border-left-color:var(--pushed)}
+  tr.rw-pushed{background:rgba(34,211,238,.045)}
+  tr.rw-rejected td:first-child{border-left-color:var(--rejected)}
+  tr.rw-rejected{background:rgba(248,113,113,.045)}
+  tr.rw-flash{animation:rowflash 1.6s ease-out}
+  @keyframes rowflash{0%{background:rgba(74,222,128,.22)}100%{background:transparent}}
   .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:10.5px;font-weight:700;white-space:nowrap}
   .st-new_record{background:rgba(52,211,153,.16);color:var(--new)}
   .st-existing_ok{background:rgba(56,189,248,.16);color:var(--retain)}
@@ -312,7 +325,8 @@ async function refreshProgress(){
 function renderDash(s){
   $('#dqNote').innerHTML=`<b>Reconciliation of ${s.incoming_rows} uploaded contacts</b> against ${s.master_records.toLocaleString()} canonical clients in ${s.processing_ms} ms. `
     +`Cosmetic differences (case, spacing, dialing codes, address abbreviations, Eircode formatting) are ignored — only substantive changes are flagged. `
-    +`Approvals write to the <b>staging dataset</b> (pending changes); the staging file is the only payload pushed to Odoo.`;
+    +`Approvals write to the <b>staging dataset</b> (pending changes); the staging file is the only payload pushed to Odoo. `
+    +`<b>Colour stripes:</b> <span style="color:var(--ready)">■ staged/ready</span> · <span style="color:var(--edited)">■ edited</span> · <span style="color:var(--pushed)">■ pushed</span> · <span style="color:var(--rejected)">■ rejected</span> — rows you have acted on are identifiable at a glance.`;
   $('#stateChips').innerHTML=CHIPS.map(([kind,k,l])=>`<span class="chip ${k===state.chip?'on':''}" data-kind="${kind}" data-k="${k}">${l}</span>`).join('');
   $('#stateChips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{state.chip=c.dataset.k;state.chipKind=c.dataset.kind;state.page=1;loadResults();});
 }
@@ -337,7 +351,10 @@ async function loadResults(){
     const cf=r.changed_fields.map(f=>`<span class="fchip">${f}</span>`).join('')||'<span class="muted">none</span>';
     const edited=r.edited?`<span class="fchip edit">edited</span>`:'';
     const acts=quickActions(r);
-    return `<tr onclick="openDetail(${r.index},event)">
+    const stripe={update_ready:'rw-staged',import_ready:'rw-staged',manual_edit:'rw-edited',
+                  pushed_to_odoo:'rw-pushed',rejected:'rw-rejected'}[r.state]||'';
+    const flash=(window._justActed===r.index)?' rw-flash':'';
+    return `<tr class="${stripe}${flash}" onclick="openDetail(${r.index},event)">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="rsel" value="${r.index}"/></td>
       <td><span class="badge st-${r.state}">${STATE_LABELS[r.state]||r.state}</span> ${edited}</td>
       <td><div class="conf"><div class="bar"><i style="width:${conf}%"></i></div>${conf}%</div></td>
@@ -346,6 +363,7 @@ async function loadResults(){
       <td>${mb}</td><td>${cf}</td>
       <td onclick="event.stopPropagation()">${acts}</td>
     </tr>`;}).join('');
+  window._justActed=null;
   const pages=Math.max(1,Math.ceil(d.total/state.page_size));
   $('#pageInfo').textContent=`Page ${state.page} of ${pages} · ${d.total} rows`;
   $('#prev').disabled=state.page<=1;$('#next').disabled=state.page>=pages;
@@ -378,9 +396,9 @@ document.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const s=th.d
 function selected(){return [...document.querySelectorAll('.rsel:checked')].map(c=>+c.value);}
 
 // ── workflow actions ──
-async function rowApprove(idx,as){try{const d=await jpost(`/reconcile/records/${idx}/approve`,as?{as}:{}); toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
-async function rowReject(idx){const reason=prompt('Reason for rejection (optional):')||'';try{const d=await jpost(`/reconcile/records/${idx}/reject`,{reason});toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
-async function rowReopen(idx){try{const d=await jpost(`/reconcile/records/${idx}/reopen`);toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
+async function rowApprove(idx,as){try{const d=await jpost(`/reconcile/records/${idx}/approve`,as?{as}:{}); window._justActed=idx;toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
+async function rowReject(idx){const reason=prompt('Reason for rejection (optional):')||'';try{const d=await jpost(`/reconcile/records/${idx}/reject`,{reason});window._justActed=idx;toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
+async function rowReopen(idx){try{const d=await jpost(`/reconcile/records/${idx}/reopen`);window._justActed=idx;toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
 async function bulkApprove(scope){
   if(scope.indices && !scope.indices.length){alert('No rows selected.');return;}
   try{const d=await jpost('/reconcile/approve-bulk',scope);

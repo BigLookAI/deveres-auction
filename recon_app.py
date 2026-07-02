@@ -40,7 +40,16 @@ def health():
 @app.get("/", response_class=HTMLResponse)
 def landing():
     """Product-1 landing: reconciliation only — no other product is linked
-    here by design (separate tools, separate front doors)."""
+    here by design (separate tools, separate front doors). Shows the READ-ONLY
+    viewer login when one is configured; the admin login is never displayed."""
+    import os
+    viewer_user = os.environ.get("RECON_VIEWER_USER", "")
+    viewer_pass = os.environ.get("RECON_VIEWER_PASS", "")
+    if viewer_user:
+        cred_note = (f"Read-only access: <code>{viewer_user}</code> / "
+                     f"<code>{viewer_pass}</code> — review actions need the admin login.")
+    else:
+        cred_note = ("Login: <code>admin@deveres.ie</code> / <code>Admin2026!</code>")
     return HTMLResponse("""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -68,7 +77,7 @@ def landing():
   <div class="flow">Blue&nbsp;Cube&nbsp;Export → Reconciliation&nbsp;Engine → Review → Approval → Staging → Push&nbsp;to&nbsp;Odoo</div>
   <a class="btn" href="/reconcile">Open the reconciliation workspace →</a>
   <div class="cred">Sign-in required — this workspace handles personal client data.
-  Login: <code>admin@deveres.ie</code> / <code>Admin2026!</code></div>
+  """ + cred_note + """</div>
 </div>
 </body></html>""")
 

@@ -253,3 +253,21 @@ class StagingRepository:
                            "counts": self.counts(session),
                            "entries": self.entries(session, status)},
                           indent=2, ensure_ascii=False)
+
+    # ── retention (GDPR data minimisation) ────────────────────────────────────
+    def purge(self, retention_days: int | None = None) -> dict:
+        """Delete pushed/withdrawn staging rows older than the retention window
+        (env RECON_STAGING_RETENTION_DAYS, default 90). 'ready' rows are NEVER
+        purged — pending work is not data to minimise. The transitions table
+        (audit trail) is kept. Returns what was removed."""
+        days = retention_days if retention_days is not None else \
+            int(os.environ.get("RECON_STAGING_RETENTION_DAYS", "90"))
+        if days < 1:
+            raise ValueError("retention_days must be >= 1")
+        from datetime import timedelta
+        cutoff = (datetime.now(timezone.utc) - timedelta(days=days)).isoformat(timespec="seconds")
+        with self._conn() as con:
+            cur = con.execute(
+                "DELETE FROM staging WHERE status IN ('pushed','withdrawn') "
+                "AND COALESCE(NULLIF(updated_at,''), approved_at) < ?", (cutoff,))
+        return {"purged": cur.rowcount, "retention_days": days, "cutoff": cutoff}

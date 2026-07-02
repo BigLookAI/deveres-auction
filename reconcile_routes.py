@@ -518,6 +518,20 @@ def staging_list(status: str = "ready"):
             "entries": repo.entries(_session_id(), status)}
 
 
+@router.post("/staging/purge")
+def staging_purge(payload: dict | None = None, user: str = Depends(require_editor)):
+    """Retention purge: remove pushed/withdrawn staging rows older than the
+    retention window (default 90 days; env RECON_STAGING_RETENTION_DAYS).
+    Pending ('ready') rows and the audit/transition history are never touched."""
+    days = (payload or {}).get("retention_days")
+    try:
+        result = _get_staging().purge(days)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+    _audit("staging_purge", actor=user, **result)
+    return result
+
+
 @router.get("/staging/export")
 def staging_export(fmt: str = "csv", status: str = "ready"):
     repo = _get_staging()
@@ -676,6 +690,33 @@ def master_quality(sample: int = 8):
             "sample_groups": groups[:sample],
             "note": "Duplicate groups share a normalised email/phone/name key. "
                     "Recommend a supervised de-duplication pass before Odoo import."}
+
+
+@router.get("/master-quality/export")
+def master_quality_export():
+    """De-duplication worksheet: every intra-master duplicate group as CSV, for
+    a supervised clean-up pass by De Veres (2,813 groups at last count)."""
+    import csv as _csv
+    import io as _io
+    from reconciliation import normalize as N
+    eng = _get_engine()
+    idx = eng.index
+    buf = _io.StringIO()
+    w = _csv.writer(buf)
+    w.writerow(["matched_on", "key", "count", "client_refs", "names", "emails", "phones"])
+    for kind, index in (("email", idx.by_email), ("phone", idx.by_phone), ("name", idx.by_name)):
+        for key, ids in sorted(index.items(), key=lambda kv: -len(kv[1])):
+            if len(ids) < 2:
+                continue
+            recs = [eng.master.records[i] for i in ids]
+            w.writerow([kind, key, len(ids),
+                        "|".join(r.get("client_ref", "") for r in recs),
+                        "|".join(f"{r.get('first_name','')} {r.get('last_name','')}".strip() for r in recs),
+                        "|".join(r.get("email", "") for r in recs),
+                        "|".join(r.get("phone", "") or r.get("mobile", "") for r in recs)])
+    return Response(buf.getvalue(), media_type="text/csv",
+                    headers={"Content-Disposition":
+                             "attachment; filename=master-duplicates-worksheet.csv"})
 
 
 # ── Odoo import — FROM STAGING ONLY (dry-run default; live writes env-gated) ─

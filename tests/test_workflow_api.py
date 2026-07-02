@@ -249,9 +249,9 @@ class TestOdooPayload:
         assert "email" not in op["values"]          # unchanged fields never written
         assert op["values"].get("street") or op["values"].get("city")  # the move IS written
 
-    def test_unmapped_county_change_is_surfaced_not_dropped(self, client):
-        """A county-only correction (Wickie→Wicklow) has no res.partner text
-        field yet — the plan must SAY so, never silently drop the change."""
+    def test_county_change_maps_to_state_lookup(self, client):
+        """A county correction (Wickie→Wicklow) becomes a state_id lookup
+        (__state_name pseudo-field) resolved at execute time — never dropped."""
         _upload(client)
         rows = client.get("/reconcile/results?state=update_suggested&page_size=100",
                           headers=ADMIN).json()["rows"]
@@ -261,8 +261,70 @@ class TestOdooPayload:
         client.post(f"/reconcile/records/{ciara['index']}/approve", json={}, headers=ADMIN)
         plan = client.post("/reconcile/odoo-import", json={"dry_run": True},
                            headers=ADMIN).json()
-        op = plan["operations"][0]
-        assert "county=Wicklow" in op["reason"]     # surfaced, not lost
+        op = next(o for o in plan["operations"] if o["op"] == "write")
+        assert op["values"]["__state_name"] == "Wicklow"
+
+    def test_lookup_resolution_on_live_execute(self, client):
+        """__state_name/__country_name resolve to state_id/country_id via a
+        stubbed Odoo client; unresolved names land in the comment."""
+        from reconciliation.odoo_import import OdooImporter, ImportOp
+
+        class StubClient:
+            def __init__(self):
+                self.calls = []
+            def _execute(self, model, method, *args, **kw):
+                self.calls.append((model, method, args))
+                if model == "res.partner" and method == "search":
+                    return [77]
+                if model == "res.country":
+                    return [103]                      # Ireland
+                if model == "res.country.state":
+                    name = args[0][0][1] if False else args[0]
+                    return [55] if "Wicklow" in str(args) else []
+                if method == "write":
+                    return True
+                return []
+
+        import os as _os
+        _os.environ["RECON_ALLOW_ODOO_WRITE"] = "1"
+        try:
+            imp = OdooImporter(client=StubClient())
+            op = ImportOp("write", "test", "5003", "Ciara Testson",
+                          {"__state_name": "Wicklow", "__country_name": "Ireland"})
+            res = imp.execute([op], dry_run=False)
+            values = res["operations"][0]["values"]
+            assert values.get("country_id") == 103
+            assert values.get("state_id") == 55
+            assert "__state_name" not in values and "__country_name" not in values
+            # unresolved case → comment, not silence
+            op2 = ImportOp("write", "test", "5003", "X",
+                           {"__state_name": "Atlantis"})
+            res2 = imp.execute([op2], dry_run=False)
+            assert "Atlantis" in res2["operations"][0]["values"].get("comment", "")
+        finally:
+            _os.environ.pop("RECON_ALLOW_ODOO_WRITE", None)
+
+    def test_staging_purge_retention(self, client):
+        """Old pushed/withdrawn rows purge; ready rows never do."""
+        _upload(client)
+        idx = _first_index(client, "update_suggested")
+        client.post(f"/reconcile/records/{idx}/approve", json={}, headers=ADMIN)
+        # ready rows survive any purge
+        r = client.post("/reconcile/staging/purge", json={"retention_days": 1},
+                        headers=ADMIN).json()
+        assert r["purged"] == 0
+        assert client.get("/reconcile/staging", headers=ADMIN).json()["counts"]["pending_total"] == 1
+        # invalid retention rejected
+        assert client.post("/reconcile/staging/purge", json={"retention_days": 0},
+                           headers=ADMIN).status_code == 400
+        # viewer can't purge
+        assert client.post("/reconcile/staging/purge", json={}, headers=VIEWER).status_code == 403
+
+    def test_master_duplicates_worksheet(self, client):
+        r = client.get("/reconcile/master-quality/export", headers=ADMIN)
+        assert r.status_code == 200
+        header = r.text.splitlines()[0]
+        assert header.startswith("matched_on,key,count")
 
     def test_high_value_flags_id_check(self, client):
         _upload(client)
