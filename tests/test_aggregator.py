@@ -1,5 +1,6 @@
 """Tests for the aggregator: end-to-end evaluation + recommendation thresholds."""
 import pytest
+from datetime import datetime, timedelta, timezone
 from pipeline.models import Bid, BidOutcome, BidderProfile, Lot, Recommendation, PriceBandTrajectory
 from pipeline.aggregator import (
     evaluate_bidder, evaluate_all, APPROVE_THRESHOLD, REVIEW_THRESHOLD,
@@ -8,7 +9,9 @@ from pipeline.aggregator import (
 
 
 def make_lot(lot_id, reserve=1000, est_low=1000, est_high=2000, upcoming=True, artist="Aoife Ní Fhaoláin"):
-    date = "2026-06-15T14:00:00Z" if upcoming else "2024-01-01T14:00:00Z"
+    # dynamic future date — fixtures must never rot as the calendar advances
+    future = (datetime.now(timezone.utc) + timedelta(days=30)).strftime("%Y-%m-%dT14:00:00Z")
+    date = future if upcoming else "2024-01-01T14:00:00Z"
     return Lot(lot_id=lot_id, title=f"Lot {lot_id}", category="painting",
                estimate_low=est_low, estimate_high=est_high,
                reserve_price=reserve, auction_date=date, artist=artist)

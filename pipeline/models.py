@@ -126,6 +126,15 @@ class LotScore:
     breakdown:     ScoreBreakdown  # dimension scores computed from artist-specific bids
     artist_bids:   int = 0         # number of past bids on this artist's lots
 
+    @property
+    def recommendation(self) -> "Recommendation":
+        """Per-lot recommendation using the same thresholds as the overall score."""
+        if self.score >= 0.70:
+            return Recommendation.APPROVE
+        if self.score >= 0.40:
+            return Recommendation.REVIEW
+        return Recommendation.REJECT
+
 
 @dataclass
 class EvaluationResult:
