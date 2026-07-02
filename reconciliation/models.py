@@ -11,6 +11,8 @@ from dataclasses import dataclass, field, asdict
 from enum import Enum
 from typing import Optional
 
+from .states import RecordState, initial_state
+
 
 class Classification(str, Enum):
     NEW              = "new"               # 🟢 no match → ADD
@@ -77,6 +79,28 @@ class ReconResult:
     lots:           list[dict] = field(default_factory=list)  # this buyer's lots/bids
     # reviewer decision (defaults to the recommendation)
     action:         Action = Action.MANUAL_REVIEW
+    # ── lifecycle state engine (2-Jul meeting) ────────────────────────────────
+    state:          Optional[RecordState] = None   # set from classification at build time
+    edits:          dict = field(default_factory=dict)   # reviewer field edits (staging-only)
+    approved_values: dict = field(default_factory=dict)  # final values written to staging
+    history:        list[dict] = field(default_factory=list)  # state-transition audit trail
+    match_evidence: dict = field(default_factory=dict)   # per-field similarity breakdown
+    review_reason:  str = ""                              # why NEEDS_REVIEW fired (rule name)
+
+    def __post_init__(self):
+        if self.state is None:
+            self.state = initial_state(self.classification)
+
+    def record_transition(self, to_state: RecordState, actor: str, note: str = "") -> None:
+        """Append a history entry and move to `to_state` (validation is the
+        caller's job via states.validate_transition)."""
+        from datetime import datetime, timezone
+        self.history.append({
+            "at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+            "from": self.state.value if self.state else None,
+            "to": to_state.value, "actor": actor, "note": note,
+        })
+        self.state = to_state
 
     def to_dict(self, full: bool = False) -> dict:
         base = {
@@ -91,12 +115,19 @@ class ReconResult:
             "master_name": self.master_name,
             "changed_fields": self.changed_fields,
             "action": self.action.value,
+            "state": self.state.value,
+            "edited": bool(self.edits),
+            "review_reason": self.review_reason,
         }
         if full:
             base["diffs"] = [d.to_dict() for d in self.diffs]
             base["incoming"] = self.incoming
             base["master"] = self.master
             base["lots"] = self.lots
+            base["edits"] = self.edits
+            base["approved_values"] = self.approved_values
+            base["history"] = self.history
+            base["match_evidence"] = self.match_evidence
         return base
 
 
@@ -122,6 +153,14 @@ def recon_result_from_dict(d: dict) -> "ReconResult":
         incoming=d.get("incoming", {}), master=d.get("master", {}),
         lots=d.get("lots", []),
         action=Action(d.get("action", "MANUAL_REVIEW")),
+        # lifecycle fields — absent in pre-state-engine sessions, so default from
+        # the classification (backwards compatible restore)
+        state=RecordState(d["state"]) if d.get("state") else None,
+        edits=d.get("edits", {}) or {},
+        approved_values=d.get("approved_values", {}) or {},
+        history=d.get("history", []) or [],
+        match_evidence=d.get("match_evidence", {}) or {},
+        review_reason=d.get("review_reason", ""),
     )
 
 

@@ -77,6 +77,54 @@ class ImportOp:
                 "partner_id": self.partner_id}
 
 
+def plan_from_staging(entries: list[dict], source_file: str = "") -> list[ImportOp]:
+    """Build the Odoo operations from STAGING entries — the official payload
+    (2-Jul meeting). Only status='ready' rows are given to this function.
+
+    change_type is explicit and unambiguous:
+      'update' → ImportOp('write')  — only the approved changed/edited fields
+      'create' → ImportOp('create') — the full approved record
+    Approved values (which already include any manual edits) are the source;
+    the incoming snapshot is never written directly.
+    """
+    ops: list[ImportOp] = []
+    for e in entries:
+        approved = e.get("approved") or {}
+        changed  = list(dict.fromkeys((e.get("changed_fields") or []) +
+                                      (e.get("edited_fields") or [])))
+        high_value = _lots_total({"lots": e.get("lots") or []}) > ID_CHECK_THRESHOLD_EUR
+        note = (f"Reconciled from Blue Cubes export {source_file or e.get('session','(upload)')} "
+                f"— staged {e.get('change_type')} approved by {e.get('approved_by','?')} "
+                f"at {e.get('approved_at','?')}.")
+        if high_value:
+            note += " HIGH VALUE: winning bids exceed EUR 10,000 — verify buyer ID before payment."
+
+        if e.get("change_type") == "create":
+            values = {"name": _full_name(approved),
+                      "ref": f"BC-{e.get('buyer_number', '')}", "comment": note}
+            for cf, pf in PARTNER_FIELD_MAP.items():
+                if approved.get(cf):
+                    values[pf] = approved[cf]
+            ops.append(ImportOp("create", "approved new client (staged)", values["ref"],
+                                values["name"], values, high_value))
+        else:  # update
+            values = {}
+            for cf in changed:
+                pf = PARTNER_FIELD_MAP.get(cf)
+                if pf and approved.get(cf):
+                    values[pf] = approved[cf]
+            ref = str(e.get("master_ref") or "")
+            if values:
+                if high_value:
+                    values["comment"] = note
+                ops.append(ImportOp("write", "approved update (staged)", ref,
+                                    e.get("name") or _full_name(approved), values, high_value))
+            else:
+                ops.append(ImportOp("skip", "staged update has no Odoo-mappable field changes",
+                                    ref, e.get("name") or _full_name(approved), {}, high_value))
+    return ops
+
+
 def plan(intermediate: list[dict], source_file: str = "") -> list[ImportOp]:
     """Turn the intermediate model into concrete operations. Pure — no Odoo."""
     ops: list[ImportOp] = []

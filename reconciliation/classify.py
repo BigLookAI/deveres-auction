@@ -108,28 +108,67 @@ def diff_fields(inc: dict, mas: dict) -> list[FieldDiff]:
     return diffs
 
 
+# ── Manual-review (POSSIBLE_DUPLICATE) rules — explicit and documented ────────
+# A record lands in MANUAL REVIEW when a master candidate exists but the match
+# is not safe enough to update automatically. Exactly three rules fire it:
+#
+#   R1 UNCERTAIN_SCORE   score in [0.55, 0.72) and NO exact email/phone match.
+#                        (An exact email/phone floors the score at 0.90, so this
+#                        band is only reachable on name/address evidence.)
+#   R2 CONFLICT_NO_ID    score ≥ 0.72 but NO exact email/phone match AND at
+#                        least one significant field CHANGED (both sides have a
+#                        value and they differ). Same name + different details
+#                        may be a DIFFERENT PERSON — a human must decide.
+#   R3 NAME_ONLY_ADDS    score ≥ 0.72, matched on name alone (no email, phone
+#                        or address agreement) and the incoming row wants to add
+#                        significant new info. Attaching contact details to a
+#                        namesake is how wrong-person merges happen — review it.
+#
+# With an exact email or phone match none of these fire: strong-ID matches go
+# straight to UPDATE (significant diffs) or RETAIN (formatting only).
+
 def classify(inc: dict, cand: Candidate | None):
-    """Return (Classification, Recommendation, confidence, matched_by, diffs, master)."""
+    """Return (Classification, Recommendation, confidence, matched_by, diffs,
+    master, review_reason)."""
     # ── No/low candidate → NEW ────────────────────────────────────────────────
     if cand is None or cand.score < REVIEW_FLOOR:
         return (Classification.NEW, Recommendation.ADD,
-                cand.score if cand else 0.0, [], [], {})
+                cand.score if cand else 0.0, [], [], {}, "")
 
     diffs = diff_fields(inc, cand.master)
     significant = [d for d in diffs if d.significant and d.status in (DiffStatus.CHANGED, DiffStatus.NEW_INFO)]
+    conflicting = [d for d in significant if d.status == DiffStatus.CHANGED]
 
-    # ── Uncertain band → MANUAL REVIEW ────────────────────────────────────────
     strong = ("email" in cand.matched_by) or ("phone" in cand.matched_by)
-    if cand.score < MATCH_THRESHOLD and not strong:
+
+    def review(reason: str):
         return (Classification.POSSIBLE_DUPLICATE, Recommendation.MANUAL_REVIEW,
-                cand.score, cand.matched_by, diffs, cand.master)
+                cand.score, cand.matched_by, diffs, cand.master, reason)
+
+    if not strong:
+        # R1 — uncertain score band without a strong identifier
+        if cand.score < MATCH_THRESHOLD:
+            return review("R1 UNCERTAIN_SCORE: confidence "
+                          f"{cand.score:.0%} is below the {MATCH_THRESHOLD:.0%} match "
+                          "threshold and no exact email/phone match exists.")
+        # R2 — same name but conflicting details: possibly a different person
+        if conflicting:
+            return review("R2 CONFLICT_NO_ID: no exact email/phone match and "
+                          f"{len(conflicting)} field(s) conflict "
+                          f"({', '.join(d.label for d in conflicting)}) — this could "
+                          "be a different person with the same name.")
+        # R3 — name-only agreement trying to add significant new info
+        if significant and not ("address" in cand.matched_by):
+            return review("R3 NAME_ONLY_ADDS: matched on name alone; adding "
+                          f"{', '.join(d.label for d in significant)} to a possible "
+                          "namesake needs human confirmation.")
 
     # ── Confident match → UPDATE if substantive change, else RETAIN ───────────
     if significant:
         return (Classification.UPDATE, Recommendation.UPDATE_RECORD,
-                cand.score, cand.matched_by, diffs, cand.master)
+                cand.score, cand.matched_by, diffs, cand.master, "")
     return (Classification.RETAIN, Recommendation.KEEP_EXISTING,
-            cand.score, cand.matched_by, diffs, cand.master)
+            cand.score, cand.matched_by, diffs, cand.master, "")
 
 
 def default_action(classification: Classification) -> Action:

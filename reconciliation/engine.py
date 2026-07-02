@@ -23,11 +23,12 @@ class ReconciliationEngine:
 
     def reconcile_one(self, index: int, inc: dict) -> ReconResult:
         cand = self.index.best_match(inc)
-        classification, recommendation, conf, matched_by, diffs, mas = classify(inc, cand)
+        classification, recommendation, conf, matched_by, diffs, mas, review_reason = classify(inc, cand)
         changed = [d.label for d in diffs if d.significant and d.status in
                    (DiffStatus.CHANGED, DiffStatus.NEW_INFO)]
         name = f"{inc.get('first_name','')} {inc.get('last_name','')}".strip()
         master_name = f"{mas.get('first_name','')} {mas.get('last_name','')}".strip() if mas else ""
+        evidence = self._evidence(cand) if cand and mas else {}
         return ReconResult(
             index=index,
             buyer_number=inc.get("buyer_number", ""),
@@ -46,7 +47,35 @@ class ReconciliationEngine:
             master=mas or {},
             lots=inc.get("lots", []),
             action=default_action(classification),
+            match_evidence=evidence,
+            review_reason=review_reason,
         )
+
+    @staticmethod
+    def _evidence(cand) -> dict:
+        """Explainable-matching breakdown: for every compared field, its raw
+        similarity, its weight, and its contribution to the final confidence.
+        This is what the UI renders as 'Matched because: …'."""
+        from .matching import WEIGHTS, STRONG_MATCH_FLOOR
+        sims = cand.field_sims or {}
+        present = {f: WEIGHTS[f] for f in sims if f in WEIGHTS}
+        wsum = sum(present.values()) or 1.0
+        fields = {
+            f: {"similarity": round(sims[f], 4),
+                "weight": present[f],
+                "contribution": round(sims[f] * present[f] / wsum, 4),
+                "exact": sims[f] >= 0.99}
+            for f in present
+        }
+        weighted = round(sum(v["contribution"] for v in fields.values()), 4)
+        floored = ("email" in cand.matched_by or "phone" in cand.matched_by) \
+                  and weighted < STRONG_MATCH_FLOOR
+        return {"fields": fields, "weighted_score": weighted,
+                "matched_by": cand.matched_by,
+                "strong_id_floor_applied": bool(floored),
+                "final_confidence": cand.score,
+                "note": ("Exact email/phone is decisive: confidence floored at "
+                         f"{STRONG_MATCH_FLOOR:.0%}." if floored else "")}
 
     def run(self, incoming: list[dict]) -> tuple[list[ReconResult], ReconSummary]:
         t0 = time.perf_counter()

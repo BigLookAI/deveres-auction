@@ -10,6 +10,7 @@
     --ink:#eef2f8; --muted:#8b93a7; --muted2:#aab2c5;
     --acc:#6366f1; --acch:#818cf8; --acc-soft:rgba(99,102,241,.15);
     --new:#34d399; --retain:#38bdf8; --update:#fbbf24; --review:#c084fc;
+    --ready:#4ade80; --pushed:#22d3ee; --rejected:#f87171; --edited:#fb923c;
     --good:#34d399; --bad:#f87171;
     --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -21,8 +22,12 @@
   .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
   header h1{font-size:15px;margin:0;font-weight:700}
   header .sub{font-size:11px;color:var(--muted);font-family:var(--mono)}
-  .wrap{max-width:1280px;margin:0 auto;padding:22px}
+  .wrap{max-width:1320px;margin:0 auto;padding:22px}
   .muted{color:var(--muted)} .mono{font-family:var(--mono)}
+  /* pending-changes indicator */
+  .pending{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:6px 12px;font-size:12px}
+  .pending b{color:var(--ready)} .pending .dot{width:8px;height:8px;border-radius:50%;background:var(--ready);animation:pulse 2s infinite}
+  @keyframes pulse{50%{opacity:.4}}
   /* upload */
   .drop{border:2px dashed var(--line2);border-radius:16px;padding:48px 24px;text-align:center;transition:.15s;cursor:pointer;background:var(--card)}
   .drop.drag{border-color:var(--acc);background:var(--acc-soft)}
@@ -32,17 +37,21 @@
   .btn:hover{border-color:var(--acc);color:var(--acch)}
   .btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
   .btn.primary:hover{filter:brightness(1.08);color:#fff}
+  .btn.good{border-color:var(--ready);color:var(--ready)} .btn.good:hover{background:rgba(74,222,128,.12)}
+  .btn.danger{border-color:var(--rejected);color:var(--rejected)} .btn.danger:hover{background:rgba(248,113,113,.10)}
+  .btn.sm{padding:4px 9px;font-size:11.5px;border-radius:7px}
   .btn:disabled{opacity:.5;cursor:not-allowed}
   /* processing */
   .proc{text-align:center;padding:60px 20px}
   .spinner{width:42px;height:42px;border:3px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
   @keyframes spin{to{transform:rotate(360deg)}}
   /* dashboard */
-  .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin:4px 0 18px}
+  .stats{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin:4px 0 18px}
   .stat{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px}
-  .stat .n{font-size:26px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-  .stat .l{font-size:11px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:.04em}
-  .stat.s-new .n{color:var(--new)} .stat.s-update .n{color:var(--update)} .stat.s-retain .n{color:var(--retain)} .stat.s-review .n{color:var(--review)}
+  .stat .n{font-size:24px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+  .stat .l{font-size:10.5px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:.04em}
+  .stat.s-new .n{color:var(--new)} .stat.s-update .n{color:var(--update)} .stat.s-retain .n{color:var(--retain)}
+  .stat.s-review .n{color:var(--review)} .stat.s-ready .n{color:var(--ready)} .stat.s-pushed .n{color:var(--pushed)}
   .distbar{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:0 0 18px;border:1px solid var(--line)}
   .distbar span{display:block} .dl{display:flex;gap:16px;font-size:12px;color:var(--muted);margin:-10px 0 18px;flex-wrap:wrap}
   .dl i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:middle}
@@ -51,7 +60,7 @@
   .chips{display:flex;gap:6px;flex-wrap:wrap}
   .chip{border:1px solid var(--line2);background:var(--card);color:var(--muted2);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
   .chip.on{background:var(--acc-soft);border-color:var(--acc);color:var(--acch)}
-  input[type=search],select{background:var(--card);border:1px solid var(--line2);color:var(--ink);border-radius:8px;padding:7px 10px;font-size:13px}
+  input[type=search],select,.field input{background:var(--card);border:1px solid var(--line2);color:var(--ink);border-radius:8px;padding:7px 10px;font-size:13px}
   .spacer{flex:1}
   /* table */
   .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:13px;background:var(--card)}
@@ -61,40 +70,76 @@
   tbody tr{cursor:pointer} tbody tr:hover{background:var(--card2)}
   tbody tr:last-child td{border-bottom:0}
   .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:10.5px;font-weight:700;white-space:nowrap}
-  .b-new{background:rgba(52,211,153,.16);color:var(--new)} .b-retain{background:rgba(56,189,248,.16);color:var(--retain)}
-  .b-update{background:rgba(251,191,36,.16);color:var(--update)} .b-possible_duplicate{background:rgba(192,132,252,.16);color:var(--review)}
+  .st-new_record{background:rgba(52,211,153,.16);color:var(--new)}
+  .st-existing_ok{background:rgba(56,189,248,.16);color:var(--retain)}
+  .st-update_suggested{background:rgba(251,191,36,.16);color:var(--update)}
+  .st-needs_review{background:rgba(192,132,252,.16);color:var(--review)}
+  .st-manual_edit{background:rgba(251,146,60,.18);color:var(--edited)}
+  .st-update_ready,.st-import_ready{background:rgba(74,222,128,.16);color:var(--ready)}
+  .st-rejected{background:rgba(248,113,113,.16);color:var(--rejected)}
+  .st-pushed_to_odoo{background:rgba(34,211,238,.16);color:var(--pushed)}
   .conf{display:flex;align-items:center;gap:7px;min-width:74px}
   .conf .bar{flex:1;height:5px;background:var(--line2);border-radius:3px;overflow:hidden}
   .conf .bar i{display:block;height:100%;background:var(--acc)}
   .fchip{display:inline-block;background:var(--card2);border:1px solid var(--line2);border-radius:5px;padding:1px 6px;font-size:10.5px;margin:1px 2px 1px 0;color:var(--muted2)}
-  .rec{font-size:11px;font-weight:700}
+  .fchip.edit{border-color:var(--edited);color:var(--edited)}
   .pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px;color:var(--muted);font-size:12px}
   /* drawer */
   .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none}
   .scrim.on{display:block}
-  .drawer{position:fixed;top:0;right:0;height:100%;width:min(680px,94vw);background:var(--bg2);border-left:1px solid var(--line);z-index:50;transform:translateX(100%);transition:.22s;overflow-y:auto;padding:20px 22px}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(760px,96vw);background:var(--bg2);border-left:1px solid var(--line);z-index:50;transform:translateX(100%);transition:.22s;overflow-y:auto;padding:20px 22px}
   .drawer.on{transform:translateX(0)}
   .drawer h3{margin:0 0 2px;font-size:17px}
   .close{position:absolute;top:16px;right:18px;background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer}
-  .cmp{display:grid;grid-template-columns:120px 1fr 1fr;gap:0;border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-top:14px;font-size:12.5px}
+  /* evidence */
+  .evid{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px 16px;margin-top:14px;font-size:12.5px}
+  .evid h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+  .evrow{display:flex;align-items:center;gap:10px;padding:3px 0}
+  .evrow .ok{color:var(--good);font-weight:700} .evrow .pc{color:var(--muted2)}
+  .evrow .ebar{flex:1;height:5px;background:var(--line2);border-radius:3px;overflow:hidden;max-width:180px}
+  .evrow .ebar i{display:block;height:100%;background:var(--good)}
+  .evtotal{border-top:1px solid var(--line);margin-top:8px;padding-top:8px;font-weight:700}
+  /* comparison grid: field | master | incoming | approved */
+  .cmp{display:grid;grid-template-columns:104px 1fr 1fr 1fr;gap:0;border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-top:14px;font-size:12.5px}
   .cmp .h{background:var(--card2);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 12px;font-weight:700}
   .cmp .fl{background:var(--card);color:var(--muted2);padding:8px 12px;font-weight:600;border-top:1px solid var(--line)}
   .cmp .cell{padding:8px 12px;border-top:1px solid var(--line);word-break:break-word}
   .cell.changed{background:rgba(248,113,113,.10)} .cell.new_info{background:rgba(52,211,153,.12)}
   .cell.equivalent{color:var(--muted)} .cell.unchanged{color:var(--muted)}
+  .cell.editedv{background:rgba(251,146,60,.14);color:var(--edited);font-weight:600}
   .tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;border-radius:5px;padding:1px 6px;margin-left:6px}
   .tag.changed{background:rgba(248,113,113,.2);color:var(--bad)} .tag.new_info{background:rgba(52,211,153,.2);color:var(--good)}
-  .tag.equivalent{background:var(--line2);color:var(--muted)}
+  .tag.equivalent{background:var(--line2);color:var(--muted)} .tag.edited{background:rgba(251,146,60,.2);color:var(--edited)}
+  /* edit form */
+  .editform{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+  .field{display:flex;flex-direction:column;gap:4px}
+  .field label{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .field input{width:100%}
+  .field input.dirty{border-color:var(--edited)}
+  .field .orig{font-size:10.5px;color:var(--muted)}
+  .field.notes{grid-column:1/-1}
+  /* history */
+  .hist{margin-top:16px;border-left:2px solid var(--line2);padding-left:14px}
+  .hist .ev{margin-bottom:8px;font-size:12px}
+  .hist .ev .when{color:var(--muted);font-family:var(--mono);font-size:10.5px}
   .note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--update);border-radius:9px;padding:11px 14px;font-size:12.5px;color:var(--muted2);margin:16px 0}
+  .reason{background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.3);border-radius:9px;padding:10px 14px;font-size:12.5px;color:var(--review);margin-top:12px}
   .hidden{display:none!important}
-  @media(max-width:900px){.stats{grid-template-columns:repeat(3,1fr)}.cmp{grid-template-columns:96px 1fr 1fr}}
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:10px 18px;font-size:13px;z-index:80;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  @media(max-width:1000px){.stats{grid-template-columns:repeat(4,1fr)}.cmp{grid-template-columns:90px 1fr 1fr 1fr}.editform{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
   <div class="logo">D</div>
-  <div><h1>Contact Reconciliation</h1><div class="sub">deVeres Auction · Blue Cubes → System of Record · by Cimelium</div></div>
+  <div><h1>Contact Reconciliation</h1><div class="sub">deVeres Auction · Blue Cubes → Staging → Odoo · by Cimelium</div></div>
   <div class="spacer"></div>
+  <div class="pending hidden" id="pendingBox">
+    <span class="dot"></span>
+    <span>Pending changes: <b id="pendUpd">0</b> updates · <b id="pendNew">0</b> new</span>
+    <a class="btn sm" href="/reconcile/staging/export?fmt=csv">⬇ CSV</a>
+    <button class="btn sm" onclick="odooDryRun()">Odoo dry-run</button>
+  </div>
   <div class="muted mono" id="masterInfo" style="font-size:11px"></div>
 </header>
 
@@ -103,7 +148,7 @@
   <section id="view-upload">
     <div class="note" style="border-left-color:var(--acc)">
       <b>Canonical master</b> (<span id="masterCount">…</span> clients from <code>All Clients.csv</code>) is baked in and never overwritten by trivial changes.
-      Upload a <b>Blue Cubes buyer export</b> (e.g. <code>Design-April 2026.csv</code>) to reconcile it against the master.
+      Upload a <b>Blue Cubes export</b> to reconcile it against the master. Approvals go to a <b>staging dataset</b> — nothing reaches Odoo without an explicit, gated push.
     </div>
     <div class="drop" id="drop">
       <div class="big">⬆️</div>
@@ -122,13 +167,14 @@
   <!-- RESULTS -->
   <section id="view-results" class="hidden">
     <div class="toolbar">
-      <div class="chips" id="statusChips"></div>
+      <div class="chips" id="stateChips"></div>
       <div class="spacer"></div>
       <select id="sessionSel" title="Switch reconciliation session"></select>
       <input type="search" id="search" placeholder="Search name / buyer no.…"/>
       <select id="sort">
         <option value="confidence">Sort: Confidence</option>
-        <option value="status">Sort: Status</option>
+        <option value="state">Sort: Workflow state</option>
+        <option value="status">Sort: Classification</option>
         <option value="name">Sort: Name</option>
         <option value="changes">Sort: Changes</option>
       </select>
@@ -142,9 +188,9 @@
     <div class="note" id="dqNote"></div>
 
     <div class="toolbar">
-      <button class="btn" onclick="decide('UPDATE', {status:'update'})">✓ Approve all updates</button>
-      <button class="btn" onclick="decide('UPDATE', {indices:selected()})">Approve selected</button>
-      <button class="btn" onclick="decide('IGNORE', {indices:selected()})">Ignore selected</button>
+      <button class="btn good" onclick="bulkApprove({state:'update_suggested'})">✓ Approve all suggested updates</button>
+      <button class="btn good" onclick="bulkApprove({indices:selected()})">✓ Approve selected</button>
+      <button class="btn danger" onclick="bulkReject(selected())">✗ Reject selected</button>
       <div class="spacer"></div>
       <a class="btn" href="/reconcile/export?fmt=csv">⬇ CSV</a>
       <a class="btn" href="/reconcile/export?fmt=json">⬇ JSON</a>
@@ -156,9 +202,9 @@
       <table>
         <thead><tr>
           <th style="width:26px"><input type="checkbox" id="selAll"/></th>
-          <th data-s="status">Status</th><th data-s="confidence">Confidence</th>
+          <th data-s="state">Workflow state</th><th data-s="confidence">Confidence</th>
           <th>Existing client</th><th>Incoming client</th>
-          <th>Matched by</th><th>Changed fields</th><th class="rec">Recommendation</th><th>Action</th>
+          <th>Matched by</th><th>Changed fields</th><th style="width:170px">Quick actions</th>
         </tr></thead>
         <tbody id="rows"></tbody>
       </table>
@@ -180,19 +226,37 @@
 
 <script>
 const $=s=>document.querySelector(s);
-const STATUSES=[["all","All"],["update","🟠 Updates"],["retain","🔵 Existing"],["new","🟢 New"],["possible_duplicate","🟣 Manual review"]];
-const BADGE={new:"New client",retain:"Existing",update:"Update suggested",possible_duplicate:"Manual review"};
-let state={status:"all",q:"",sort:"confidence",order:"desc",page:1,page_size:25,total:0,summary:null};
+const CHIPS=[
+  ["all","all","All"],
+  ["status","update","🟠 Updates suggested"],
+  ["status","retain","🔵 Existing"],
+  ["status","new","🟢 New"],
+  ["status","possible_duplicate","🟣 Manual review"],
+  ["state","manual_edit","✏️ Edited"],
+  ["state","staged","🟩 Ready for Odoo"],
+  ["state","pushed_to_odoo","🔷 Pushed"],
+  ["state","rejected","🔴 Rejected"],
+];
+let STATE_LABELS={};
+let state={chip:"all",chipKind:"all",q:"",sort:"confidence",order:"desc",page:1,page_size:25,total:0,summary:null};
 let pageRows=[];
 
 async function jget(u){const r=await fetch(u);if(!r.ok)throw new Error((await r.json()).detail||r.statusText);return r.json();}
+async function jpost(u,body,method="POST"){
+  const r=await fetch(u,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
+  const d=await r.json().catch(()=>({}));
+  if(!r.ok)throw new Error(d.detail||r.statusText);
+  return d;
+}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // ── master info ──
 (async()=>{try{const h=await jget('/reconcile/health');$('#masterInfo').textContent=h.master_records.toLocaleString()+' master clients';$('#masterCount').textContent=h.master_records.toLocaleString();}catch(e){}})();
 
 // ── restore last session on load (survives refresh / server restart) ──
 (async()=>{try{const sess=await jget('/reconcile/session');
-  state.summary=sess.summary;renderDash(sess.summary);await loadResults();loadSessions();show('results');
+  state.summary=sess.summary;renderDash(sess.summary);await refreshAll();loadSessions();show('results');
 }catch(e){/* no session yet — stay on upload */}})();
 
 // ── upload ──
@@ -211,57 +275,99 @@ async function doUpload(f){
     const r=await fetch('/reconcile/upload',{method:'POST',body:fd});
     const d=await r.json();
     if(!r.ok)throw new Error(d.detail||'Upload failed');
-    state.summary=d.summary;state.page=1;state.status='all';state.q='';
-    renderDash(d.summary);await loadResults();loadSessions();show('results');
+    state.summary=d.summary;state.page=1;state.chip='all';state.chipKind='all';state.q='';
+    renderDash(d.summary);await refreshAll();loadSessions();show('results');
   }catch(e){alert('Error: '+e.message);show('upload');}
 }
 
 function show(v){for(const k of['upload','proc','results'])$('#view-'+k).classList.toggle('hidden',k!==v);}
 
-// ── dashboard ──
-function renderDash(s){
-  const tiles=[["Total uploaded",s.total,""],["New",s.new,"s-new"],["Updates",s.update,"s-update"],
-    ["Existing",s.retain,"s-retain"],["Manual review",s.manual_review,"s-review"],
-    ["Avg confidence",(s.avg_confidence*100).toFixed(0)+"%",""]];
-  $('#stats').innerHTML=tiles.map(([l,n,c])=>`<div class="stat ${c}"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
-  const seg=[["new",s.new,"var(--new)"],["retain",s.retain,"var(--retain)"],["update",s.update,"var(--update)"],["possible_duplicate",s.manual_review,"var(--review)"]];
-  const tot=s.total||1;
-  $('#distbar').innerHTML=seg.map(([k,v,c])=>v?`<span style="width:${v/tot*100}%;background:${c}" title="${k}: ${v}"></span>`:'').join('');
-  $('#distlegend').innerHTML=seg.map(([k,v,c])=>`<span><i style="background:${c}"></i>${BADGE[k]}: <b>${v}</b></span>`).join('')
-    +`<span><i style="background:var(--muted)"></i>Ignored formatting diffs: <b>${s.ignored_diffs}</b></span>`;
-  $('#dqNote').innerHTML=`<b>Reconciliation of ${s.incoming_rows} uploaded buyers</b> against ${s.master_records.toLocaleString()} canonical clients in ${s.processing_ms} ms. `
-    +`Cosmetic differences (case, spacing, dialing codes, address abbreviations, Eircode formatting) are ignored — only substantive changes are flagged as updates.`;
-  // status chips
-  $('#statusChips').innerHTML=STATUSES.map(([k,l])=>`<span class="chip ${k===state.status?'on':''}" data-k="${k}">${l}</span>`).join('');
-  $('#statusChips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{state.status=c.dataset.k;state.page=1;loadResults();});
+// ── progress + staging (the live workflow counters) ──
+async function refreshProgress(){
+  try{
+    const p=await jget('/reconcile/progress');
+    STATE_LABELS=p.labels;
+    const st=p.by_state, stg=p.staging;
+    const staged=(st.update_ready||0)+(st.import_ready||0);
+    const tiles=[["Total",p.total,""],["New",st.new_record||0,"s-new"],
+      ["Updates suggested",st.update_suggested||0,"s-update"],["Existing",st.existing_ok||0,"s-retain"],
+      ["Manual review",st.needs_review||0,"s-review"],
+      ["Ready for Odoo",staged,"s-ready"],["Pushed",st.pushed_to_odoo||0,"s-pushed"]];
+    $('#stats').innerHTML=tiles.map(([l,n,c])=>`<div class="stat ${c}"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
+    const seg=[["new_record",st.new_record,"var(--new)"],["update_suggested",st.update_suggested,"var(--update)"],
+      ["existing_ok",st.existing_ok,"var(--retain)"],["needs_review",st.needs_review,"var(--review)"],
+      ["manual_edit",st.manual_edit,"var(--edited)"],["staged",staged,"var(--ready)"],
+      ["pushed_to_odoo",st.pushed_to_odoo,"var(--pushed)"],["rejected",st.rejected,"var(--rejected)"]];
+    const tot=p.total||1;
+    $('#distbar').innerHTML=seg.map(([k,v,c])=>v?`<span style="width:${v/tot*100}%;background:${c}" title="${k}: ${v}"></span>`:'').join('');
+    $('#distlegend').innerHTML=seg.filter(([k,v])=>v).map(([k,v,c])=>`<span><i style="background:${c}"></i>${k==='staged'?'Ready for Odoo':(STATE_LABELS[k]||k)}: <b>${v}</b></span>`).join('');
+    // pending-changes indicator
+    const pu=stg.ready.update||0, pn=stg.ready.create||0;
+    $('#pendingBox').classList.toggle('hidden',!(pu+pn));
+    $('#pendUpd').textContent=pu; $('#pendNew').textContent=pn;
+  }catch(e){}
 }
 
+// ── dashboard note + chips ──
+function renderDash(s){
+  $('#dqNote').innerHTML=`<b>Reconciliation of ${s.incoming_rows} uploaded contacts</b> against ${s.master_records.toLocaleString()} canonical clients in ${s.processing_ms} ms. `
+    +`Cosmetic differences (case, spacing, dialing codes, address abbreviations, Eircode formatting) are ignored — only substantive changes are flagged. `
+    +`Approvals write to the <b>staging dataset</b> (pending changes); the staging file is the only payload pushed to Odoo.`;
+  $('#stateChips').innerHTML=CHIPS.map(([kind,k,l])=>`<span class="chip ${k===state.chip?'on':''}" data-kind="${kind}" data-k="${k}">${l}</span>`).join('');
+  $('#stateChips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{state.chip=c.dataset.k;state.chipKind=c.dataset.kind;state.page=1;loadResults();});
+}
+
+async function refreshAll(){await Promise.all([loadResults(),refreshProgress()]);}
+
 // ── results table ──
+function chipParams(){
+  if(state.chipKind==='status')return `status=${state.chip}&state=all`;
+  if(state.chipKind==='state')return `status=all&state=${state.chip}`;
+  return 'status=all&state=all';
+}
 async function loadResults(){
-  const u=`/reconcile/results?status=${state.status}&q=${encodeURIComponent(state.q)}&sort=${state.sort}&order=${state.order}&page=${state.page}&page_size=${state.page_size}`;
-  const d=await jget(u);state.total=d.total;pageRows=d.rows;
-  $('#statusChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.k===state.status));
+  const u=`/reconcile/results?${chipParams()}&q=${encodeURIComponent(state.q)}&sort=${state.sort}&order=${state.order}&page=${state.page}&page_size=${state.page_size}`;
+  let d;
+  try{d=await jget(u);}catch(e){$('#rows').innerHTML=`<tr><td colspan="8" class="muted" style="padding:20px">${esc(e.message)}</td></tr>`;return;}
+  state.total=d.total;pageRows=d.rows;
+  $('#stateChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.k===state.chip));
   $('#rows').innerHTML=d.rows.map(r=>{
     const conf=Math.round(r.confidence*100);
     const mb=r.matched_by.map(f=>`<span class="fchip">${f}</span>`).join('')||'<span class="muted">—</span>';
     const cf=r.changed_fields.map(f=>`<span class="fchip">${f}</span>`).join('')||'<span class="muted">none</span>';
-    const recColor={ADD:'var(--new)','KEEP EXISTING':'var(--retain)','UPDATE RECORD':'var(--update)','MANUAL REVIEW':'var(--review)'}[r.recommendation]||'var(--ink)';
+    const edited=r.edited?`<span class="fchip edit">edited</span>`:'';
+    const acts=quickActions(r);
     return `<tr onclick="openDetail(${r.index},event)">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="rsel" value="${r.index}"/></td>
-      <td><span class="badge b-${r.classification}">${BADGE[r.classification]}</span></td>
+      <td><span class="badge st-${r.state}">${STATE_LABELS[r.state]||r.state}</span> ${edited}</td>
       <td><div class="conf"><div class="bar"><i style="width:${conf}%"></i></div>${conf}%</div></td>
       <td>${esc(r.master_name)||'<span class="muted">— no match —</span>'}${r.master_ref?` <span class="muted mono">#${esc(r.master_ref)}</span>`:''}</td>
       <td>${esc(r.incoming_name)} <span class="muted mono">#${esc(r.buyer_number)}</span></td>
       <td>${mb}</td><td>${cf}</td>
-      <td class="rec" style="color:${recColor}">${r.recommendation}</td>
-      <td><span class="fchip">${r.action.replace('_',' ')}</span></td>
+      <td onclick="event.stopPropagation()">${acts}</td>
     </tr>`;}).join('');
   const pages=Math.max(1,Math.ceil(d.total/state.page_size));
   $('#pageInfo').textContent=`Page ${state.page} of ${pages} · ${d.total} rows`;
   $('#prev').disabled=state.page<=1;$('#next').disabled=state.page>=pages;
   $('#selAll').checked=false;
 }
-function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function quickActions(r){
+  const s=r.state;
+  if(s==='update_suggested'||s==='manual_edit')
+    return `<button class="btn sm good" onclick="rowApprove(${r.index})">✓ Approve</button>
+            <button class="btn sm danger" onclick="rowReject(${r.index})">✗</button>`;
+  if(s==='new_record')
+    return `<button class="btn sm good" onclick="rowApprove(${r.index},'new')">✓ Approve new</button>
+            <button class="btn sm danger" onclick="rowReject(${r.index})">✗</button>`;
+  if(s==='needs_review')
+    return `<button class="btn sm" onclick="openDetail(${r.index})">Review…</button>`;
+  if(s==='update_ready'||s==='import_ready')
+    return `<span class="muted" style="font-size:11px">staged</span>
+            <button class="btn sm" onclick="rowReopen(${r.index})">↩ Un-approve</button>`;
+  if(s==='rejected')
+    return `<button class="btn sm" onclick="rowReopen(${r.index})">↩ Reopen</button>`;
+  return '<span class="muted">—</span>';
+}
 $('#search').oninput=e=>{state.q=e.target.value;state.page=1;clearTimeout(window._t);window._t=setTimeout(loadResults,220);};
 $('#sort').onchange=e=>{state.sort=e.target.value;loadResults();};
 $('#prev').onclick=()=>{if(state.page>1){state.page--;loadResults();}};
@@ -270,10 +376,32 @@ $('#selAll').onchange=e=>document.querySelectorAll('.rsel').forEach(c=>c.checked
 document.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(state.sort===s)state.order=state.order==='desc'?'asc':'desc';else{state.sort=s;state.order='desc';}loadResults();});
 
 function selected(){return [...document.querySelectorAll('.rsel:checked')].map(c=>+c.value);}
-async function decide(action,scope){
+
+// ── workflow actions ──
+async function rowApprove(idx,as){try{const d=await jpost(`/reconcile/records/${idx}/approve`,as?{as}:{}); toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
+async function rowReject(idx){const reason=prompt('Reason for rejection (optional):')||'';try{const d=await jpost(`/reconcile/records/${idx}/reject`,{reason});toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
+async function rowReopen(idx){try{const d=await jpost(`/reconcile/records/${idx}/reopen`);toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
+async function bulkApprove(scope){
   if(scope.indices && !scope.indices.length){alert('No rows selected.');return;}
-  const r=await fetch('/reconcile/decide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...scope})});
-  const d=await r.json();if(r.ok){loadResults();}else alert(d.detail||'Failed');
+  try{const d=await jpost('/reconcile/approve-bulk',scope);
+    toast(`Approved ${d.approved.length}${d.skipped.length?` · skipped ${d.skipped.length}`:''}`);refreshAll();
+  }catch(e){toast('⚠ '+e.message);}
+}
+async function bulkReject(indices){
+  if(!indices.length){alert('No rows selected.');return;}
+  const reason=prompt('Reason for rejection (optional):')||'';
+  let ok=0,fail=0;
+  for(const i of indices){try{await jpost(`/reconcile/records/${i}/reject`,{reason});ok++;}catch(e){fail++;}}
+  toast(`Rejected ${ok}${fail?` · ${fail} not rejectable`:''}`);refreshAll();
+}
+async function odooDryRun(){
+  try{const d=await jpost('/reconcile/odoo-import',{dry_run:true});
+    const s=d.summary;
+    alert(`Odoo push plan (dry-run — NO writes)\n\n`
+      +`Creates: ${s.create}\nUpdates: ${s.write}\nSkipped: ${s.skip}\nTotal ops: ${s.total}\n`
+      +`ID checks required (>€10k): ${s.id_checks_required}\n`
+      +(d.note?`\n${d.note}`:'\nConnected to Odoo: '+(s.connected?'yes':'no')));
+  }catch(e){alert('Dry-run failed: '+e.message);}
 }
 
 // ── sessions (one per uploaded auction file) ──
@@ -285,46 +413,156 @@ async function loadSessions(){
     sel.classList.remove('hidden');
     sel.innerHTML=d.sessions.map(s=>`<option value="${s.sid}" ${s.active?'selected':''}>${s.filename} (${s.kind}, ${s.total})</option>`).join('');
     sel.onchange=async()=>{
-      await fetch('/reconcile/sessions/'+encodeURIComponent(sel.value)+'/activate',{method:'POST'});
+      await jpost('/reconcile/sessions/'+encodeURIComponent(sel.value)+'/activate');
       const sess=await jget('/reconcile/session');
-      state.summary=sess.summary;state.page=1;state.status='all';
-      renderDash(sess.summary);await loadResults();
+      state.summary=sess.summary;state.page=1;state.chip='all';state.chipKind='all';
+      renderDash(sess.summary);await refreshAll();
     };
   }catch(e){}
 }
 
 // ── detail drawer ──
+let currentDetail=null, editMode=false;
 async function openDetail(index,ev){
   const d=await jget('/reconcile/results/'+index);
+  currentDetail=d; editMode=false;
+  renderDrawer();
+  $('#scrim').classList.add('on');$('#drawer').classList.add('on');
+}
+function evidenceHTML(d){
+  const ev=d.match_evidence||{};
+  if(!ev.fields||!Object.keys(ev.fields).length)
+    return d.classification==='new'?`<div class="evid"><h4>Why is this NEW?</h4>
+      <div class="muted">No canonical client shares this contact's email, phone or name — there was nothing to match against.</div></div>`:'';
+  const NAMES={email:'Email',phone:'Phone',name:'Name',address:'Address',postcode:'Postcode',country:'Country',company:'Company'};
+  const rows=Object.entries(ev.fields).sort((a,b)=>b[1].weight-a[1].weight).map(([f,v])=>{
+    const pct=Math.round(v.similarity*100);
+    const mark=v.exact?'<span class="ok">✓</span>':`<span class="pc">${pct}%</span>`;
+    const lab=v.exact?(f==='email'||f==='phone'?`${NAMES[f]} exact match`:`${NAMES[f]} match`):`${NAMES[f]} similarity ${pct}%`;
+    return `<div class="evrow">${mark}<span style="min-width:170px">${lab}</span>
+      <div class="ebar"><i style="width:${pct}%"></i></div>
+      <span class="pc mono" title="weight ${v.weight}">w ${v.weight}</span></div>`;
+  }).join('');
+  return `<div class="evid"><h4>Matched because</h4>${rows}
+    <div class="evrow evtotal"><span>Overall confidence</span><span style="margin-left:auto">${Math.round(d.confidence*100)}%</span></div>
+    ${ev.strong_id_floor_applied?`<div class="muted" style="margin-top:6px;font-size:11.5px">${esc(ev.note)}</div>`:''}</div>`;
+}
+function renderDrawer(){
+  const d=currentDetail;
+  const approved=Object.keys(d.approved_values||{}).length?d.approved_values:null;
+  const edits=d.edits||{};
   const rows=d.diffs.map(f=>{
     const cls=f.status;const tag=(f.status==='changed'||f.status==='new_info'||f.status==='equivalent')
       ?`<span class="tag ${f.status}">${f.status.replace('_',' ')}</span>`:'';
+    // final value: edited > approved > incoming
+    const fieldKey=f.field==='name'?null:f.field;
+    let finalV = fieldKey ? (edits[fieldKey]!==undefined?edits[fieldKey]:(approved?approved[fieldKey]:'')) : '';
+    const isEdited = fieldKey && edits[fieldKey]!==undefined;
+    const finalCell = (isEdited||approved)?`<div class="cell ${isEdited?'editedv':''}">${esc(finalV)||'<span class="muted">—</span>'}${isEdited?'<span class="tag edited">edited</span>':''}</div>`
+                                          :`<div class="cell unchanged"><span class="muted">—</span></div>`;
     return `<div class="fl">${esc(f.label)}</div>
       <div class="cell ${cls}">${esc(f.current)||'<span class="muted">—</span>'}</div>
-      <div class="cell ${cls}">${esc(f.incoming)||'<span class="muted">—</span>'}${tag}</div>`;}).join('');
+      <div class="cell ${cls}">${esc(f.incoming)||'<span class="muted">—</span>'}${tag}</div>
+      ${finalCell}`;}).join('');
   const lots=(d.lots||[]).map(l=>`<span class="fchip">Lot ${esc(l.lot_number)}${l.winning_bid?` · €${esc(l.winning_bid)}`:''}</span>`).join('')||'<span class="muted">—</span>';
+  const hist=(d.history||[]).slice().reverse().map(h=>`<div class="ev"><b>${STATE_LABELS[h.to]||h.to}</b> <span class="muted">← ${STATE_LABELS[h.from]||h.from||'start'}</span> · ${esc(h.actor)}${h.note?` — <span class="muted">${esc(h.note)}</span>`:''}<div class="when">${esc(h.at)}</div></div>`).join('')
+    ||'<div class="muted" style="font-size:12px">No workflow actions yet.</div>';
+  const btns=drawerButtons(d);
   $('#drawerBody').innerHTML=`
     <div class="muted mono" style="font-size:11px">${d.recommendation} · confidence ${Math.round(d.confidence*100)}%</div>
-    <h3>${esc(d.incoming_name)} <span class="muted mono" style="font-size:12px">#${esc(d.buyer_number)}</span></h3>
+    <h3>${esc(d.incoming_name)} <span class="muted mono" style="font-size:12px">#${esc(d.buyer_number)}</span>
+      <span class="badge st-${d.state}" style="margin-left:8px">${esc(d.state_label)}</span></h3>
     <div class="muted" style="font-size:12px">Matched by: ${d.matched_by.map(f=>`<span class="fchip">${f}</span>`).join('')||'—'} ${d.master_ref?`· master #${esc(d.master_ref)}`:''}</div>
+    ${d.review_reason?`<div class="reason"><b>Why manual review?</b> ${esc(d.review_reason)}</div>`:''}
+    ${evidenceHTML(d)}
     <div class="cmp">
-      <div class="h">Field</div><div class="h">Master (source of truth)</div><div class="h">Incoming (Blue Cubes)</div>
+      <div class="h">Field</div><div class="h">Master (source of truth)</div><div class="h">Incoming (Blue Cubes)</div><div class="h">Final approved</div>
       ${rows}
     </div>
+    <div id="editArea">${editMode?editFormHTML(d):''}</div>
     <div style="margin-top:14px"><b>Lots won:</b> ${lots}</div>
-    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn" onclick="decideOne(${d.index},'UPDATE')">✓ Approve update</button>
-      <button class="btn" onclick="decideOne(${d.index},'IGNORE')">Keep existing</button>
-      <button class="btn" onclick="decideOne(${d.index},'ADD')">Add as new</button>
-      <button class="btn" onclick="decideOne(${d.index},'MANUAL_REVIEW')">Flag for review</button>
-    </div>
-    <div class="note" style="margin-top:16px">Green = new information · Red = changed value · Grey = unchanged or formatting-only (equivalent). The master is never overwritten by equivalent-only differences.</div>`;
-  $('#scrim').classList.add('on');$('#drawer').classList.add('on');
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">${btns}</div>
+    <div style="margin-top:18px"><b style="font-size:12.5px">Approval history</b><div class="hist">${hist}</div></div>
+    <div class="note" style="margin-top:16px">Approve writes the final values to the <b>staging dataset</b> (pending changes) — the master and the uploaded file are never modified. The staging file is the only payload pushed to Odoo, and the push itself is dry-run by default and env-gated.</div>`;
+  if(editMode)wireEditForm(d);
 }
-async function decideOne(index,action){
-  await fetch('/reconcile/decide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,indices:[index]})});
-  closeDrawer();loadResults();
+function drawerButtons(d){
+  const s=d.state, B=[];
+  const editBtn=`<button class="btn" onclick="toggleEdit()">${editMode?'Cancel editing':'✏️ Edit fields'}</button>`;
+  if(s==='update_suggested'||s==='manual_edit'){
+    B.push(`<button class="btn good" onclick="drawerApprove()">✓ Approve ${d.master_ref?'update':'as new'}</button>`,editBtn,
+           `<button class="btn" onclick="drawerKeep()">Keep existing</button>`,
+           `<button class="btn danger" onclick="drawerReject()">✗ Reject</button>`);
+    if(s==='manual_edit'&&Object.keys(d.edits||{}).length)
+      B.push(`<button class="btn" onclick="drawerDiscardEdits()">Discard edits</button>`);
+  }else if(s==='new_record'){
+    B.push(`<button class="btn good" onclick="drawerApprove('new')">✓ Approve new client</button>`,editBtn,
+           `<button class="btn danger" onclick="drawerReject()">✗ Reject</button>`);
+  }else if(s==='needs_review'){
+    B.push(`<button class="btn good" onclick="drawerApprove('update')">✓ It's the same person — approve update</button>`,
+           `<button class="btn good" onclick="drawerApprove('new')">✓ Different person — add as new</button>`,
+           editBtn,
+           `<button class="btn" onclick="drawerKeep()">Keep existing</button>`,
+           `<button class="btn danger" onclick="drawerReject()">✗ Reject</button>`);
+  }else if(s==='update_ready'||s==='import_ready'){
+    B.push(`<span class="badge st-${s}" style="align-self:center">In staging — ready for the Odoo push</span>`,
+           `<button class="btn" onclick="drawerReopen()">↩ Un-approve</button>`,editBtn);
+  }else if(s==='rejected'){
+    B.push(`<button class="btn" onclick="drawerReopen()">↩ Reopen</button>`);
+  }else if(s==='existing_ok'){
+    B.push(editBtn,`<button class="btn danger" onclick="drawerReject()">✗ Reject</button>`);
+  }else if(s==='pushed_to_odoo'){
+    B.push(`<span class="badge st-pushed_to_odoo" style="align-self:center">Pushed to Odoo — read-only</span>`);
+  }
+  return B.join('');
 }
+function editFormHTML(d){
+  const F=[["first_name","First name"],["last_name","Last name"],["email","Email"],["phone","Phone"],
+    ["company","Company"],["address1","Address 1"],["address2","Address 2"],["town","Town"],
+    ["county","County"],["postcode","Postcode"],["country","Country"]];
+  const cur=f=>d.edits&&d.edits[f]!==undefined?d.edits[f]:(d.incoming[f]||'');
+  const inputs=F.map(([f,l])=>`<div class="field">
+      <label>${l}</label>
+      <input data-f="${f}" value="${esc(cur(f))}" data-orig="${esc(d.incoming[f]||'')}"/>
+      <span class="orig">incoming: ${esc(d.incoming[f]||'—')}${d.master&&d.master[f]?` · master: ${esc(d.master[f])}`:''}</span>
+    </div>`).join('');
+  const notes=`<div class="field notes"><label>Notes (goes to the staging record)</label>
+      <input data-f="notes" value="${esc(d.edits&&d.edits.notes||'')}" data-orig=""/></div>`;
+  return `<div class="editform">${inputs}${notes}</div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn primary" onclick="saveEdits()">💾 Save edits</button>
+      <button class="btn" onclick="toggleEdit()">Cancel</button>
+    </div>`;
+}
+function wireEditForm(d){
+  document.querySelectorAll('#editArea input').forEach(inp=>{
+    const mark=()=>inp.classList.toggle('dirty',inp.value!==(inp.dataset.orig||''));
+    inp.oninput=mark;mark();
+  });
+}
+function toggleEdit(){editMode=!editMode;renderDrawer();}
+async function saveEdits(){
+  const fields={};
+  document.querySelectorAll('#editArea input').forEach(inp=>{
+    if(inp.value!==(inp.dataset.orig||''))fields[inp.dataset.f]=inp.value;
+  });
+  if(!Object.keys(fields).length){toast('No changes to save.');return;}
+  try{
+    await jpost(`/reconcile/records/${currentDetail.index}/edit`,{fields});
+    toast('Edits saved — approve to write them to staging.');
+    currentDetail=await jget('/reconcile/results/'+currentDetail.index);
+    editMode=false;renderDrawer();refreshAll();
+  }catch(e){toast('⚠ '+e.message);}
+}
+async function drawerAction(fn){
+  try{await fn();currentDetail=await jget('/reconcile/results/'+currentDetail.index);renderDrawer();refreshAll();}
+  catch(e){toast('⚠ '+e.message);}
+}
+function drawerApprove(as){drawerAction(async()=>{const d=await jpost(`/reconcile/records/${currentDetail.index}/approve`,as?{as}:{});toast('→ '+d.state_label);});}
+function drawerReject(){const reason=prompt('Reason for rejection (optional):')||'';drawerAction(async()=>{const d=await jpost(`/reconcile/records/${currentDetail.index}/reject`,{reason});toast('→ '+d.state_label);});}
+function drawerReopen(){drawerAction(async()=>{const d=await jpost(`/reconcile/records/${currentDetail.index}/reopen`);toast('→ '+d.state_label);});}
+function drawerKeep(){drawerAction(async()=>{const d=await jpost(`/reconcile/records/${currentDetail.index}/keep-existing`);toast('→ '+d.state_label);});}
+function drawerDiscardEdits(){drawerAction(async()=>{const d=await jpost(`/reconcile/records/${currentDetail.index}/edit`,null,'DELETE');toast('Edits discarded');});}
 function closeDrawer(){$('#scrim').classList.remove('on');$('#drawer').classList.remove('on');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
 </script>

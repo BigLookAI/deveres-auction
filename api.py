@@ -1906,18 +1906,7 @@ const DECISION_OVERRIDES = {overrides_json};
 </body>
 </html>"""
 
-# ── Contact Reconciliation Engine (auction data preprocessing) ──────────────
-try:
-    from reconcile_routes import router as reconcile_router
-    app.include_router(reconcile_router)
-except Exception as _recon_exc:
-    import logging as _lg; _lg.getLogger(__name__).warning('reconcile routes not loaded: %s', _recon_exc)
-
-# ── Platform overview / unified demo hub ─────────────────────────────────────
-@app.get("/overview")
-def overview():
-    from fastapi.responses import HTMLResponse as _HR
-    _p = Path(__file__).resolve().parent / "static" / "overview.html"
-    if _p.exists():
-        return _HR(_p.read_text(encoding="utf-8"))
-    return _HR("<h1>Overview page missing</h1>", status_code=500)
+# ── Product separation (2-Jul-2026 decision) ─────────────────────────────────
+# This app is PRODUCT 2: AI Bidder Evaluation ONLY. Contact Reconciliation is a
+# completely separate product served by recon_app.py — no shared routes, no
+# shared landing page, no shared navigation.

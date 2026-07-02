@@ -3,20 +3,38 @@ deVeres Auction — Contact Reconciliation · API routes
 =======================================================
 
 A self-contained FastAPI APIRouter that exposes the reconciliation engine and
-serves the review UI. Wired into the main app via `app.include_router(router)`.
+serves the review UI. Wired into the Product-1 app via `app.include_router`.
 
-  GET  /reconcile                     → review UI (SPA)
-  GET  /reconcile/health              → status + master size
-  POST /reconcile/upload              → process an uploaded Blue Cubes CSV
-  GET  /reconcile/results             → paginated / filtered / sorted rows
-  GET  /reconcile/results/{index}     → full field-diff detail for one contact
-  POST /reconcile/decide              → set reviewer action on selected rows
-  GET  /reconcile/export?fmt=csv|json → download reconciled output
-  GET  /reconcile/odoo-preview        → Odoo-ready intermediate model
-  GET  /reconcile/lots                → Lot List import preview (Hammer forced 0)
+Core flow (2-Jul-2026 meeting):  upload → review → edit → approve → STAGING →
+push to Odoo. Approving never touches Odoo directly; it stages the approved
+values, and the staging repository is the only push payload.
 
-The canonical master (All Clients.csv) is baked in and loaded once at startup;
-the user only ever uploads the Blue Cubes export.
+  GET  /reconcile                          → review UI (SPA)
+  GET  /reconcile/health                   → status + master size
+  POST /reconcile/upload                   → process an uploaded Blue Cubes CSV
+  GET  /reconcile/results                  → paginated / filtered / sorted rows
+  GET  /reconcile/results/{index}          → full detail incl. match evidence
+  GET  /reconcile/progress                 → live per-state counters
+  POST /reconcile/records/{index}/edit     → save manual field edits (staging-only)
+  DELETE /reconcile/records/{index}/edit   → discard edits
+  POST /reconcile/records/{index}/approve  → approve → write to staging
+  POST /reconcile/records/{index}/reject   → reject (withdraws staging entry)
+  POST /reconcile/records/{index}/reopen   → reopen a rejected/decided record
+  POST /reconcile/records/{index}/keep-existing → confirm no change needed
+  GET  /reconcile/records/{index}/history  → approval/state history
+  POST /reconcile/approve-bulk             → approve many (indices or state)
+  GET  /reconcile/staging                  → pending changes (the push payload)
+  GET  /reconcile/staging/export?fmt=csv   → pending-changes file
+  POST /reconcile/decide                   → legacy bulk decision (state-engine backed)
+  GET  /reconcile/export?fmt=csv|json|xlsx|pdf → reconciled results
+  GET  /reconcile/odoo-preview             → Odoo-ready intermediate model
+  POST /reconcile/odoo-import              → dry-run/live push FROM STAGING
+  GET  /reconcile/master-quality           → master data-quality report
+  GET  /reconcile/lots                     → Lot List import preview (Hammer forced 0)
+
+Security: HTTP Basic. RECON_USER/RECON_PASS is the admin (read-write) account;
+optional RECON_VIEWER_USER/RECON_VIEWER_PASS adds a read-only account. All
+consequential actions carry the acting username into the audit trail.
 """
 from __future__ import annotations
 
@@ -34,27 +52,52 @@ from fastapi.responses import HTMLResponse, JSONResponse, Response
 from fastapi.security import HTTPBasic, HTTPBasicCredentials
 
 from reconciliation import (
-    Action, MasterRepository, ReconciliationEngine, load_lots,
+    Action, MasterRepository, ReconciliationEngine, StagingRepository,
+    RecordState, TransitionError, initial_state, validate_transition,
+    STATE_LABELS, STAGED_STATES, load_lots,
 )
-from reconciliation.models import recon_result_from_dict
+from reconciliation.models import ReconResult, recon_result_from_dict
 from reconciliation.repository import load_upload
 from reconciliation.export import to_csv, to_json, to_xlsx, to_pdf_summary, odoo_intermediate
 
 log = logging.getLogger("reconcile")
 
-# ── Authentication (HTTP Basic) — buyer personal data must not be public ────
+# ── Authentication + roles (HTTP Basic) — personal data must not be public ───
 _security = HTTPBasic()
 RECON_USER = os.environ.get("RECON_USER", "admin@deveres.ie")
 RECON_PASS = os.environ.get("RECON_PASS", "Admin2026!")
+VIEWER_USER = os.environ.get("RECON_VIEWER_USER", "")
+VIEWER_PASS = os.environ.get("RECON_VIEWER_PASS", "")
+
+
+def _role_for(credentials: HTTPBasicCredentials) -> str | None:
+    if (secrets.compare_digest(credentials.username, RECON_USER)
+            and secrets.compare_digest(credentials.password, RECON_PASS)):
+        return "admin"
+    if VIEWER_USER and (secrets.compare_digest(credentials.username, VIEWER_USER)
+                        and secrets.compare_digest(credentials.password, VIEWER_PASS)):
+        return "viewer"
+    return None
 
 
 def require_auth(credentials: HTTPBasicCredentials = Depends(_security)) -> str:
-    ok = (secrets.compare_digest(credentials.username, RECON_USER)
-          and secrets.compare_digest(credentials.password, RECON_PASS))
-    if not ok:
+    if _role_for(credentials) is None:
         raise HTTPException(401, "Invalid credentials",
                             headers={"WWW-Authenticate": "Basic realm=reconciliation"})
     return credentials.username
+
+
+def require_editor(credentials: HTTPBasicCredentials = Depends(_security)) -> str:
+    """Write actions (edit/approve/reject/push) need the admin role — the
+    optional viewer account is strictly read-only."""
+    role = _role_for(credentials)
+    if role is None:
+        raise HTTPException(401, "Invalid credentials",
+                            headers={"WWW-Authenticate": "Basic realm=reconciliation"})
+    if role != "admin":
+        raise HTTPException(403, "Read-only account: this action needs the admin login.")
+    return credentials.username
+
 
 BASE_DIR     = Path(__file__).resolve().parent
 MASTER_PATH  = os.environ.get("RECON_MASTER_CSV", str(BASE_DIR / "All Clients.csv"))
@@ -67,11 +110,19 @@ AUDIT_PATH   = BASE_DIR / "output" / "reconcile_audit.log"
 router = APIRouter(prefix="/reconcile", tags=["reconciliation"],
                    dependencies=[Depends(require_auth)])
 
+# Fields the reviewer may edit before approval (per the 2-Jul meeting).
+EDITABLE_FIELDS = {"first_name", "last_name", "email", "phone", "company",
+                   "address1", "address2", "town", "county", "postcode",
+                   "country", "notes"}
+_CONTACT_FIELDS = ["first_name", "last_name", "email", "phone", "company",
+                   "address1", "address2", "town", "county", "postcode", "country"]
+
 # ── Lazy singletons + durable session ────────────────────────────────────────
 _master: MasterRepository | None = None
 _engine: ReconciliationEngine | None = None
+_staging: StagingRepository | None = None
 _state: dict = {"results": [], "summary": None, "filename": None, "kind": None,
-                "loaded_from_disk": False}
+                "session_id": None, "loaded_from_disk": False}
 
 
 def _get_engine() -> ReconciliationEngine:
@@ -83,17 +134,35 @@ def _get_engine() -> ReconciliationEngine:
     return _engine
 
 
+def _get_staging() -> StagingRepository:
+    global _staging
+    if _staging is None:
+        _staging = StagingRepository()
+    return _staging
+
+
+def _session_id() -> str:
+    return _state.get("session_id") or _state.get("filename") or "default"
+
+
 def _save_session() -> None:
-    """Persist the session (results + decisions) so a restart / --reload never
+    """Persist the session (results + decisions + states) so a restart never
     loses reviewer work. Best-effort — failures are logged, not raised."""
     try:
         SESSION_PATH.parent.mkdir(parents=True, exist_ok=True)
         payload = {
             "filename": _state["filename"], "kind": _state["kind"],
+            "session_id": _state.get("session_id"),
             "summary": _state["summary"].to_dict() if hasattr(_state["summary"], "to_dict") else _state["summary"],
             "results": [r.to_dict(full=True) for r in _state["results"]],
         }
         SESSION_PATH.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        # keep the named snapshot in sync so re-activating it later keeps decisions
+        sid = _state.get("session_id")
+        if sid:
+            SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
+            (SESSIONS_DIR / f"{sid}.json").write_text(
+                SESSION_PATH.read_text(encoding="utf-8"), encoding="utf-8")
     except Exception as exc:
         log.warning("reconcile: session save failed: %s", exc)
 
@@ -110,6 +179,7 @@ def _restore_session() -> None:
             _state["summary"] = payload.get("summary")
             _state["filename"] = payload.get("filename")
             _state["kind"] = payload.get("kind")
+            _state["session_id"] = payload.get("session_id") or payload.get("filename")
             log.info("reconcile: restored session '%s' (%d results)",
                      _state["filename"], len(_state["results"]))
     except Exception as exc:
@@ -127,6 +197,65 @@ def _audit(event: str, **kw) -> None:
         log.warning("reconcile: audit write failed: %s", exc)
 
 
+def _get_result(index: int) -> ReconResult:
+    _restore_session()
+    match = next((r for r in _state["results"] if r.index == index), None)
+    if match is None:
+        raise HTTPException(404, "Unknown result index.")
+    return match
+
+
+# ── Workflow core: transition + staging as one unit ──────────────────────────
+def _transition(r: ReconResult, target: RecordState, actor: str, note: str = "") -> None:
+    """Validate + apply + persist + audit a state change. Raises 409 on an
+    illegal move so the UI can explain instead of silently doing nothing."""
+    try:
+        validate_transition(r.state, target)
+    except TransitionError as e:
+        raise HTTPException(409, str(e))
+    frm = r.state.value
+    r.record_transition(target, actor, note)
+    _get_staging().log_transition(_session_id(), r.index, frm, target.value, actor, note)
+    _audit("state", index=r.index, buyer=r.buyer_number, frm=frm,
+           to=target.value, actor=actor, note=note)
+
+
+def _approved_values(r: ReconResult) -> tuple[dict, list[str], list[str]]:
+    """Merge = incoming snapshot overlaid with the reviewer's edits (editable
+    fields only). Returns (approved, changed_fields, edited_fields) where
+    changed_fields are canonical field names destined for the Odoo write."""
+    approved = {f: r.incoming.get(f, "") for f in _CONTACT_FIELDS}
+    edited = []
+    for f, v in (r.edits or {}).items():
+        if f in EDITABLE_FIELDS and f != "notes":
+            approved[f] = (v or "").strip()
+            edited.append(f)
+    # fields that genuinely change the master: significant diffs + any edits
+    changed = [d.field for d in r.diffs
+               if d.significant and d.status.value in ("changed", "new_info")]
+    for f in edited:
+        if f not in changed:
+            changed.append(f)
+    return approved, changed, edited
+
+
+def _stage(r: ReconResult, change_type: str, actor: str, note: str = "") -> None:
+    approved, changed, edited = _approved_values(r)
+    r.approved_values = approved
+    _get_staging().stage(
+        session=_session_id(), record_index=r.index, buyer_number=r.buyer_number,
+        change_type=change_type, master_ref=r.master_ref or "",
+        name=r.incoming_name or r.master_name,
+        original=r.master or {}, incoming=r.incoming or {}, approved=approved,
+        edited_fields=edited, changed_fields=changed,
+        confidence=r.confidence, matched_by=r.matched_by, lots=r.lots or [],
+        actor=actor, note=note or (r.edits.get("notes", "") if r.edits else ""))
+
+
+def _unstage_if_staged(r: ReconResult, actor: str, note: str) -> None:
+    _get_staging().withdraw(_session_id(), r.index, actor, note)
+
+
 # ── UI ────────────────────────────────────────────────────────────────────────
 @router.get("", response_class=HTMLResponse)
 def ui():
@@ -141,8 +270,10 @@ def health():
     _restore_session()
     return {"status": "ok", "master_records": len(eng.master),
             "loaded_upload": _state["filename"], "upload_kind": _state["kind"],
+            "session_id": _state.get("session_id"),
             "results_cached": len(_state["results"]),
-            "session_persisted": SESSION_PATH.exists()}
+            "session_persisted": SESSION_PATH.exists(),
+            "staging_counts": _get_staging().counts(_session_id())}
 
 
 @router.get("/session")
@@ -154,12 +285,13 @@ def session():
         raise HTTPException(404, "No reconciliation session yet.")
     summary = _state["summary"]
     return {"summary": summary.to_dict() if hasattr(summary, "to_dict") else summary,
-            "filename": _state["filename"], "kind": _state["kind"]}
+            "filename": _state["filename"], "kind": _state["kind"],
+            "session_id": _state.get("session_id")}
 
 
 # ── Upload + process ────────────────────────────────────────────────────────
 @router.post("/upload")
-async def upload(file: UploadFile = File(...)):
+async def upload(file: UploadFile = File(...), user: str = Depends(require_editor)):
     if not file.filename.lower().endswith(".csv"):
         raise HTTPException(400, "Please upload a .csv export from Blue Cubes.")
     raw = (await file.read()).decode("utf-8-sig", errors="replace")
@@ -172,25 +304,21 @@ async def upload(file: UploadFile = File(...)):
     if not incoming:
         raise HTTPException(400, "No contact rows found in the uploaded file.")
     results, summary = _get_engine().run(incoming)
-    _state.update(results=results, summary=summary, filename=file.filename, kind=kind)
-    _save_session()
-    # named per-upload snapshot (multi-session support)
     sid = time.strftime("%Y%m%d-%H%M%S") + "-" + "".join(
         c if c.isalnum() else "-" for c in file.filename)[:60]
-    try:
-        SESSIONS_DIR.mkdir(parents=True, exist_ok=True)
-        (SESSIONS_DIR / f"{sid}.json").write_text(SESSION_PATH.read_text(encoding="utf-8"),
-                                                  encoding="utf-8")
-    except Exception as exc:
-        log.warning("reconcile: session snapshot failed: %s", exc)
-    _audit("upload", filename=file.filename, kind=kind, contacts=len(results), session=sid)
+    _state.update(results=results, summary=summary, filename=file.filename,
+                  kind=kind, session_id=sid)
+    _save_session()
+    _audit("upload", filename=file.filename, kind=kind, contacts=len(results),
+           session=sid, actor=user)
     log.info("reconcile: processed '%s' (%s, %d contacts)", file.filename, kind, len(results))
     return {"summary": summary.to_dict(), "filename": file.filename, "kind": kind, "session": sid}
 
 
 # ── Results (paginated / filtered / sorted) ───────────────────────────────────
 @router.get("/results")
-def results(status: str = Query("all"), q: str = "", sort: str = "confidence",
+def results(status: str = Query("all"), state: str = Query("all"),
+            q: str = "", sort: str = "confidence",
             order: str = "desc", page: int = 1, page_size: int = 25):
     _restore_session()
     rows = _state["results"]
@@ -199,6 +327,11 @@ def results(status: str = Query("all"), q: str = "", sort: str = "confidence",
     filt = rows
     if status and status != "all":
         filt = [r for r in filt if r.classification.value == status]
+    if state and state != "all":
+        if state == "staged":                      # convenience filter: ready for Odoo
+            filt = [r for r in filt if r.state in STAGED_STATES]
+        else:
+            filt = [r for r in filt if r.state.value == state]
     if q:
         ql = q.lower()
         filt = [r for r in filt if ql in r.incoming_name.lower()
@@ -206,6 +339,7 @@ def results(status: str = Query("all"), q: str = "", sort: str = "confidence",
     key = {"confidence": lambda r: r.confidence,
            "name": lambda r: r.incoming_name.lower(),
            "status": lambda r: r.classification.value,
+           "state": lambda r: r.state.value,
            "changes": lambda r: len(r.changed_fields)}.get(sort, lambda r: r.confidence)
     filt = sorted(filt, key=key, reverse=(order == "desc"))
     total = len(filt)
@@ -215,22 +349,196 @@ def results(status: str = Query("all"), q: str = "", sort: str = "confidence",
             "rows": [r.to_dict() for r in page_rows]}
 
 
-@router.get("/results/{index}")
-def result_detail(index: int):
+@router.get("/progress")
+def progress():
+    """Live workflow counters: how many records sit in each lifecycle state,
+    plus the staging (pending-changes) totals. Drives the UI progress bar."""
     _restore_session()
     rows = _state["results"]
-    match = next((r for r in rows if r.index == index), None)
-    if match is None:
-        raise HTTPException(404, "Unknown result index.")
-    return match.to_dict(full=True)
+    by_state = {s.value: 0 for s in RecordState}
+    for r in rows:
+        by_state[r.state.value] += 1
+    return {"total": len(rows), "by_state": by_state,
+            "labels": {s.value: STATE_LABELS[s] for s in RecordState},
+            "staging": _get_staging().counts(_session_id()),
+            "session_id": _session_id()}
 
 
-# ── Reviewer decisions ─────────────────────────────────────────────────────────
+@router.get("/results/{index}")
+def result_detail(index: int):
+    r = _get_result(index)
+    d = r.to_dict(full=True)
+    d["state_label"] = STATE_LABELS[r.state]
+    d["editable_fields"] = sorted(EDITABLE_FIELDS)
+    return d
+
+
+@router.get("/records/{index}/history")
+def record_history(index: int):
+    r = _get_result(index)
+    return {"index": index, "buyer_number": r.buyer_number,
+            "state": r.state.value, "history": r.history,
+            "transitions": _get_staging().history(_session_id(), index)}
+
+
+# ── Manual edit (edits live ONLY in the session + staging; originals untouched) ─
+@router.post("/records/{index}/edit")
+def edit_record(index: int, payload: dict, user: str = Depends(require_editor)):
+    r = _get_result(index)
+    fields = payload.get("fields") or {}
+    if not isinstance(fields, dict) or not fields:
+        raise HTTPException(400, "Provide 'fields': {field: newValue, …}.")
+    bad = sorted(set(fields) - EDITABLE_FIELDS)
+    if bad:
+        raise HTTPException(400, f"Field(s) not editable: {', '.join(bad)}. "
+                                 f"Editable: {', '.join(sorted(EDITABLE_FIELDS))}.")
+    if r.state == RecordState.PUSHED_TO_ODOO:
+        raise HTTPException(409, "Record already pushed to Odoo — no further edits.")
+    # keep only real changes vs the incoming snapshot
+    cleaned = {f: (v or "").strip() for f, v in fields.items()}
+    r.edits.update(cleaned)
+    r.edits = {f: v for f, v in r.edits.items()
+               if f == "notes" or v != (r.incoming.get(f, "") or "")}
+    was_staged = r.state in STAGED_STATES
+    if r.state != RecordState.MANUAL_EDIT:
+        _transition(r, RecordState.MANUAL_EDIT, user,
+                    f"edited: {', '.join(sorted(cleaned))}")
+    if was_staged:   # editing a staged record pulls it back out of the push
+        _unstage_if_staged(r, user, "edited after approval — re-approve to restage")
+    _save_session()
+    _audit("edit", index=index, buyer=r.buyer_number, fields=sorted(cleaned), actor=user)
+    return {"index": index, "state": r.state.value, "state_label": STATE_LABELS[r.state],
+            "edits": r.edits}
+
+
+@router.delete("/records/{index}/edit")
+def discard_edits(index: int, user: str = Depends(require_editor)):
+    r = _get_result(index)
+    if not r.edits:
+        raise HTTPException(400, "No edits to discard.")
+    r.edits = {}
+    if r.state == RecordState.MANUAL_EDIT:
+        _transition(r, initial_state(r.classification), user, "edits discarded")
+    _save_session()
+    _audit("edit_discard", index=index, buyer=r.buyer_number, actor=user)
+    return {"index": index, "state": r.state.value, "state_label": STATE_LABELS[r.state]}
+
+
+# ── Approve / reject / reopen / keep-existing ────────────────────────────────
+def _approve_one(r: ReconResult, as_type: str | None, user: str) -> None:
+    """Approve a record into staging. as_type overrides the change type for
+    NEEDS_REVIEW records ('update' or 'new'); otherwise it is derived."""
+    if as_type not in (None, "", "update", "new"):
+        raise HTTPException(400, "'as' must be 'update' or 'new'.")
+    derived = "new" if (r.state == RecordState.NEW_RECORD
+                        or (r.state == RecordState.MANUAL_EDIT and not r.master_ref)
+                        or (not r.master_ref and r.classification.value == "new")) else "update"
+    change = as_type or derived
+    if change == "update" and not r.master_ref:
+        raise HTTPException(409, "Cannot approve as update: no master record is linked. "
+                                 "Approve as 'new' instead.")
+    target = RecordState.IMPORT_READY if change == "new" else RecordState.UPDATE_READY
+    _transition(r, target, user, f"approved as {change}")
+    _stage(r, "create" if change == "new" else "update", user)
+    r.action = Action.ADD if change == "new" else Action.UPDATE
+
+
+@router.post("/records/{index}/approve")
+def approve_record(index: int, payload: dict | None = None,
+                   user: str = Depends(require_editor)):
+    r = _get_result(index)
+    _approve_one(r, (payload or {}).get("as"), user)
+    _save_session()
+    return {"index": index, "state": r.state.value, "state_label": STATE_LABELS[r.state],
+            "staging": _get_staging().counts(_session_id())}
+
+
+@router.post("/records/{index}/reject")
+def reject_record(index: int, payload: dict | None = None,
+                  user: str = Depends(require_editor)):
+    r = _get_result(index)
+    reason = (payload or {}).get("reason", "")
+    _transition(r, RecordState.REJECTED, user, reason or "rejected")
+    _unstage_if_staged(r, user, reason or "rejected")
+    r.action = Action.IGNORE
+    _save_session()
+    return {"index": index, "state": r.state.value, "state_label": STATE_LABELS[r.state]}
+
+
+@router.post("/records/{index}/reopen")
+def reopen_record(index: int, user: str = Depends(require_editor)):
+    r = _get_result(index)
+    target = RecordState.MANUAL_EDIT if r.edits else initial_state(r.classification)
+    _transition(r, target, user, "reopened")
+    _unstage_if_staged(r, user, "reopened — removed from pending push")
+    _save_session()
+    return {"index": index, "state": r.state.value, "state_label": STATE_LABELS[r.state]}
+
+
+@router.post("/records/{index}/keep-existing")
+def keep_existing(index: int, user: str = Depends(require_editor)):
+    r = _get_result(index)
+    _transition(r, RecordState.EXISTING_OK, user, "reviewer chose to keep existing record")
+    _unstage_if_staged(r, user, "keep existing")
+    r.action = Action.IGNORE
+    _save_session()
+    return {"index": index, "state": r.state.value, "state_label": STATE_LABELS[r.state]}
+
+
+@router.post("/approve-bulk")
+def approve_bulk(payload: dict, user: str = Depends(require_editor)):
+    """Approve many records at once — by explicit indices or by current state
+    (e.g. every 'update_suggested'). Illegal transitions are reported, not fatal."""
+    _restore_session()
+    indices = payload.get("indices") or []
+    state_f = (payload.get("state") or "").lower()
+    if not indices and not state_f:
+        raise HTTPException(400, "Provide 'indices' or 'state' — refusing an empty scope.")
+    idxset = set(indices)
+    done, skipped = [], []
+    for r in _state["results"]:
+        if (indices and r.index in idxset) or (state_f and r.state.value == state_f):
+            try:
+                _approve_one(r, payload.get("as"), user)
+                done.append(r.index)
+            except HTTPException as e:
+                skipped.append({"index": r.index, "reason": e.detail})
+    _save_session()
+    _audit("approve_bulk", approved=len(done), skipped=len(skipped), actor=user)
+    return {"approved": done, "skipped": skipped,
+            "staging": _get_staging().counts(_session_id())}
+
+
+# ── Staging (pending changes = the Odoo push payload) ─────────────────────────
+@router.get("/staging")
+def staging_list(status: str = "ready"):
+    _restore_session()
+    repo = _get_staging()
+    return {"session": _session_id(), "counts": repo.counts(_session_id()),
+            "entries": repo.entries(_session_id(), status)}
+
+
+@router.get("/staging/export")
+def staging_export(fmt: str = "csv", status: str = "ready"):
+    repo = _get_staging()
+    _restore_session()
+    if fmt == "json":
+        return Response(repo.export_json(_session_id(), status),
+                        media_type="application/json",
+                        headers={"Content-Disposition":
+                                 "attachment; filename=pending-changes.json"})
+    return Response(repo.export_csv(_session_id(), status), media_type="text/csv",
+                    headers={"Content-Disposition":
+                             "attachment; filename=pending-changes.csv"})
+
+
+# ── Legacy bulk decisions (kept for compatibility; state-engine backed) ───────
 @router.post("/decide")
-def decide(payload: dict):
+def decide(payload: dict, user: str = Depends(require_editor)):
     """Set a reviewer action on an EXPLICIT scope — either specific row indices
-    or all rows of a given classification (e.g. every 'update'). An empty scope
-    is rejected rather than silently applying to everything."""
+    or all rows of a given classification. Now drives the state engine: UPDATE/
+    ADD approve into staging, IGNORE keeps existing, MANUAL_REVIEW rejects into
+    review. Illegal transitions are skipped and reported."""
     _restore_session()
     action = payload.get("action", "").upper()
     indices = payload.get("indices") or []
@@ -243,15 +551,31 @@ def decide(payload: dict):
         raise HTTPException(400, "Provide 'indices' (row list) or 'status' "
                                  "(classification, e.g. 'update') — refusing an empty scope.")
     idxset = set(indices)
-    n = 0
+    n, skipped = 0, []
     for r in _state["results"]:
-        if (indices and r.index in idxset) or (status and r.classification.value == status):
-            r.action = act; n += 1
+        if not ((indices and r.index in idxset) or (status and r.classification.value == status)):
+            continue
+        try:
+            if act == Action.UPDATE:
+                _approve_one(r, "update", user)
+            elif act == Action.ADD:
+                _approve_one(r, "new", user)
+            elif act == Action.IGNORE:
+                if r.state != RecordState.EXISTING_OK:
+                    _transition(r, RecordState.EXISTING_OK, user, "decide: keep existing")
+                _unstage_if_staged(r, user, "decide: keep existing")
+                r.action = Action.IGNORE
+            elif act == Action.MANUAL_REVIEW:
+                if r.state != RecordState.NEEDS_REVIEW:
+                    _transition(r, RecordState.NEEDS_REVIEW, user, "decide: flag for review")
+                r.action = Action.MANUAL_REVIEW
+            n += 1
+        except HTTPException as e:
+            skipped.append({"index": r.index, "reason": e.detail})
     _save_session()
-    _audit("decide", action=act.value, rows=n, indices=len(indices), status=status or None)
-    log.info("reconcile: decision %s applied to %d rows (indices=%d, status=%s)",
-             act.value, n, len(indices), status or "-")
-    return {"updated": n, "action": act.value}
+    _audit("decide", action=act.value, rows=n, skipped=len(skipped),
+           indices=len(indices), status=status or None, actor=user)
+    return {"updated": n, "action": act.value, "skipped": skipped}
 
 
 # ── Exports (CSV / JSON / Excel / PDF summary) ───────────────────────────────
@@ -304,22 +628,25 @@ def list_sessions():
             d = json.loads(f.read_text(encoding="utf-8"))
             out.append({"sid": f.stem, "filename": d.get("filename"), "kind": d.get("kind"),
                         "total": (d.get("summary") or {}).get("total"),
-                        "active": d.get("filename") == _state.get("filename")})
+                        "active": f.stem == (_state.get("session_id") or "")})
         except Exception:
             continue
     return {"sessions": out}
 
 
 @router.post("/sessions/{sid}/activate")
-def activate_session(sid: str):
+def activate_session(sid: str, user: str = Depends(require_editor)):
     f = SESSIONS_DIR / f"{Path(sid).name}.json"
     if not f.exists():
         raise HTTPException(404, "Unknown session.")
     SESSION_PATH.parent.mkdir(parents=True, exist_ok=True)
     SESSION_PATH.write_text(f.read_text(encoding="utf-8"), encoding="utf-8")
-    _state.update(results=[], summary=None, filename=None, kind=None, loaded_from_disk=False)
+    _state.update(results=[], summary=None, filename=None, kind=None,
+                  session_id=None, loaded_from_disk=False)
     _restore_session()
-    _audit("session_activate", session=sid)
+    if not _state.get("session_id"):
+        _state["session_id"] = sid
+    _audit("session_activate", session=sid, actor=user)
     return {"activated": sid, "results": len(_state["results"])}
 
 
@@ -351,24 +678,25 @@ def master_quality(sample: int = 8):
                     "Recommend a supervised de-duplication pass before Odoo import."}
 
 
-# ── Odoo import (dry-run by default; live writes env-gated) ──────────────────
+# ── Odoo import — FROM STAGING ONLY (dry-run default; live writes env-gated) ─
 @router.post("/odoo-import")
-def odoo_import(payload: dict | None = None):
-    """Apply approved reconciliation actions to Odoo res.partner.
+def odoo_import(payload: dict | None = None, user: str = Depends(require_editor)):
+    """Push the STAGED (approved) changes to Odoo res.partner. The staging
+    repository is the only payload — un-approved records can never reach Odoo.
     dry_run=true (default): plan + resolve only — NO writes. Live writes require
     dry_run=false AND RECON_ALLOW_ODOO_WRITE=1 on the server."""
-    from reconciliation.odoo_import import OdooImporter, plan as build_plan
+    from reconciliation.odoo_import import OdooImporter, plan_from_staging
     _restore_session()
-    rows = _state["results"]
-    if not rows:
-        raise HTTPException(404, "Nothing to import — run a reconciliation first.")
+    repo = _get_staging()
+    entries = repo.entries(_session_id(), status="ready")
+    if not entries:
+        raise HTTPException(404, "Staging is empty — approve records first. "
+                                 "Only approved (staged) changes can be pushed.")
     payload = payload or {}
     dry_run = bool(payload.get("dry_run", True))
-    intermediate = odoo_intermediate(rows)
-    ops = build_plan(intermediate, source_file=_state.get("filename") or "")
+    ops = plan_from_staging(entries, source_file=_state.get("filename") or "")
     connected = bool(os.environ.get("ODOO_URL"))
     if not connected:
-        # plan-only mode: no Odoo credentials configured on this server
         result = {"summary": {"dry_run": True, "connected": False,
                               "create": sum(1 for o in ops if o.op == "create"),
                               "write": sum(1 for o in ops if o.op == "write"),
@@ -377,7 +705,7 @@ def odoo_import(payload: dict | None = None):
                               "id_checks_required": sum(1 for o in ops if o.id_check)},
                   "operations": [o.to_dict() for o in ops],
                   "note": "ODOO_URL not configured — returning the import plan only."}
-        _audit("odoo_import_plan", **result["summary"])
+        _audit("odoo_import_plan", actor=user, **result["summary"])
         return result
     try:
         importer = OdooImporter()
@@ -387,7 +715,20 @@ def odoo_import(payload: dict | None = None):
     except Exception as e:
         raise HTTPException(502, f"Odoo connection failed: {e}")
     result["summary"]["connected"] = True
-    _audit("odoo_import", **result["summary"])
+    if not dry_run:
+        # mark staged rows pushed + move records to the terminal state
+        by_index = {e["record_index"]: e for e in entries}
+        op_by_ref: dict[str, dict] = {o["ref"]: o for o in result.get("operations", [])}
+        for idx, entry in by_index.items():
+            ref = entry["master_ref"] or f"BC-{entry['buyer_number']}"
+            partner = (op_by_ref.get(ref) or {}).get("partner_id")
+            repo.mark_pushed(_session_id(), idx, partner)
+            r = next((x for x in _state["results"] if x.index == idx), None)
+            if r is not None and r.state in STAGED_STATES:
+                _transition(r, RecordState.PUSHED_TO_ODOO, user,
+                            f"pushed (partner_id={partner})")
+        _save_session()
+    _audit("odoo_import", actor=user, dry_run=dry_run, **result["summary"])
     return result
 
 

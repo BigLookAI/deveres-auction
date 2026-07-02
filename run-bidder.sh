@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# deVeres Auction — PRODUCT 1: Contact Reconciliation (port 8003)
+# deVeres Auction — PRODUCT 2: AI Bidder Evaluation (port 8006)
 # Run ./setup.sh once before using this script.
 
 set -e
 cd "$(dirname "$0")"
 
-PORT="${PORT:-8003}"
+PORT="${PORT:-8006}"
 HOST="${HOST:-0.0.0.0}"
 
 # ── Colour helpers ────────────────────────────────────────────────────────────
@@ -28,14 +28,14 @@ if [ -f ".env" ]; then
 fi
 
 # ── Stop any existing instance ────────────────────────────────────────────────
-pkill -f "uvicorn recon_app:app" 2>/dev/null && echo "Stopped existing instance." || true
+pkill -f "uvicorn api:app" 2>/dev/null && echo "Stopped existing instance." || true
 
 bold ""
-bold "  Starting deVeres Contact Reconciliation on port $PORT..."
+bold "  Starting deVeres AI Bidder Evaluation on port $PORT..."
 bold ""
 
 # ── Launch server ─────────────────────────────────────────────────────────────
-exec .venv/bin/uvicorn recon_app:app \
+exec .venv/bin/uvicorn api:app \
     --host "$HOST" \
     --port "$PORT" \
     --reload \
