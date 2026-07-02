@@ -35,10 +35,13 @@ log = logging.getLogger("reconcile.odoo")
 ID_CHECK_THRESHOLD_EUR = 10_000.0
 
 # canonical field → res.partner field
+# NOTE: Odoo 19 removed res.partner.mobile (merged into phone) — verified via
+# fields_get on the restored April-test instance. A canonical mobile therefore
+# maps to phone when phone is empty, and is appended to the comment otherwise
+# (see _apply_mobile) so the number is never silently dropped.
 PARTNER_FIELD_MAP = {
     "email":    "email",
     "phone":    "phone",
-    "mobile":   "mobile",
     "address1": "street",
     "address2": "street2",
     "town":     "city",
@@ -57,6 +60,18 @@ LOOKUP_FIELD_MAP = {
 def _full_name(rec: dict) -> str:
     name = f"{rec.get('first_name', '')} {rec.get('last_name', '')}".strip()
     return name or rec.get("company", "") or "Unknown contact"
+
+
+def _apply_mobile(values: dict, mobile: str) -> None:
+    """Odoo 19 has no res.partner.mobile: use it as the phone when none is
+    set, otherwise keep it audit-visible in the comment."""
+    if not mobile:
+        return
+    if not values.get("phone"):
+        values["phone"] = mobile
+    elif mobile != values["phone"]:
+        values["comment"] = (values.get("comment", "")
+                             + f" Mobile (no Odoo field): {mobile}.").strip()
 
 
 def _lots_total(entry: dict) -> float:
@@ -100,6 +115,22 @@ def plan_from_staging(entries: list[dict], source_file: str = "") -> list[Import
         approved = e.get("approved") or {}
         changed  = list(dict.fromkeys((e.get("changed_fields") or []) +
                                       (e.get("edited_fields") or [])))
+        # ── payload validation: a bad staging row becomes an explicit skip, it
+        # never reaches Odoo and never silently disappears ─────────────────────
+        problems = []
+        if not any(approved.get(f) for f in ("first_name", "last_name", "company")):
+            problems.append("no name (first/last/company all empty)")
+        if e.get("change_type") == "create" and not e.get("buyer_number"):
+            problems.append("create without a buyer number (ref would collide)")
+        if e.get("change_type") == "update" and not e.get("master_ref"):
+            problems.append("update without a master ref")
+        if problems:
+            ops.append(ImportOp("skip", "VALIDATION: " + "; ".join(problems),
+                                str(e.get("master_ref") or f"BC-{e.get('buyer_number','')}"),
+                                e.get("name") or _full_name(approved), {}, False))
+            log.warning("odoo import plan: staging row %s/%s rejected: %s",
+                        e.get("session"), e.get("record_index"), "; ".join(problems))
+            continue
         high_value = _lots_total({"lots": e.get("lots") or []}) > ID_CHECK_THRESHOLD_EUR
         note = (f"Reconciled from Blue Cubes export {source_file or e.get('session','(upload)')} "
                 f"— staged {e.get('change_type')} approved by {e.get('approved_by','?')} "
@@ -113,6 +144,7 @@ def plan_from_staging(entries: list[dict], source_file: str = "") -> list[Import
             for cf, pf in PARTNER_FIELD_MAP.items():
                 if approved.get(cf):
                     values[pf] = approved[cf]
+            _apply_mobile(values, approved.get("mobile", ""))
             for cf, pseudo in LOOKUP_FIELD_MAP.items():
                 if approved.get(cf):
                     values[pseudo] = approved[cf]
@@ -127,11 +159,13 @@ def plan_from_staging(entries: list[dict], source_file: str = "") -> list[Import
                 pseudo = LOOKUP_FIELD_MAP.get(cf)
                 if pseudo and approved.get(cf):
                     values[pseudo] = approved[cf]   # resolved to an id at execute time
+            if "mobile" in changed:
+                _apply_mobile(values, approved.get("mobile", ""))
             # Any remaining field with no mapping at all (currently: company) is
             # surfaced in the op reason — never silently dropped.
             unmapped = {cf: approved.get(cf, "") for cf in changed
                         if cf not in PARTNER_FIELD_MAP and cf not in LOOKUP_FIELD_MAP
-                        and approved.get(cf)}
+                        and cf != "mobile" and approved.get(cf)}
             ref = str(e.get("master_ref") or "")
             if values:
                 if high_value:
@@ -170,6 +204,7 @@ def plan(intermediate: list[dict], source_file: str = "") -> list[ImportOp]:
             for cf, pf in PARTNER_FIELD_MAP.items():
                 if inc.get(cf):
                     values[pf] = inc[cf]
+            _apply_mobile(values, inc.get("mobile", ""))
             ops.append(ImportOp("create", "new client from export", values["ref"],
                                 values["name"], values, high_value))
         elif action == "UPDATE":
@@ -180,6 +215,8 @@ def plan(intermediate: list[dict], source_file: str = "") -> list[ImportOp]:
                     pf = PARTNER_FIELD_MAP.get(d["field"])
                     if pf and d.get("incoming"):
                         values[pf] = d["incoming"]
+                    elif d["field"] == "mobile" and d.get("incoming"):
+                        _apply_mobile(values, d["incoming"])
             ref = str(entry.get("canonical_ref") or "")
             if values:
                 if high_value:
@@ -209,13 +246,32 @@ class OdooImporter:
 
     # thin wrappers so tests can stub .client
     def _search_partner(self, domain: list) -> list[int]:
+        # execute_kw positional args are [domain]; _execute(*args) adds that
+        # wrapping itself, so the domain is passed here WITHOUT extra nesting.
         return self.client._execute("res.partner", "search", domain, limit=2)
 
     def _resolve(self, op: ImportOp) -> int | None:
-        ids = self._search_partner([[["ref", "=", op.ref]]]) if op.ref else []
+        ids = self._search_partner([["ref", "=", op.ref]]) if op.ref else []
         if not ids and op.values.get("email"):
-            ids = self._search_partner([[["email", "=ilike", op.values["email"]]]])
+            ids = self._search_partner([["email", "=ilike", op.values["email"]]])
         return ids[0] if ids else None
+
+    @staticmethod
+    def _state_name_candidates(name: str) -> list[str]:
+        """Lookup candidates for a Blue Cubes county value, in priority order:
+        the raw value, then with the Irish 'Co./County' prefix stripped, then
+        known aliases. Odoo stores 'Wicklow', the exports say 'Co. Wicklow'."""
+        import re
+        cands = [name]
+        stripped = re.sub(r"^\s*(co\.?|county)\s+", "", name, flags=re.I).strip()
+        if stripped and stripped.lower() != name.lower():
+            cands.append(stripped)
+        aliases = {"n. ireland": "Northern Ireland", "n ireland": "Northern Ireland"}
+        for cand in list(cands):
+            alias = aliases.get(cand.lower())
+            if alias and alias not in cands:
+                cands.append(alias)
+        return cands
 
     def _resolve_lookups(self, op: ImportOp) -> None:
         """Turn the __country_name/__state_name pseudo-fields into country_id /
@@ -226,18 +282,25 @@ class OdooImporter:
         unresolved = []
         country_id = None
         if country_name:
-            ids = self.client._execute("res.country", "search",
-                                       [[["name", "=ilike", country_name]]], limit=1)
+            domain = [["name", "=ilike", country_name]]
+            if len(country_name) == 2:                  # 'IE' / 'GB' style codes
+                domain = ["|", ["name", "=ilike", country_name],
+                          ["code", "=ilike", country_name]]
+            ids = self.client._execute("res.country", "search", domain, limit=1)
             if ids:
                 country_id = ids[0]
                 op.values["country_id"] = country_id
             else:
                 unresolved.append(f"country={country_name}")
         if state_name:
-            domain = [["name", "=ilike", state_name]]
-            if country_id:
-                domain.append(["country_id", "=", country_id])
-            ids = self.client._execute("res.country.state", "search", [domain], limit=1)
+            ids = []
+            for cand in self._state_name_candidates(state_name):
+                domain = [["name", "=ilike", cand]]
+                if country_id:
+                    domain.append(["country_id", "=", country_id])
+                ids = self.client._execute("res.country.state", "search", domain, limit=1)
+                if ids:
+                    break
             if ids:
                 op.values["state_id"] = ids[0]
             else:
@@ -247,38 +310,56 @@ class OdooImporter:
             op.values["comment"] = (op.values.get("comment", "") + " " + extra).strip()
 
     def execute(self, ops: list[ImportOp], dry_run: bool = True) -> dict:
+        """Apply the plan. One failing operation never aborts the batch: it is
+        reported as op='error' with the exception message and the rest proceed
+        (each op is independent, and creates are idempotent by ref on re-push).
+        Every operation is logged with its ref, values written and duration."""
         if not dry_run and os.environ.get("RECON_ALLOW_ODOO_WRITE") != "1":
             raise PermissionError(
                 "Refusing live Odoo write: set RECON_ALLOW_ODOO_WRITE=1 to enable. "
                 "Run with dry_run=true to preview.")
-        created = written = skipped = 0
+        import time as _time
+        created = written = skipped = errors = 0
         results = []
         for op in ops:
+            t0 = _time.perf_counter()
             if op.op == "skip":
-                skipped += 1; results.append(op.to_dict()); continue
-            partner_id = self._resolve(op)
-            op.partner_id = partner_id
-            if op.op == "create" and partner_id:
-                # already exists (previous import) → idempotent write instead
-                op.op, op.reason = "write", "already imported previously — updating"
-            if not dry_run:
-                self._resolve_lookups(op)   # county/country name → state_id/country_id
-            if dry_run:
-                results.append(op.to_dict())
-                created += 1 if op.op == "create" else 0
-                written += 1 if op.op == "write" else 0
-                continue
-            if op.op == "create":
-                op.partner_id = self.client._execute("res.partner", "create", op.values)
-                created += 1
-            elif op.op == "write" and partner_id:
-                self.client._execute("res.partner", "write", [partner_id], op.values)
-                written += 1
-            else:
                 skipped += 1
+                results.append(op.to_dict())
+                log.info("odoo import skip ref=%s: %s", op.ref, op.reason)
+                continue
+            try:
+                partner_id = self._resolve(op)
+                op.partner_id = partner_id
+                if op.op == "create" and partner_id:
+                    # already exists (previous import) → idempotent write instead
+                    op.op, op.reason = "write", "already imported previously — updating"
+                if not dry_run:
+                    self._resolve_lookups(op)  # county/country name → state_id/country_id
+                if dry_run:
+                    created += 1 if op.op == "create" else 0
+                    written += 1 if op.op == "write" else 0
+                elif op.op == "create":
+                    op.partner_id = self.client._execute("res.partner", "create", op.values)
+                    created += 1
+                elif op.op == "write" and partner_id:
+                    self.client._execute("res.partner", "write", [partner_id], op.values)
+                    written += 1
+                else:
+                    op.op, op.reason = "skip", (op.reason +
+                        " — no matching partner found by ref or email; nothing written")
+                    skipped += 1
+                log.info("odoo import %s%s ref=%s partner_id=%s fields=%s in %.0fms",
+                         op.op, " (dry-run)" if dry_run else "", op.ref, op.partner_id,
+                         sorted(k for k in op.values if not k.startswith("__")),
+                         (_time.perf_counter() - t0) * 1000)
+            except Exception as exc:                     # noqa: BLE001 — per-op isolation
+                errors += 1
+                op.op, op.reason = "error", f"{type(exc).__name__}: {exc}"
+                log.exception("odoo import FAILED ref=%s name=%s", op.ref, op.name)
             results.append(op.to_dict())
         summary = {"dry_run": dry_run, "create": created, "write": written,
-                   "skip": skipped, "total": len(ops),
+                   "skip": skipped, "error": errors, "total": len(ops),
                    "id_checks_required": sum(1 for o in ops if o.id_check)}
         log.info("odoo import (%s): %s", "dry-run" if dry_run else "LIVE", summary)
         return {"summary": summary, "operations": results}

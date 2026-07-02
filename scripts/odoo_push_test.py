@@ -48,7 +48,7 @@ def main() -> int:
 
     # 2. seed the "existing client" this test will update
     existing = cli._execute("res.partner", "search",
-                            [[["ref", "=", REF_EXISTING]]], limit=1)
+                            [["ref", "=", REF_EXISTING]], limit=1)
     if live:
         if not existing:
             pid = cli._execute("res.partner", "create",
@@ -102,12 +102,12 @@ def main() -> int:
     res = importer.execute(ops, dry_run=False)
     print(f"5. live push: {res['summary']}")
     created = cli._execute("res.partner", "search_read",
-                           [[["ref", "=", REF_NEW]]],
-                           {"fields": ["name", "email", "city", "state_id", "country_id"]})
+                           [["ref", "=", REF_NEW]],
+                           fields=["name", "email", "city", "state_id", "country_id"])
     assert created, "created partner not found"
     updated = cli._execute("res.partner", "search_read",
-                           [[["ref", "=", REF_EXISTING]]],
-                           {"fields": ["name", "state_id", "country_id", "comment"]})
+                           [["ref", "=", REF_EXISTING]],
+                           fields=["name", "state_id", "country_id", "comment"])
     print(f"   created: {created[0]['name']} state={created[0]['state_id']} "
           f"country={created[0]['country_id']}")
     print(f"   updated: {updated[0]['name']} state={updated[0]['state_id']} "
@@ -117,7 +117,7 @@ def main() -> int:
     ops2 = plan_from_staging(repo.entries("push-test", status="pushed") or
                              repo.entries("push-test"), source_file="push-test")
     importer.execute(ops2, dry_run=False)
-    dupes = cli._execute("res.partner", "search", [[["ref", "=", REF_NEW]]])
+    dupes = cli._execute("res.partner", "search", [["ref", "=", REF_NEW]])
     assert len(dupes) == 1, f"duplicate partners created: {dupes}"
     print("6. idempotency OK — no duplicates on re-push")
     print("\nPASS — full end-to-end push verified against the test instance.")
