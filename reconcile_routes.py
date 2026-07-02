@@ -1,5 +1,5 @@
 """
-Deviours Auction — Contact Reconciliation · API routes
+deVeres Auction — Contact Reconciliation · API routes
 =======================================================
 
 A self-contained FastAPI APIRouter that exposes the reconciliation engine and
@@ -44,7 +44,7 @@ log = logging.getLogger("reconcile")
 
 # ── Authentication (HTTP Basic) — buyer personal data must not be public ────
 _security = HTTPBasic()
-RECON_USER = os.environ.get("RECON_USER", "admin@deviours.ie")
+RECON_USER = os.environ.get("RECON_USER", "admin@deveres.ie")
 RECON_PASS = os.environ.get("RECON_PASS", "Admin2026!")
 
 

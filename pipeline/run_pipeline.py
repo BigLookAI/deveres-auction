@@ -1,5 +1,5 @@
 """
-Deviours Auction — Pipeline Runner
+deVeres Auction — Pipeline Runner
 Entry point: load data → evaluate → generate reports → draft emails.
 
 Usage:
@@ -97,7 +97,7 @@ def run(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Deviours Auction Bidder Evaluation Pipeline")
+    parser = argparse.ArgumentParser(description="deVeres Auction Bidder Evaluation Pipeline")
     parser.add_argument("--data-dir",  default="data",   help="Directory with JSON data files")
     parser.add_argument("--output-dir", default="output", help="Output directory for reports")
     parser.add_argument("--odoo",     action="store_true", help="Use live Odoo data")

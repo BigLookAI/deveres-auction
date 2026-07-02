@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deviours Auction — Start the API server + Dashboard
+# deVeres Auction — Start the API server + Dashboard
 # Run ./setup.sh once before using this script.
 
 set -e
@@ -31,7 +31,7 @@ fi
 pkill -f "uvicorn api:app" 2>/dev/null && echo "Stopped existing instance." || true
 
 bold ""
-bold "  Starting Deviours Auction on port $PORT..."
+bold "  Starting deVeres Auction on port $PORT..."
 bold ""
 
 # ── Launch server ─────────────────────────────────────────────────────────────

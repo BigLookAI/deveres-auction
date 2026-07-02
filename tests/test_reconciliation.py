@@ -208,7 +208,7 @@ def test_routes_require_auth_and_work_with_creds():
     app = FastAPI(); app.include_router(reconcile_routes.router)
     c = TestClient(app)
     assert c.get("/reconcile/health").status_code == 401                      # no creds
-    auth = ("admin@deviours.ie", "Admin2026!")
+    auth = ("admin@deveres.ie", "Admin2026!")
     assert c.get("/reconcile/health", auth=auth).status_code == 200          # good creds
     assert c.get("/reconcile/health", auth=("x", "y")).status_code == 401    # bad creds
     # master-quality works and finds the known intra-master duplicates

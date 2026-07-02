@@ -1,15 +1,15 @@
-# GDPR Draft Email — Deviours Auction Bidder Evaluation Pipeline
+# GDPR Draft Email — deVeres Auction Bidder Evaluation Pipeline
 
 **To:** Data Collection Officer, Trinity College Dublin
 **From:** [Shelly / Carl — add sender name]
-**Subject:** Data Processing Notice — Bidder Evaluation System (Tegiris Auction House)
+**Subject:** Data Processing Notice — Bidder Evaluation System (deVeres Auction)
 **Date:** 12 May 2026
 
 ---
 
 Dear Data Collection Officer,
 
-I am writing to notify you of a data processing activity that involves personal data held by Trinity College Dublin in connection with the **Tegiris / Deviours auction programme**.
+I am writing to notify you of a data processing activity that involves personal data held by Trinity College Dublin in connection with the **deVeres auction programme**.
 
 ---
 
@@ -99,7 +99,7 @@ We are happy to provide the full Legitimate Interest Assessment, data flow diagr
 Yours sincerely,
 [Sender name]
 [Title]
-Cimelium Ltd / Tegiris Auction
+Cimelium Ltd / deVeres Auction
 
 ---
 

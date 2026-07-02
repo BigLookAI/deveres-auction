@@ -1,5 +1,5 @@
 """
-Deviours Auction — Reconciliation · Export service
+deVeres Auction — Reconciliation · Export service
 ===================================================
 
 Serialises reconciliation results to the formats the reviewer needs and to a
@@ -84,7 +84,7 @@ def to_pdf_summary(results: list[ReconResult], summary: ReconSummary | dict) -> 
         by_action[r.action.value] = by_action.get(r.action.value, 0) + 1
     pdf = FPDF(); pdf.set_auto_page_break(True, 18); pdf.add_page()
     pdf.set_font("Helvetica", "B", 16); pdf.set_text_color(11, 107, 80)
-    pdf.cell(0, 10, "Deviours Auction - Contact Reconciliation Summary", new_x="LMARGIN", new_y="NEXT")
+    pdf.cell(0, 10, "deVeres Auction - Contact Reconciliation Summary", new_x="LMARGIN", new_y="NEXT")
     pdf.set_font("Helvetica", "", 9); pdf.set_text_color(93, 107, 100)
     pdf.cell(0, 6, "Blue Cubes upload reconciled against the canonical client database - by Cimelium",
              new_x="LMARGIN", new_y="NEXT"); pdf.ln(3)

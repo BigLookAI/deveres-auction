@@ -1,5 +1,5 @@
 """
-Deviours Auction — Reconciliation · Odoo importer
+deVeres Auction — Reconciliation · Odoo importer
 ==================================================
 
 Consumes the Odoo-ready intermediate model (`export.odoo_intermediate`) and

@@ -1,5 +1,5 @@
 """
-Deviours Auction — FastAPI Service v2
+deVeres Auction — FastAPI Service v2
 Port: 8003
 
 Endpoints:
@@ -33,6 +33,8 @@ from pipeline.email_drafter import draft_all_emails
 from pipeline.odoo_client import load_from_json
 from pipeline.recommender import generate_all_reports, generate_summary_table
 from pipeline.models import EvaluationResult, Recommendation
+from pipeline.rationale import generate_rationale, build_source_table
+from pipeline.aggregator import build_artist_index, get_bidder_artists
 
 # ── Config ─────────────────────────────────────────────────────────────────
 BASE_DIR        = Path(__file__).resolve().parent
@@ -42,15 +44,12 @@ REPORTS_DIR     = OUTPUT_DIR / "reports"
 LOTS_PATH       = DATA_DIR / "sample_upcoming_lots.json"
 BIDDERS_PATH    = DATA_DIR / "sample_bidding_history.json"
 PAST_LOTS_PATH  = DATA_DIR / "sample_past_lots.json"
-# LLM endpoint for email drafting (optional — leave unset to use dry-run template mode).
-# Point at any vLLM / Ollama / OpenAI-compatible server.
-# Example: VLLM_URL=http://localhost:11434/api/generate
-VLLM_URL        = os.environ.get("VLLM_URL", "")
+GEMMA4_URL      = os.environ.get("GEMMA4_URL", "http://localhost:8000/generate")
 
 # ── App ────────────────────────────────────────────────────────────────────
 app = FastAPI(
-    title       = "Deviours Auction — Bidder Evaluation API",
-    description = "Deterministic bidder scoring pipeline for Tegiris auction house",
+    title       = "deVeres Auction — Bidder Evaluation API",
+    description = "Deterministic bidder scoring pipeline for deVeres Auction, by Cimelium",
     version     = "2.0.0",
 )
 
@@ -59,6 +58,9 @@ _results_cache:      list[EvaluationResult] = []
 _emails_cache:       list[dict]             = []
 _decision_overrides: dict[str, str]         = {}   # bidder_id -> "approve"|"reject"|"review"
 _composed_emails:    list[dict]             = []   # sent / scheduled emails
+_past_lots_cache:    list                   = []   # raw Lot objects from last evaluate
+_profiles_cache:     list                   = []   # raw BidderProfile objects
+_lots_by_id_cache:   dict                   = {}   # lot_id -> Lot
 
 
 # ── Pydantic models ────────────────────────────────────────────────────────
@@ -69,22 +71,19 @@ class EvaluateRequest(BaseModel):
     lots_path:      Optional[str]  = None
     bidders_path:   Optional[str]  = None
     past_lots_path: Optional[str]  = None
+    weights:        Optional[dict] = None   # operator-configurable dimension weights (normalised client-side)
 
 class BidderSummary(BaseModel):
-    bidder_id:          str
-    bidder_name:        str
-    bidder_email:       str
-    score:              float
-    recommendation:     str
-    manual_decision:    Optional[str] = None
-    total_bids:         int
-    total_wins:         int
-    trajectory:         str
-    matched_lots:       int
-    # Per-lot recommendation counts (primary decision surface)
-    lot_approve:        int = 0
-    lot_review:         int = 0
-    lot_reject:         int = 0
+    bidder_id:       str
+    bidder_name:     str
+    bidder_email:    str
+    score:           float
+    recommendation:  str
+    manual_decision: Optional[str] = None
+    total_bids:      int
+    total_wins:      int
+    trajectory:      str
+    matched_lots:    int
 
 class EvaluateResponse(BaseModel):
     total:           int
@@ -112,7 +111,7 @@ class ComposeEmailRequest(BaseModel):
 def health():
     return {
         "status":             "ok",
-        "service":            "deviours-auction",
+        "service":            "deveres-auction",
         "version":            "2.0.0",
         "port":               8003,
         "results_cached":     len(_results_cache),
@@ -124,7 +123,7 @@ def health():
 
 @app.post("/evaluate", response_model=EvaluateResponse)
 def evaluate(req: EvaluateRequest):
-    global _results_cache, _emails_cache
+    global _results_cache, _emails_cache, _past_lots_cache, _profiles_cache, _lots_by_id_cache
 
     lots_path      = req.lots_path      or str(LOTS_PATH)
     bidders_path   = req.bidders_path   or str(BIDDERS_PATH)
@@ -139,7 +138,39 @@ def evaluate(req: EvaluateRequest):
     else:
         lots, profiles, past_lots = load_from_json(lots_path, bidders_path, past_lots_path)
 
-    results = evaluate_all(profiles, lots, past_lots=past_lots if past_lots else None)
+    # Sanitise operator-supplied weights to the known dimensions (ignore junk keys).
+    _valid_dims = {"win_loss_rate", "bid_count", "reserve_ratio",
+                   "repeat_buyer", "price_band_trajectory", "hammer_influence"}
+    _weights = None
+    if req.weights:
+        _weights = {k: float(v) for k, v in req.weights.items()
+                    if k in _valid_dims and isinstance(v, (int, float))}
+        if not _weights or sum(_weights.values()) <= 0:
+            _weights = None
+
+    results = evaluate_all(profiles, lots, weights=_weights,
+                           past_lots=past_lots if past_lots else None)
+
+    # ── Build caches for rationale generation ──────────────────────────
+    _past_lots_cache[:] = past_lots or []
+    _profiles_cache[:] = profiles
+    _lots_by_id_cache.clear()
+    _artist_index = build_artist_index(past_lots or [])
+    for _lot in lots:
+        _lots_by_id_cache[_lot.lot_id] = _lot
+    for _pl in (past_lots or []):
+        _lots_by_id_cache[_pl.lot_id] = _pl
+
+    # ── Generate NLP rationale for each result ──────────────────────
+    for _result in results:
+        _profile = next((p for p in profiles if p.bidder_id == _result.bidder_id), None)
+        if _profile:
+            _bidder_artists = get_bidder_artists(_profile.bids, _artist_index)
+            _all_artist_bids = [b for bids_list in _bidder_artists.values() for b in bids_list]
+        else:
+            _all_artist_bids = []
+        _result.rationale   = generate_rationale(_result, _all_artist_bids, gemma4_url=GEMMA4_URL)
+        _result.source_bids = build_source_table(_result, _all_artist_bids, _lots_by_id_cache)
 
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     generate_all_reports(results, REPORTS_DIR)
@@ -147,7 +178,7 @@ def evaluate(req: EvaluateRequest):
     summary_md = generate_summary_table(results)
     (OUTPUT_DIR / "summary.md").write_text(summary_md, encoding="utf-8")
 
-    emails = draft_all_emails(results, vllm_url=VLLM_URL, dry_run=req.dry_run)
+    emails = draft_all_emails(results, vllm_url=GEMMA4_URL, dry_run=req.dry_run)
     (OUTPUT_DIR / "emails.json").write_text(
         json.dumps(emails, indent=2, ensure_ascii=False), encoding="utf-8"
     )
@@ -219,16 +250,15 @@ def get_result(bidder_id: str):
         ],
         "per_lot_scores": [
             {
-                "lot_id":         ls.lot_id,
-                "title":          ls.title,
-                "artist":         ls.artist,
-                "category":       ls.category,
-                "estimate_low":   ls.estimate_low,
-                "estimate_high":  ls.estimate_high,
-                "auction_date":   ls.auction_date,
-                "score":          ls.score,
-                "recommendation": ls.recommendation.value,
-                "artist_bids":    ls.artist_bids,
+                "lot_id":        ls.lot_id,
+                "title":         ls.title,
+                "artist":        ls.artist,
+                "category":      ls.category,
+                "estimate_low":  ls.estimate_low,
+                "estimate_high": ls.estimate_high,
+                "auction_date":  ls.auction_date,
+                "score":         ls.score,
+                "artist_bids":   ls.artist_bids,
                 "breakdown": {
                     "win_loss_rate":         ls.breakdown.win_loss_rate,
                     "bid_count":             ls.breakdown.bid_count,
@@ -317,6 +347,28 @@ def get_summary():
     return generate_summary_table(_results_cache)
 
 
+@app.get("/rationale/{bidder_id}")
+def get_rationale(bidder_id: str):
+    """Return the NLP rationale text for a bidder (Layer 2)."""
+    result = _find_result(bidder_id)
+    return {
+        "bidder_id": bidder_id,
+        "bidder_name": result.bidder_name,
+        "rationale": result.rationale or "(Run /evaluate to generate rationales)",
+    }
+
+
+@app.get("/sources/{bidder_id}")
+def get_sources(bidder_id: str):
+    """Return the expandable source data table for a bidder (Layer 3)."""
+    result = _find_result(bidder_id)
+    return {
+        "bidder_id": bidder_id,
+        "bidder_name": result.bidder_name,
+        "sources": result.source_bids,
+    }
+
+
 @app.get("/", response_class=HTMLResponse)
 def results_viewer():
     return HTMLResponse(_build_html_viewer())
@@ -335,10 +387,7 @@ def _to_summary(r: EvaluationResult) -> BidderSummary:
         total_bids      = r.breakdown.total_bids,
         total_wins      = r.breakdown.total_wins,
         trajectory      = r.breakdown.trajectory.value,
-        matched_lots    = len(r.per_lot_scores) or len(r.matched_lots),
-        lot_approve     = sum(1 for ls in r.per_lot_scores if ls.recommendation.value == "approve"),
-        lot_review      = sum(1 for ls in r.per_lot_scores if ls.recommendation.value == "review"),
-        lot_reject      = sum(1 for ls in r.per_lot_scores if ls.recommendation.value == "reject"),
+        matched_lots    = len(r.matched_lots),
     )
 
 
@@ -366,19 +415,16 @@ def _build_html_viewer() -> str:
         }
         _bidders = [
             {
-                "id":         r.bidder_id,
-                "name":       r.bidder_name,
-                "email":      r.bidder_email,
-                "score":      round(r.score, 4),
-                "rec":        r.recommendation.value,
-                "manual":     _decision_overrides.get(r.bidder_id),
-                "bids":       r.breakdown.total_bids,
-                "wins":       r.breakdown.total_wins,
-                "traj":       r.breakdown.trajectory.value,
-                "lots":       len(r.per_lot_scores) or len(r.matched_lots),
-                "lotApprove": sum(1 for ls in r.per_lot_scores if ls.recommendation.value == "approve"),
-                "lotReview":  sum(1 for ls in r.per_lot_scores if ls.recommendation.value == "review"),
-                "lotReject":  sum(1 for ls in r.per_lot_scores if ls.recommendation.value == "reject"),
+                "id":    r.bidder_id,
+                "name":  r.bidder_name,
+                "email": r.bidder_email,
+                "score": round(r.score, 4),
+                "rec":   r.recommendation.value,
+                "manual": _decision_overrides.get(r.bidder_id),
+                "bids":  r.breakdown.total_bids,
+                "wins":  r.breakdown.total_wins,
+                "traj":  r.breakdown.trajectory.value,
+                "lots":  len(r.matched_lots),
             }
             for r in _results_cache
         ]
@@ -544,6 +590,17 @@ body {
 .main { padding: 28px 28px 60px; max-width: 1340px; margin: 0 auto; }
 .tab-panel { display: none; }
 .tab-panel.active { display: block; }
+
+/* ── Scoring weights panel ── */
+.weights-panel { background:#161a22; border:1px solid #232833; border-radius:12px; padding:14px 16px; margin:0 0 18px; }
+.weights-panel .wp-title { font-size:13px; font-weight:700; margin-bottom:10px; }
+.weights-panel .wp-sub { font-weight:400; color:#8b93a7; font-size:12px; }
+.weights-panel .wp-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px 16px; }
+.weights-panel label { display:flex; flex-direction:column; font-size:11px; color:#8b93a7; gap:4px; }
+.weights-panel input { background:#0f131a; border:1px solid #232833; border-radius:7px; padding:6px 8px; color:#fff; font-size:13px; width:100%; }
+.weights-panel .wp-actions { display:flex; justify-content:space-between; align-items:center; margin-top:12px; }
+.weights-panel .wp-sum { font-size:12px; color:#8b93a7; }
+@media (max-width:700px){ .weights-panel .wp-grid { grid-template-columns:1fr 1fr; } }
 
 /* ── Toolbar ── */
 .toolbar {
@@ -711,6 +768,45 @@ body {
 .lot-title { font-weight: 600; font-size: 13px; }
 .lot-meta  { font-size: 12px; color: var(--muted2); margin-top: 3px; }
 .lot-price { color: var(--acch); font-weight: 600; }
+.rationale-text {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text);
+  padding: 12px 14px;
+  background: var(--s2);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+.sources-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+.sources-table th {
+  text-align: left;
+  padding: 5px 8px;
+  color: var(--muted2);
+  border-bottom: 1px solid var(--border2);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sources-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.outcome-badge {
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.outcome-won  { background: rgba(34,197,94,.15); color: var(--green); }
+.outcome-lost { background: rgba(239,68,68,.12);  color: var(--red); }
 .flag-item { color: var(--red); font-size: 12px; margin: 5px 0; }
 .breakdown-row {
   display: flex; justify-content: space-between;
@@ -863,8 +959,8 @@ body {
     JS = r"""
 // ── Credentials ──────────────────────────────────────────────────────────
 const CREDS = {
-  'admin@tegiris.ie':  { pass: 'Admin2026!', role: 'admin',  name: 'Admin' },
-  'viewer@tegiris.ie': { pass: 'View2026',   role: 'viewer', name: 'Viewer' },
+  'admin@deveres.ie':  { pass: 'Admin2026!', role: 'admin',  name: 'Admin' },
+  'viewer@deveres.ie': { pass: 'View2026',   role: 'viewer', name: 'Viewer' },
 };
 
 let currentUser = null;
@@ -984,11 +1080,6 @@ function renderBidders() {
       <button class="btn-sm btn-reject" onclick="updateDecision(event,'${b.id}','reject')" title="Reject">✗ Reject</button>
       <button class="btn-sm btn-email"  onclick="openEmail(event,'${b.id}')" title="Compose email">✉ Email</button>
     ` : '';
-    const perLotParts = [];
-    if (b.lotApprove) perLotParts.push(`<span style="color:var(--green);font-size:11px;font-weight:700">${b.lotApprove}✓</span>`);
-    if (b.lotReview)  perLotParts.push(`<span style="color:var(--yellow);font-size:11px;font-weight:700">${b.lotReview}~</span>`);
-    if (b.lotReject)  perLotParts.push(`<span style="color:var(--red);font-size:11px;font-weight:700">${b.lotReject}✗</span>`);
-    const perLotPill = perLotParts.length ? ` <span style="margin-left:4px;display:inline-flex;gap:3px">${perLotParts.join(' ')}</span>` : '';
     return `
       <tr class="bidder-row" id="row-${b.id}" onclick="openDetail('${b.id}')">
         <td><div class="bidder-name">${b.name}</div><div class="bidder-email">${b.email}</div></td>
@@ -1002,7 +1093,7 @@ function renderBidders() {
         <td class="td-r">${b.bids}</td>
         <td class="td-r">${b.wins}</td>
         <td><span class="${trajCls}">${trajIcon} ${b.traj}</span></td>
-        <td class="td-r">${b.lots}${perLotPill}</td>
+        <td class="td-r">${b.lots}</td>
         <td onclick="event.stopPropagation()">
           <div class="actions-col">
             ${adminBtns}
@@ -1027,6 +1118,39 @@ function renderBidders() {
     </div>`;
 }
 
+// ── Scoring weights (operator-configurable) ─────────────────────────────────
+const DEFAULT_WEIGHTS = { win_loss_rate:0.25, bid_count:0.20, reserve_ratio:0.20,
+                          repeat_buyer:0.15, price_band_trajectory:0.10, hammer_influence:0.10 };
+function toggleWeights() {
+  const p = document.getElementById('weights-panel');
+  p.style.display = (p.style.display === 'none') ? 'block' : 'none';
+  updateWeightSum();
+}
+function readWeights() {
+  let w = {}, sum = 0;
+  for (const k in DEFAULT_WEIGHTS) {
+    const el = document.getElementById('w-' + k);
+    const v = el ? (parseFloat(el.value) || 0) : DEFAULT_WEIGHTS[k];
+    w[k] = v; sum += v;
+  }
+  return { w, sum };
+}
+function updateWeightSum() {
+  const { sum } = readWeights();
+  const el = document.getElementById('wp-sum');
+  if (el) el.textContent = 'Sum: ' + sum.toFixed(2) + (Math.abs(sum - 1) > 0.001 ? ' — will be normalised to 1' : '');
+}
+function resetWeights() {
+  for (const k in DEFAULT_WEIGHTS) { const el = document.getElementById('w-' + k); if (el) el.value = DEFAULT_WEIGHTS[k]; }
+  updateWeightSum();
+}
+function normalisedWeights() {
+  const { w, sum } = readWeights();
+  if (sum <= 0) return null;
+  const n = {}; for (const k in w) n[k] = +(w[k] / sum).toFixed(4);
+  return n;
+}
+
 // ── Run Evaluation ────────────────────────────────────────────────────────
 async function runEval() {
   const btn = document.getElementById('eval-btn');
@@ -1035,10 +1159,11 @@ async function runEval() {
   btn.innerHTML = '<div class="spinner"></div> Running…';
   showToast('Running pipeline…', 'info');
   try {
+    const weights = normalisedWeights();
     const resp = await fetch('/evaluate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ dry_run: true }),
+      body: JSON.stringify(weights ? { dry_run: true, weights } : { dry_run: true }),
     });
     if (resp.ok) {
       const d = await resp.json();
@@ -1124,7 +1249,6 @@ async function openDetail(id) {
         ${d.per_lot_scores.map(ls => {
           const pct = Math.round(ls.score * 100);
           const barClr = pct >= 70 ? 'var(--green)' : pct >= 40 ? 'var(--yellow)' : 'var(--red)';
-          const recCls = { approve: 'b-approve', review: 'b-review', reject: 'b-reject' }[ls.recommendation] || '';
           return `<div class="lot-card">
             <div style="display:flex;justify-content:space-between;align-items:flex-start">
               <div>
@@ -1134,7 +1258,6 @@ async function openDetail(id) {
                   &nbsp;·&nbsp; <span class="lot-price">€${ls.estimate_low.toLocaleString()}–€${ls.estimate_high.toLocaleString()}</span>
                   &nbsp;·&nbsp; ${ls.auction_date.substring(0,10)}
                 </div>
-                <div style="margin-top:5px"><span class="badge ${recCls}" style="font-size:10px">${ls.recommendation}</span></div>
               </div>
               <div style="text-align:right;flex-shrink:0;margin-left:10px">
                 <div style="font-size:18px;font-weight:800;color:${barClr}">${ls.score.toFixed(2)}</div>
@@ -1196,11 +1319,49 @@ async function openDetail(id) {
     <a href="/reports/${id}" target="_blank" class="btn-secondary" style="font-size:12px;padding:5px 10px;text-decoration:none">Report ↗</a>
   ` : `<a href="/reports/${id}" target="_blank" class="btn-secondary" style="font-size:12px;padding:5px 10px;text-decoration:none">View Report ↗</a>`;
 
+  // ── Layer 2: NLP Rationale ──────────────────────────────────────────────
+  const rationaleHtml = d.rationale ? `
+    <div class="d-section" id="rationale-section-${id}">
+      <div class="d-section-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>AI Rationale</span>
+        <span style="font-size:10px;color:var(--muted);font-weight:400">Why shortlisted</span>
+      </div>
+      <div class="rationale-text">${d.rationale}</div>
+    </div>` : '';
+
+  // ── Layer 3: Expandable Source Table ──────────────────────────────────────
+  const sourcesHtml = (d.source_bids && d.source_bids.length) ? `
+    <div class="d-section">
+      <div class="sources-toggle" onclick="toggleSources('${id}')" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span class="d-section-title" style="margin-bottom:0">See Sources</span>
+        <span id="sources-arrow-${id}" style="color:var(--muted);font-size:12px;transition:transform .2s">▼ ${d.source_bids.length} bids</span>
+      </div>
+      <div id="sources-table-${id}" style="display:none;margin-top:10px;overflow-x:auto">
+        <table class="sources-table">
+          <thead><tr>
+            <th>Lot</th><th>Artist</th><th>Bid</th><th>Outcome</th><th>Estimate</th><th>Date</th>
+          </tr></thead>
+          <tbody>
+            ${d.source_bids.map(s => `<tr>
+              <td title="${s.lot_id}">${s.lot_title || s.lot_id}</td>
+              <td>${s.artist || '—'}</td>
+              <td style="color:var(--green);font-weight:600">€${Number(s.bid_amount).toLocaleString()}</td>
+              <td><span class="outcome-badge outcome-${s.outcome}">${s.outcome}</span></td>
+              <td style="color:var(--muted2)">${s.estimate}</td>
+              <td style="color:var(--muted)">${s.timestamp}</td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>` : '';
+
   document.getElementById('drawer-body').innerHTML = `
     <div class="d-section">
       <div class="d-section-title">Score Breakdown</div>
       <div class="dim-grid">${dimsHtml}</div>
     </div>
+    ${rationaleHtml}
+    ${sourcesHtml}
     ${perLotHtml}
     ${flagsHtml}
     ${breakdownHtml}`;
@@ -1439,7 +1600,7 @@ window.addEventListener('DOMContentLoaded', () => {
 
     # ── API Reference content (static HTML) ───────────────────────────────
     API_DOCS_HTML = """
-<div class="panel-hd"><h2>API Reference</h2><p>Deviours Auction — Bidder Evaluation API v2.0</p></div>
+<div class="panel-hd"><h2>API Reference</h2><p>deVeres Auction — Bidder Evaluation API v2.0</p></div>
 <div class="api-grid">
   <div class="api-card">
     <div class="api-card-head">
@@ -1532,7 +1693,7 @@ Response: { "ok": true, "email_id": "mail_0001", "status": "sent" }</pre></div>
       <span class="api-path">/summary</span>
       <span class="api-desc">Markdown summary table of all results</span>
     </div>
-    <div class="api-body"><pre># Deviours Auction — Bidder Evaluation Summary
+    <div class="api-body"><pre># deVeres Auction — Bidder Evaluation Summary
 | # | Bidder | Score | Recommendation | Bids | Wins | Trajectory |
 |---|--------|-------|----------------|------|------|------------|
 | 1 | Patrick Doyle | 0.76 | ✅ Approve | ... |</pre></div>
@@ -1553,7 +1714,7 @@ matched lots, and recommendations. Plain text response.</pre></div>
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Deviours Auction</title>
+  <title>deVeres Auction</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <style>{CSS}</style>
@@ -1564,8 +1725,8 @@ matched lots, and recommendations. Plain text response.</pre></div>
 <div id="login-page" style="display:none">
   <div class="login-card">
     <div class="login-logo">D</div>
-    <h1>Deviours Auction</h1>
-    <p class="login-sub">Tegiris Auction House &nbsp;·&nbsp; Bidder Evaluation Platform</p>
+    <h1>deVeres Auction</h1>
+    <p class="login-sub">Bidder Evaluation Platform &nbsp;·&nbsp; by Cimelium</p>
 
     <div class="role-row">
       <button class="role-btn" id="role-admin" onclick="selectRole('admin')">
@@ -1579,7 +1740,7 @@ matched lots, and recommendations. Plain text response.</pre></div>
     <form onsubmit="doLogin(event)">
       <div class="form-group">
         <label for="l-email">Email address</label>
-        <input type="email" id="l-email" placeholder="you@tegiris.ie" required autocomplete="email"/>
+        <input type="email" id="l-email" placeholder="you@deveres.ie" required autocomplete="email"/>
       </div>
       <div class="form-group">
         <label for="l-pass">Password</label>
@@ -1593,8 +1754,8 @@ matched lots, and recommendations. Plain text response.</pre></div>
 
     <div class="login-hint">
       <strong>Demo credentials</strong><br>
-      Admin &nbsp;— <code>admin@tegiris.ie</code> / <code>Admin2026!</code><br>
-      Viewer — <code>viewer@tegiris.ie</code> / <code>View2026</code>
+      Admin &nbsp;— <code>admin@deveres.ie</code> / <code>Admin2026!</code><br>
+      Viewer — <code>viewer@deveres.ie</code> / <code>View2026</code>
     </div>
   </div>
 </div>
@@ -1605,8 +1766,8 @@ matched lots, and recommendations. Plain text response.</pre></div>
   <header class="header">
     <div class="h-logo">D</div>
     <div class="h-brand">
-      <div class="h-brand-name">Deviours Auction</div>
-      <div class="h-brand-sub">Tegiris Auction House</div>
+      <div class="h-brand-name">deVeres Auction</div>
+      <div class="h-brand-sub">by Cimelium</div>
     </div>
 
     <nav class="tab-nav">
@@ -1634,9 +1795,22 @@ matched lots, and recommendations. Plain text response.</pre></div>
         <button class="btn-primary admin-only" id="eval-btn" onclick="runEval()">
           <span>▶</span> Run Evaluation
         </button>
+        <button class="btn-secondary admin-only" id="weights-toggle" onclick="toggleWeights()">⚖ Weights</button>
         <button class="btn-secondary" onclick="showTab('bidders')">↻ Refresh</button>
         <div id="toast" class="toast"></div>
         <span class="last-run" id="last-run">{_results_cache[0].evaluated_at[:16].replace("T", " ") + " UTC" if _results_cache else ""}</span>
+      </div>
+      <div id="weights-panel" class="weights-panel admin-only" style="display:none">
+        <div class="wp-title">Scoring weights <span class="wp-sub">— tune how each signal contributes, then Run Evaluation. Values are normalised to sum to 1.</span></div>
+        <div class="wp-grid">
+          <label>Win / loss rate<input type="number" step="0.05" min="0" id="w-win_loss_rate" value="0.25" oninput="updateWeightSum()"></label>
+          <label>Bid count / engagement<input type="number" step="0.05" min="0" id="w-bid_count" value="0.20" oninput="updateWeightSum()"></label>
+          <label>Reserve ratio (intent)<input type="number" step="0.05" min="0" id="w-reserve_ratio" value="0.20" oninput="updateWeightSum()"></label>
+          <label>Repeat buyer<input type="number" step="0.05" min="0" id="w-repeat_buyer" value="0.15" oninput="updateWeightSum()"></label>
+          <label>Price-band trajectory<input type="number" step="0.05" min="0" id="w-price_band_trajectory" value="0.10" oninput="updateWeightSum()"></label>
+          <label>Hammer influence<input type="number" step="0.05" min="0" id="w-hammer_influence" value="0.10" oninput="updateWeightSum()"></label>
+        </div>
+        <div class="wp-actions"><span id="wp-sum" class="wp-sum"></span><button class="btn-secondary" onclick="resetWeights()">Reset defaults</button></div>
       </div>
       <div id="stats-grid" class="stats"></div>
       <div id="bidders-content"></div>
@@ -1736,8 +1910,8 @@ const DECISION_OVERRIDES = {overrides_json};
 try:
     from reconcile_routes import router as reconcile_router
     app.include_router(reconcile_router)
-except Exception as _recon_exc:  # keep the core app up even if recon fails to load
-    import logging as _lg; _lg.getLogger(__name__).warning("reconcile routes not loaded: %s", _recon_exc)
+except Exception as _recon_exc:
+    import logging as _lg; _lg.getLogger(__name__).warning('reconcile routes not loaded: %s', _recon_exc)
 
 # ── Platform overview / unified demo hub ─────────────────────────────────────
 @app.get("/overview")

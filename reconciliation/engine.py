@@ -1,5 +1,5 @@
 """
-Deviours Auction — Reconciliation · Engine (service layer)
+deVeres Auction — Reconciliation · Engine (service layer)
 ==========================================================
 
 Orchestrates the pipeline: for each uploaded buyer, find the best canonical

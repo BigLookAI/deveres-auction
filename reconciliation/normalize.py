@@ -1,5 +1,5 @@
 """
-Deviours Auction — Reconciliation · Normalization module
+deVeres Auction — Reconciliation · Normalization module
 =========================================================
 
 Pure, dependency-free normalization utilities used by the matching engine to

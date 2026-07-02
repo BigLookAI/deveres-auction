@@ -1,5 +1,5 @@
 """
-Deviours Auction — Reconciliation · Classifier
+deVeres Auction — Reconciliation · Classifier
 ==============================================
 
 Turns a (incoming contact, best master candidate, score) into a decision:

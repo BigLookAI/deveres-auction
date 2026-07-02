@@ -1,4 +1,4 @@
-"""Deviours Auction — Contact Reconciliation Engine.
+"""deVeres Auction — Contact Reconciliation Engine.
 
 The preprocessing layer that reconciles an uploaded Blue Cubes buyer export
 against the immutable canonical client database before auction data enters the

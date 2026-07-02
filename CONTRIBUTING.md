@@ -1,12 +1,12 @@
-# Contributing to Deviours Auction
+# Contributing to deVeres Auction
 
 Thank you for your interest in contributing. This document explains how to get started.
 
 ## Development Setup
 
 ```bash
-git clone https://github.com/santosh-biglook/deviours-auction
-cd deviours-auction
+git clone https://github.com/santosh-biglook/deveres-auction
+cd deveres-auction
 ./setup.sh
 ./run.sh
 ```
@@ -22,7 +22,7 @@ All 40 tests should pass in under 1 second. No network or database connection re
 ## Project Structure
 
 ```
-deviours-auction/
+deveres-auction/
 ├── api.py              # FastAPI application + embedded dashboard SPA
 ├── pipeline/
 │   ├── models.py       # Core dataclasses (Bid, Lot, BidderProfile, EvaluationResult…)
@@ -62,5 +62,5 @@ deviours-auction/
 
 ## Reporting Issues
 
-Please use [GitHub Issues](https://github.com/santosh-biglook/deviours-auction/issues).
+Please use [GitHub Issues](https://github.com/santosh-biglook/deveres-auction/issues).
 Include Python version, OS, and the full error traceback.

@@ -1,5 +1,5 @@
 """
-Deviours Auction — Aggregator
+deVeres Auction — Aggregator
 Combines 6 scoring dimensions into a final score and Approve/Review/Reject recommendation.
 Matches bidders to upcoming lots based on artist history (v2 — artist-based matching).
 """
@@ -114,14 +114,6 @@ def _score_breakdown_for_bids(
     return breakdown, score
 
 
-def _recommendation_for_score(score: float) -> Recommendation:
-    if score >= APPROVE_THRESHOLD:
-        return Recommendation.APPROVE
-    elif score >= REVIEW_THRESHOLD:
-        return Recommendation.REVIEW
-    return Recommendation.REJECT
-
-
 def score_per_lot(
     upcoming_lot: Lot,
     artist_bids:  list[Bid],
@@ -129,23 +121,21 @@ def score_per_lot(
     weights:      dict[str, float],
 ) -> LotScore:
     """
-    Compute a score and per-lot recommendation for a single upcoming lot,
-    based on the bidder's historical bids on that lot's artist only.
-    This is the primary decision unit: "should we invite this bidder for this lot?"
+    Compute a score for a single upcoming lot based on the bidder's
+    historical bids on that lot's artist.
     """
     breakdown, score = _score_breakdown_for_bids(artist_bids, lots_by_id, weights)
     return LotScore(
-        lot_id         = upcoming_lot.lot_id,
-        title          = upcoming_lot.title,
-        artist         = upcoming_lot.artist,
-        category       = upcoming_lot.category,
-        estimate_low   = upcoming_lot.estimate_low,
-        estimate_high  = upcoming_lot.estimate_high,
-        auction_date   = upcoming_lot.auction_date,
-        score          = score,
-        recommendation = _recommendation_for_score(score),
-        breakdown      = breakdown,
-        artist_bids    = len(artist_bids),
+        lot_id        = upcoming_lot.lot_id,
+        title         = upcoming_lot.title,
+        artist        = upcoming_lot.artist,
+        category      = upcoming_lot.category,
+        estimate_low  = upcoming_lot.estimate_low,
+        estimate_high = upcoming_lot.estimate_high,
+        auction_date  = upcoming_lot.auction_date,
+        score         = score,
+        breakdown     = breakdown,
+        artist_bids   = len(artist_bids),
     )
 
 
@@ -216,19 +206,22 @@ def evaluate_bidder(
         per_lot_scores.sort(key=lambda s: s.score, reverse=True)
         matched_lots.sort(key=lambda m: m.lot_id)
 
-        # Overall score = BEST per-lot score (not average).
-        # Rationale: the invitation question is "is there at least one lot worth
-        # inviting this bidder for?" — not "how do they score on average across
-        # all matched lots". A bidder who scores 0.85 for one artist and 0.30
-        # for another should be APPROVED (for the first lot), not averaged to REVIEW.
+        # Derive overall score from per-lot scores if any artist matches found
         if per_lot_scores:
-            overall_score = per_lot_scores[0].score  # already sorted descending
+            overall_score = round(
+                sum(s.score for s in per_lot_scores) / len(per_lot_scores), 4
+            )
     else:
         # Fallback: price-band matching when no past_lots provided
         matched_lots = _match_lots_price_band(bids, upcoming)
 
-    # ── Recommendation (derived from best per-lot score) ─────────────────────
-    recommendation = _recommendation_for_score(overall_score)
+    # ── Recommendation ────────────────────────────────────────────────────────
+    if overall_score >= APPROVE_THRESHOLD:
+        recommendation = Recommendation.APPROVE
+    elif overall_score >= REVIEW_THRESHOLD:
+        recommendation = Recommendation.REVIEW
+    else:
+        recommendation = Recommendation.REJECT
 
     # ── Rejection reasons ─────────────────────────────────────────────────────
     rejection_reasons: list[str] = []

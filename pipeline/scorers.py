@@ -1,5 +1,5 @@
 """
-Deviours Auction — Deterministic Scoring Engine
+deVeres Auction — Deterministic Scoring Engine
 Six independent scoring dimensions, each returning a normalised 0–1 float.
 All logic is binary/deterministic — no LLM involved at this layer.
 """

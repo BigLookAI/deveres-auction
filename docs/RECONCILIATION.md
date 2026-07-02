@@ -128,7 +128,7 @@ sets, table virtualisation and chunked/streamed upload are the next step (see
 ## Developer setup
 
 ```bash
-cd deviours-auction
+cd deveres-auction
 pip install -r requirements.txt          # + python-multipart (file upload)
 pytest tests/test_reconciliation.py -q    # 17 tests
 # run the app (serves /reconcile):

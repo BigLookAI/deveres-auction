@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Deviours Auction — One-time setup script
+# deVeres Auction — One-time setup script
 # Works on macOS (Apple Silicon + Intel) and Linux.
 # No conda, no DGX, no GPU required.
 
@@ -15,7 +15,7 @@ red()   { printf '\033[0;31m%s\033[0m\n' "$*"; }
 bold()  { printf '\033[1m%s\033[0m\n' "$*"; }
 
 bold "============================================"
-bold "  Deviours Auction — Setup"
+bold "  deVeres Auction — Setup"
 bold "============================================"
 echo ""
 

@@ -1,5 +1,5 @@
 """
-Deviours Auction — Odoo API Client
+deVeres Auction — Odoo API Client
 Fetches upcoming lots and historical bidding data from Odoo via XML-RPC.
 Writes evaluation results back to bidder records.
 

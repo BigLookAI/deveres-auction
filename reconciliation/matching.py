@@ -1,5 +1,5 @@
 """
-Deviours Auction — Reconciliation · Matching engine
+deVeres Auction — Reconciliation · Matching engine
 ====================================================
 
 Finds the best canonical (master) client for an incoming contact using:

@@ -1,6 +1,6 @@
 version: "3.9"
 
-# Deviours Auction — Docker Compose
+# deVeres Auction — Docker Compose
 #
 # Quick start:
 #   docker compose up
@@ -15,8 +15,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    image: deviours-auction:latest
-    container_name: deviours-auction
+    image: deveres-auction:latest
+    container_name: deveres-auction
     ports:
       - "${PORT:-8003}:8003"
     environment:

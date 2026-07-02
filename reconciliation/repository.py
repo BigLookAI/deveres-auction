@@ -1,5 +1,5 @@
 """
-Deviours Auction — Reconciliation · Repository layer
+deVeres Auction — Reconciliation · Repository layer
 ====================================================
 
 All CSV I/O lives here (repository pattern), so the engine never touches files.

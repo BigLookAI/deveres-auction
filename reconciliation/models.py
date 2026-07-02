@@ -1,5 +1,5 @@
 """
-Deviours Auction — Reconciliation · Data models
+deVeres Auction — Reconciliation · Data models
 ================================================
 
 Typed, serialisable dataclasses shared across the engine, API and exporters.

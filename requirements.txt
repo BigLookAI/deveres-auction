@@ -1,4 +1,4 @@
-# Deviours Auction — Python dependencies
+# deVeres Auction — Python dependencies
 # Pinned for reproducibility. Tested on Python 3.11, 3.12, 3.13.
 
 # API server

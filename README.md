@@ -1,4 +1,4 @@
-# Deviours Auction
+# deVeres Auction
 
 **Bidder Evaluation & Invitation Intelligence Platform**
 
@@ -11,8 +11,8 @@ No database. No GPU. No paid APIs. Runs on any MacBook in under 2 minutes.
 ## Quick Start
 
 ```bash
-git clone https://github.com/santosh-biglook/deviours-auction
-cd deviours-auction
+git clone https://github.com/santosh-biglook/deveres-auction
+cd deveres-auction
 ./setup.sh    # one-time: creates .venv, installs deps, runs tests
 ./run.sh      # start the server
 ```
@@ -22,8 +22,8 @@ Then open **http://localhost:8003** in your browser.
 **Login credentials (demo):**
 | Role | Email | Password |
 |------|-------|----------|
-| Admin | `admin@tegiris.ie` | `Admin2026!` |
-| Viewer | `viewer@tegiris.ie` | `View2026` |
+| Admin | `admin@deveres.ie` | `Admin2026!` |
+| Viewer | `viewer@deveres.ie` | `View2026` |
 
 Or with Docker:
 
@@ -35,7 +35,7 @@ docker compose up
 
 ## What it does
 
-Deviours answers: **"Should we invite bidder X for upcoming lot Y?"**
+deVeres answers: **"Should we invite bidder X for upcoming lot Y?"**
 
 For each bidder, it:
 
@@ -314,7 +314,7 @@ The LLM is only used for the optional email drafting step.
 ## Project Structure
 
 ```
-deviours-auction/
+deveres-auction/
 ├── api.py                      # FastAPI app + embedded dashboard SPA
 ├── pipeline/
 │   ├── __init__.py
@@ -337,7 +337,7 @@ deviours-auction/
 │       ├── email_tone.md       # Editable tone guidance for LLM email drafting
 │       └── outreach_template.md # Email template (used in dry-run mode)
 ├── docs/
-│   └── deviours_project_report.html  # Full project report (open in browser)
+│   └── deveres_project_report.html  # Full project report (open in browser)
 ├── Dockerfile
 ├── docker-compose.yml
 ├── .env.example
@@ -375,7 +375,7 @@ This is expected when `VLLM_URL` is not set. Set it to a local Ollama or vLLM se
 **Docker build fails on Apple Silicon**
 The image is built for `linux/arm64` automatically on Apple Silicon. If you need `linux/amd64`:
 ```bash
-docker build --platform linux/amd64 -t deviours-auction .
+docker build --platform linux/amd64 -t deveres-auction .
 ```
 
 ---

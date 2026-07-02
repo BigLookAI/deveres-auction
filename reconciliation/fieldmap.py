@@ -1,5 +1,5 @@
 """
-Deviours Auction — Reconciliation · Field mapping
+deVeres Auction — Reconciliation · Field mapping
 =================================================
 
 Single source of truth for how the two data sources map onto the engine's

@@ -1,5 +1,5 @@
 """
-Deviours Auction — Data Models
+deVeres Auction — Data Models
 Core dataclasses for the bidder evaluation pipeline.
 """
 from __future__ import annotations
@@ -114,22 +114,17 @@ class MatchedLot:
 
 @dataclass
 class LotScore:
-    """
-    Per-lot score for a bidder — computed against artist-specific bid history.
-    This is the primary recommendation unit: each LotScore answers
-    "should we invite this bidder for this specific upcoming lot?"
-    """
-    lot_id:         str
-    title:          str
-    artist:         str
-    category:       str
-    estimate_low:   float
-    estimate_high:  float
-    auction_date:   str
-    score:          float           # weighted score for this specific lot
-    recommendation: Recommendation  # APPROVE/REVIEW/REJECT for this lot
-    breakdown:      ScoreBreakdown  # dimension scores computed from artist-specific bids
-    artist_bids:    int = 0         # number of past bids on this artist's lots
+    """Per-lot score for a bidder — computed against artist-specific bid history."""
+    lot_id:        str
+    title:         str
+    artist:        str
+    category:      str
+    estimate_low:  float
+    estimate_high: float
+    auction_date:  str
+    score:         float           # weighted score for this specific lot
+    breakdown:     ScoreBreakdown  # dimension scores computed from artist-specific bids
+    artist_bids:   int = 0         # number of past bids on this artist's lots
 
 
 @dataclass
@@ -137,10 +132,12 @@ class EvaluationResult:
     bidder_id:      str
     bidder_name:    str
     bidder_email:   str
-    score:          float           # best per-lot score (or overall if no artist matches)
-    recommendation: Recommendation  # derived from best per-lot score
+    score:          float
+    recommendation: Recommendation
     breakdown:      ScoreBreakdown
     matched_lots:   list[MatchedLot] = field(default_factory=list)
     per_lot_scores: list[LotScore]   = field(default_factory=list)
     rejection_reasons: list[str]     = field(default_factory=list)
     evaluated_at:   str              = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    rationale:      str              = ""
+    source_bids:    list             = field(default_factory=list)
