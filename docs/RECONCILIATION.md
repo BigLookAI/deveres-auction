@@ -123,6 +123,12 @@ below): create, update, county→`state_id` / country→`country_id` resolution
 ("Co. Wicklow" → Wicklow (IE)), high-value ID-check note, per-op error
 isolation, and no-duplicate idempotency.
 
+**Full-batch verification (2-Jul, fully populated backup — 13,652 partners):**
+every update ref in the April upload resolves against the live contact base
+(68/68 unique refs), and the complete session pushed in one call — 1 create +
+69 field-level writes, 0 errors, 1 high-value ID-check flag — with all 70
+records landing in `pushed_to_odoo` and staging fully drained.
+
 Odoo 19 notes baked into the field map:
 - `res.partner.mobile` no longer exists — a canonical mobile becomes `phone`
   when phone is empty, otherwise it is preserved in the comment.
