@@ -135,8 +135,12 @@ def classify(inc: dict, cand: Candidate | None):
     master, review_reason)."""
     # ── No/low candidate → NEW ────────────────────────────────────────────────
     if cand is None or cand.score < REVIEW_FLOOR:
+        # A NEW client still gets a field-by-field report: every populated
+        # incoming field diffed against an empty master, so the review drawer
+        # shows exactly what will be created (an empty diff list left the
+        # Incoming column blank for new clients).
         return (Classification.NEW, Recommendation.ADD,
-                cand.score if cand else 0.0, [], [], {}, "")
+                cand.score if cand else 0.0, [], diff_fields(inc, {}), {}, "")
 
     diffs = diff_fields(inc, cand.master)
     significant = [d for d in diffs if d.significant and d.status in (DiffStatus.CHANGED, DiffStatus.NEW_INFO)]

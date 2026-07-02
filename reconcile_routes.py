@@ -177,6 +177,13 @@ def _restore_session() -> None:
         if SESSION_PATH.exists():
             payload = json.loads(SESSION_PATH.read_text(encoding="utf-8"))
             _state["results"] = [recon_result_from_dict(d) for d in payload.get("results", [])]
+            # Heal sessions persisted before NEW clients carried a field report:
+            # rebuild their diffs (incoming vs empty master) so the review
+            # drawer's Incoming column is populated on old sessions too.
+            from reconciliation.classify import diff_fields
+            for r in _state["results"]:
+                if not r.diffs and r.incoming and not r.master_ref:
+                    r.diffs = diff_fields(r.incoming, {})
             _state["summary"] = payload.get("summary")
             _state["filename"] = payload.get("filename")
             _state["kind"] = payload.get("kind")
@@ -232,9 +239,12 @@ def _approved_values(r: ReconResult) -> tuple[dict, list[str], list[str]]:
         if f in EDITABLE_FIELDS and f != "notes":
             approved[f] = (v or "").strip()
             edited.append(f)
-    # fields that genuinely change the master: significant diffs + any edits
+    # fields that genuinely change the master: significant diffs + any edits.
+    # NEW clients have no master to change — their diffs are vs an empty
+    # record (display only), so they contribute nothing here.
     changed = [d.field for d in r.diffs
-               if d.significant and d.status.value in ("changed", "new_info")]
+               if d.significant and d.status.value in ("changed", "new_info")] \
+        if r.master_ref else []
     for f in edited:
         if f not in changed:
             changed.append(f)
@@ -786,19 +796,28 @@ def odoo_import(payload: dict | None = None, user: str = Depends(require_editor)
         raise HTTPException(502, f"Odoo connection failed: {e}")
     result["summary"]["connected"] = True
     if not dry_run:
-        # mark staged rows pushed + move records to the terminal state
+        # Mark staged rows pushed + move records to the terminal state — but
+        # ONLY for operations that actually succeeded (create/write) or had
+        # nothing to write (skip). Errored ops stay 'ready' so a re-push
+        # retries them (creates are idempotent by ref).
         by_index = {e["record_index"]: e for e in entries}
         op_by_ref: dict[str, dict] = {o["ref"]: o for o in result.get("operations", [])}
         for idx, entry in by_index.items():
             ref = entry["master_ref"] or f"BC-{entry['buyer_number']}"
-            partner = (op_by_ref.get(ref) or {}).get("partner_id")
+            op = op_by_ref.get(ref) or {}
+            if op.get("op") == "error" or str(op.get("reason", "")).startswith("VALIDATION"):
+                log.warning("odoo import: ref=%s not pushed, staging row stays ready (%s)",
+                            ref, op.get("reason"))
+                continue
+            partner = op.get("partner_id")
             repo.mark_pushed(_session_id(), idx, partner)
             r = next((x for x in _state["results"] if x.index == idx), None)
             if r is not None and r.state in STAGED_STATES:
                 _transition(r, RecordState.PUSHED_TO_ODOO, user,
                             f"pushed (partner_id={partner})")
         _save_session()
-    _audit("odoo_import", actor=user, dry_run=dry_run, **result["summary"])
+    # summary already carries dry_run — passing it twice was a TypeError (500).
+    _audit("odoo_import", actor=user, **result["summary"])
     return result
 
 

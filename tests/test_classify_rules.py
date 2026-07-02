@@ -136,6 +136,26 @@ class TestEvidenceAndCompany:
         assert r.classification is Classification.NEW and r.match_evidence == {}
         assert r.state is RecordState.NEW_RECORD
 
+    def test_new_record_diffs_populate_incoming_column(self):
+        """A NEW client must carry a full field report (incoming vs empty
+        master) so the review drawer shows what will be created — regression
+        test for the blank Incoming column (2-Jul)."""
+        engine = ReconciliationEngine(MasterRepository([_mk_master(first_name="Zz", last_name="Qq")]))
+        r = engine.reconcile_one(0, _mk_inc(
+            first_name="Fintan", last_name="O Byrne", email="fintan@example.test",
+            phone="0871234567", address1="1 Test Road", town="Dublin",
+            county="Dublin", postcode="D01 X2Y3", country="Ireland"))
+        assert r.classification is Classification.NEW
+        by_field = {d.field: d for d in r.diffs}
+        for f in ("name", "email", "phone", "address1", "town", "county",
+                  "postcode", "country"):
+            assert f in by_field, f"NEW client diff report missing '{f}'"
+            assert by_field[f].incoming, f"'{f}' incoming value must be populated"
+            assert not by_field[f].current, f"'{f}' has no master value"
+        # but nothing "changes" in the master — there is no master record
+        assert r.changed_fields == []
+        assert r.master == {} and r.master_ref is None
+
 
 # ── full fixture dataset: every pathway ───────────────────────────────────────
 @pytest.fixture(scope="module")

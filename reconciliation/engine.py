@@ -24,8 +24,10 @@ class ReconciliationEngine:
     def reconcile_one(self, index: int, inc: dict) -> ReconResult:
         cand = self.index.best_match(inc)
         classification, recommendation, conf, matched_by, diffs, mas, review_reason = classify(inc, cand)
+        # changed_fields means "fields that would change the master" — a NEW
+        # client has no master, so its diffs (all vs empty) never count here.
         changed = [d.label for d in diffs if d.significant and d.status in
-                   (DiffStatus.CHANGED, DiffStatus.NEW_INFO)]
+                   (DiffStatus.CHANGED, DiffStatus.NEW_INFO)] if mas else []
         name = f"{inc.get('first_name','')} {inc.get('last_name','')}".strip()
         master_name = f"{mas.get('first_name','')} {mas.get('last_name','')}".strip() if mas else ""
         evidence = self._evidence(cand) if cand and mas else {}
