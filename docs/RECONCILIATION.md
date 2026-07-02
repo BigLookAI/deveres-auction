@@ -109,13 +109,68 @@ unchanged/equivalent.
 `load_lots()` parses a Lot List export and **forces `hammer = 0`** on every lot
 (the original value is retained as `hammer_export` for audit), per the meeting rule.
 
-## Odoo integration (future)
+## Odoo integration (LIVE — verified 2-Jul-2026)
 
-`export.odoo_intermediate()` emits a clean per-contact model —
-`{action, canonical_record, canonical_ref, incoming_record, difference_report, lots}` —
-so a future Odoo importer needs no reconciliation logic: it applies `ADD`,
-`UPDATE` (only the significant fields), or `IGNORE`, and imports lots with
-hammer = 0. Contacts map to `res.partner`; buyers/vendors via existing SOR roles.
+The push is staging-only (`POST /reconcile/odoo-import`): approved records are
+planned by `reconciliation/odoo_import.plan_from_staging`, resolved against
+`res.partner` by `ref` then exact email (idempotent — re-pushing a create
+becomes a write), and applied via XML-RPC. Dry-run is the default; live writes
+additionally require `RECON_ALLOW_ODOO_WRITE=1` on the server.
+
+Verified end-to-end against a restored copy of the client's **April-auction
+test database** (Odoo 19 + the sor_* module stack — see *Local Odoo sandbox*
+below): create, update, county→`state_id` / country→`country_id` resolution
+("Co. Wicklow" → Wicklow (IE)), high-value ID-check note, per-op error
+isolation, and no-duplicate idempotency.
+
+Odoo 19 notes baked into the field map:
+- `res.partner.mobile` no longer exists — a canonical mobile becomes `phone`
+  when phone is empty, otherwise it is preserved in the comment.
+- Unresolvable counties/countries (e.g. "N. Ireland" — base Odoo ships no GB
+  states) are appended to the partner comment, never silently dropped.
+
+### Local Odoo sandbox (April-test restore)
+
+```bash
+cd odoo-test
+./restore.sh ~/Downloads/odoo_deveres_april_test_2026-07-02_17-36-58.zip
+# → http://localhost:8071  (db: deveres, admin / DeveresTest2026!)
+```
+
+The restore script extracts the Odoo backup zip, restores dump + filestore into
+postgres:15 / odoo:19 containers, **neutralizes** the copy (mail servers and
+crons off, fresh database.uuid, local base url, admin password reset) and syncs
+schema drift. `odoo-test/addons/` holds the sor_* sources synced from the DGX
+repo plus locally reconstructed modules for version drift — every
+reconstruction is marked with a `RECONSTRUCTION`/`compat` header comment
+explaining exactly what was recovered from the dump and why.
+
+Generate an integration API key (already done once; key lives in `.env`):
+
+```bash
+cd odoo-test && docker compose run --rm -T --entrypoint python3 odoo - <<'PY'
+import odoo
+from odoo.modules.registry import Registry
+odoo.tools.config.parse_config(['-c', '/etc/odoo/odoo.conf'])
+with Registry('deveres').cursor() as cr:
+    env = odoo.api.Environment(cr, 2, {})   # admin
+    print(env['res.users.apikeys']._generate('rpc', 'deveres-reconciliation-push'))
+    cr.commit()
+PY
+```
+
+App-side environment (see `.env.example`):
+
+```
+ODOO_URL=http://localhost:8071
+ODOO_DB=deveres
+ODOO_USERNAME=admin
+ODOO_PASSWORD=<api key>
+RECON_ALLOW_ODOO_WRITE=1   # only on instances where live writes are intended
+```
+
+Supervised proof-run: `python3 scripts/odoo_push_test.py` (add
+`PUSH_TEST_LIVE=1 RECON_ALLOW_ODOO_WRITE=1` for the write+idempotency phases).
 
 ## Performance
 
