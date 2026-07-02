@@ -1,0 +1,120 @@
+"""
+Deviours Auction — Reconciliation · Data models
+================================================
+
+Typed, serialisable dataclasses shared across the engine, API and exporters.
+These form the clean intermediate data model that later feeds Odoo import.
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field, asdict
+from enum import Enum
+from typing import Optional
+
+
+class Classification(str, Enum):
+    NEW              = "new"               # 🟢 no match → ADD
+    RETAIN           = "retain"            # 🔵 match, only cosmetic diffs → KEEP EXISTING
+    UPDATE           = "update"            # 🟠 match, meaningful new info → UPDATE RECORD
+    POSSIBLE_DUPLICATE = "possible_duplicate"  # 🟣 uncertain → MANUAL REVIEW
+
+
+class Recommendation(str, Enum):
+    ADD           = "ADD"
+    KEEP_EXISTING = "KEEP EXISTING"
+    UPDATE_RECORD = "UPDATE RECORD"
+    MANUAL_REVIEW = "MANUAL REVIEW"
+
+
+class DiffStatus(str, Enum):
+    EQUIVALENT   = "equivalent"    # same after normalisation (formatting only)
+    CHANGED      = "changed"       # both present, meaningfully different
+    NEW_INFO     = "new_info"      # master empty, incoming has a value
+    MISSING      = "missing"       # incoming empty, master has a value
+    UNCHANGED    = "unchanged"     # identical raw values
+
+
+# Actions the reviewer can assign (drives the Odoo-ready output).
+class Action(str, Enum):
+    ADD           = "ADD"
+    UPDATE        = "UPDATE"
+    IGNORE        = "IGNORE"
+    MANUAL_REVIEW = "MANUAL_REVIEW"
+
+
+@dataclass
+class FieldDiff:
+    field:    str
+    label:    str
+    current:  str            # canonical/master value (source of truth)
+    incoming: str            # value from the uploaded Blue Cubes export
+    status:   DiffStatus
+    significant: bool = False   # True only for meaningful changes/new info
+
+    def to_dict(self) -> dict:
+        d = asdict(self); d["status"] = self.status.value; return d
+
+
+@dataclass
+class ReconResult:
+    # identity
+    index:          int
+    buyer_number:   str
+    incoming_name:  str
+    # classification
+    classification: Classification
+    recommendation: Recommendation
+    confidence:     float                 # 0–1 match confidence
+    matched_by:     list[str] = field(default_factory=list)  # e.g. ["email","phone"]
+    # linkage to master
+    master_ref:     Optional[str] = None
+    master_name:    str = ""
+    # detail
+    changed_fields: list[str]      = field(default_factory=list)
+    diffs:          list[FieldDiff] = field(default_factory=list)
+    incoming:       dict = field(default_factory=dict)   # canonical incoming snapshot
+    master:         dict = field(default_factory=dict)   # canonical master snapshot
+    lots:           list[dict] = field(default_factory=list)  # this buyer's lots/bids
+    # reviewer decision (defaults to the recommendation)
+    action:         Action = Action.MANUAL_REVIEW
+
+    def to_dict(self, full: bool = False) -> dict:
+        base = {
+            "index": self.index,
+            "buyer_number": self.buyer_number,
+            "incoming_name": self.incoming_name,
+            "classification": self.classification.value,
+            "recommendation": self.recommendation.value,
+            "confidence": round(self.confidence, 4),
+            "matched_by": self.matched_by,
+            "master_ref": self.master_ref,
+            "master_name": self.master_name,
+            "changed_fields": self.changed_fields,
+            "action": self.action.value,
+        }
+        if full:
+            base["diffs"] = [d.to_dict() for d in self.diffs]
+            base["incoming"] = self.incoming
+            base["master"] = self.master
+            base["lots"] = self.lots
+        return base
+
+
+@dataclass
+class ReconSummary:
+    total:            int = 0
+    new:              int = 0
+    retain:           int = 0
+    update:           int = 0
+    manual_review:    int = 0
+    ignored_diffs:    int = 0     # count of equivalent (formatting-only) field diffs
+    avg_confidence:   float = 0.0
+    master_records:   int = 0
+    incoming_rows:    int = 0
+    processing_ms:    float = 0.0
+
+    def to_dict(self) -> dict:
+        d = asdict(self)
+        d["avg_confidence"] = round(self.avg_confidence, 4)
+        d["processing_ms"] = round(self.processing_ms, 1)
+        return d

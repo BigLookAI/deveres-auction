@@ -1731,3 +1731,10 @@ const DECISION_OVERRIDES = {overrides_json};
 <script>{JS}</script>
 </body>
 </html>"""
+
+# ── Contact Reconciliation Engine (auction data preprocessing) ──────────────
+try:
+    from reconcile_routes import router as reconcile_router
+    app.include_router(reconcile_router)
+except Exception as _recon_exc:  # keep the core app up even if recon fails to load
+    import logging as _lg; _lg.getLogger(__name__).warning("reconcile routes not loaded: %s", _recon_exc)
