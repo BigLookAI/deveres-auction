@@ -113,14 +113,28 @@ def plan_from_staging(entries: list[dict], source_file: str = "") -> list[Import
                 pf = PARTNER_FIELD_MAP.get(cf)
                 if pf and approved.get(cf):
                     values[pf] = approved[cf]
+            # county/country have no direct res.partner text field (state_id /
+            # country_id are lookups — mapping pending confirmation). Never drop
+            # them silently: surface them in the op so the reviewer sees them.
+            unmapped = {cf: approved.get(cf, "") for cf in changed
+                        if cf not in PARTNER_FIELD_MAP and approved.get(cf)}
             ref = str(e.get("master_ref") or "")
             if values:
                 if high_value:
                     values["comment"] = note
-                ops.append(ImportOp("write", "approved update (staged)", ref,
+                reason = "approved update (staged)"
+                if unmapped:
+                    reason += (" — NOTE unmapped field changes not written: "
+                               + ", ".join(f"{k}={v}" for k, v in unmapped.items()))
+                ops.append(ImportOp("write", reason, ref,
                                     e.get("name") or _full_name(approved), values, high_value))
             else:
-                ops.append(ImportOp("skip", "staged update has no Odoo-mappable field changes",
+                reason = "staged update has no Odoo-mappable field changes"
+                if unmapped:
+                    reason += (" (unmapped: "
+                               + ", ".join(f"{k}={v}" for k, v in unmapped.items())
+                               + " — needs county/country → state_id/country_id mapping)")
+                ops.append(ImportOp("skip", reason,
                                     ref, e.get("name") or _full_name(approved), {}, high_value))
     return ops
 

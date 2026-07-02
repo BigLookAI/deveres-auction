@@ -1,0 +1,14 @@
+Buyer Number,First Name,Last Name,Email,Address 1,Address 2,Town,County,Postcode,Country,Phone,Lot Number,Lot Title,Winning Bid
+9001,Testfirst,Newclient,testfirst.newclient@example.test,12 Sample Quay,,Kinsale,Cork,P17TE01,Ireland,+353 87 000 0001,101,Sample Lot A,450
+9002,Aoife,Samples,aoife.samples@example.test,8 Harbour View,,Howth,Dublin,D13TE02,Ireland,+353 86 000 0002,102,Sample Lot B,1200
+9003,Aoife,Samples,aoife.samples@example.test,8 Harbour View,,Howth,Dublin,D13TE02,Ireland,+353 86 000 0002,103,Sample Lot C,300
+9004,Brian,O Testor,brian.otestor@example.test,War House,Main Street,Naas,Kildare,W91TE03,Ireland,045 000003,104,Sample Lot D,900
+9005,Ciara,Testson,,22 Mill Lane,,Greystones,Wickie,A63TE04,Ireland,+353 85 000 0005,105,Sample Lot E,760
+9006,Declan,Sampleman,declan.sampleman@example.test,5 Abbey Street,,Trim,Meath,,Ireland,+353 46 000 0006,106,Sample Lot F,220
+9007,Emer,Testwoman,,14 Castle Road,,Athlone,Westmeath,N37TE07,,090 000007,107,Sample Lot G,540
+9008,Fergal,Casechange,FERGAL.CASECHANGE@EXAMPLE.TEST,9  Chapel   Street,,Dingle,Kerry,V92TE08,IRELAND,00353870000008,108,Sample Lot H,3100
+9009,Grainne,Spacey,grainne.spacey@example.test,7 New Rd,,Ennis,Clare,V95TE09,Ireland,087 000 0009,109,Sample Lot I,150
+9010,Helen,Addressmove,helen.addressmove@example.test,88 Ocean Drive,,Salthill,Galway,H91TE10,Ireland,+353 91 000010,110,Sample Lot J,12500
+9012,John,Commonname,,3 River Walk,,Cork,Cork,,,,112,Sample Lot L,410
+9013,Karen,Namesake,,55 Hillside Grove,,Limerick,Limerick,V94TE13,,,113,Sample Lot M,275
+9014,Liam,Conflicted,,40 Oak Avenue,,Waterford,Waterford,X91TE14,Ireland,,114,Sample Lot N,820

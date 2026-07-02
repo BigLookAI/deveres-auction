@@ -22,7 +22,10 @@ REVIEW_FLOOR     = 0.55   # [REVIEW_FLOOR, MATCH_THRESHOLD) → POSSIBLE_DUPLICA
 # < REVIEW_FLOOR → NEW
 
 # Fields whose meaningful change constitutes a substantive UPDATE.
-SIGNIFICANT_FIELDS = {"email", "phone", "address1", "address2", "town", "postcode", "company"}
+# county/country included per the 2-Jul meeting (the Wickie→Wicklow case:
+# county typos must surface for review, and country completions are welcome).
+SIGNIFICANT_FIELDS = {"email", "phone", "address1", "address2", "town",
+                      "county", "country", "postcode", "company"}
 
 # Per-field normaliser used to decide equivalence.
 def _norm(field: str, value: str) -> str:
