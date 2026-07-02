@@ -141,12 +141,14 @@
     <div class="note" id="dqNote"></div>
 
     <div class="toolbar">
-      <button class="btn" onclick="decide('UPDATE', selectedOrAllUpdates())">✓ Approve all updates</button>
-      <button class="btn" onclick="decide('UPDATE', selected())">Approve selected</button>
-      <button class="btn" onclick="decide('IGNORE', selected())">Ignore selected</button>
+      <button class="btn" onclick="decide('UPDATE', {status:'update'})">✓ Approve all updates</button>
+      <button class="btn" onclick="decide('UPDATE', {indices:selected()})">Approve selected</button>
+      <button class="btn" onclick="decide('IGNORE', {indices:selected()})">Ignore selected</button>
       <div class="spacer"></div>
       <a class="btn" href="/reconcile/export?fmt=csv">⬇ CSV</a>
       <a class="btn" href="/reconcile/export?fmt=json">⬇ JSON</a>
+      <a class="btn" href="/reconcile/export?fmt=xlsx">⬇ Excel</a>
+      <a class="btn" href="/reconcile/export?fmt=pdf">⬇ PDF summary</a>
     </div>
 
     <div class="tablewrap">
@@ -155,7 +157,7 @@
           <th style="width:26px"><input type="checkbox" id="selAll"/></th>
           <th data-s="status">Status</th><th data-s="confidence">Confidence</th>
           <th>Existing client</th><th>Incoming client</th>
-          <th>Matched by</th><th>Changed fields</th><th class="rec">Recommendation</th>
+          <th>Matched by</th><th>Changed fields</th><th class="rec">Recommendation</th><th>Action</th>
         </tr></thead>
         <tbody id="rows"></tbody>
       </table>
@@ -186,6 +188,11 @@ async function jget(u){const r=await fetch(u);if(!r.ok)throw new Error((await r.
 
 // ── master info ──
 (async()=>{try{const h=await jget('/reconcile/health');$('#masterInfo').textContent=h.master_records.toLocaleString()+' master clients';$('#masterCount').textContent=h.master_records.toLocaleString();}catch(e){}})();
+
+// ── restore last session on load (survives refresh / server restart) ──
+(async()=>{try{const sess=await jget('/reconcile/session');
+  state.summary=sess.summary;renderDash(sess.summary);await loadResults();show('results');
+}catch(e){/* no session yet — stay on upload */}})();
 
 // ── upload ──
 const drop=$('#drop'),file=$('#file');
@@ -246,6 +253,7 @@ async function loadResults(){
       <td>${esc(r.incoming_name)} <span class="muted mono">#${esc(r.buyer_number)}</span></td>
       <td>${mb}</td><td>${cf}</td>
       <td class="rec" style="color:${recColor}">${r.recommendation}</td>
+      <td><span class="fchip">${r.action.replace('_',' ')}</span></td>
     </tr>`;}).join('');
   const pages=Math.max(1,Math.ceil(d.total/state.page_size));
   $('#pageInfo').textContent=`Page ${state.page} of ${pages} · ${d.total} rows`;
@@ -261,10 +269,9 @@ $('#selAll').onchange=e=>document.querySelectorAll('.rsel').forEach(c=>c.checked
 document.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(state.sort===s)state.order=state.order==='desc'?'asc':'desc';else{state.sort=s;state.order='desc';}loadResults();});
 
 function selected(){return [...document.querySelectorAll('.rsel:checked')].map(c=>+c.value);}
-function selectedOrAllUpdates(){const s=selected();return s.length?s:pageRows.filter(r=>r.classification==='update').map(r=>r.index);}
-async function decide(action,indices){
-  if(!indices.length){alert('No rows selected.');return;}
-  const r=await fetch('/reconcile/decide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,indices})});
+async function decide(action,scope){
+  if(scope.indices && !scope.indices.length){alert('No rows selected.');return;}
+  const r=await fetch('/reconcile/decide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,...scope})});
   const d=await r.json();if(r.ok){loadResults();}else alert(d.detail||'Failed');
 }
 

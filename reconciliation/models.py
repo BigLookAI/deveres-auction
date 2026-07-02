@@ -100,6 +100,31 @@ class ReconResult:
         return base
 
 
+def field_diff_from_dict(d: dict) -> "FieldDiff":
+    return FieldDiff(field=d["field"], label=d["label"], current=d.get("current", ""),
+                     incoming=d.get("incoming", ""), status=DiffStatus(d["status"]),
+                     significant=bool(d.get("significant", False)))
+
+
+def recon_result_from_dict(d: dict) -> "ReconResult":
+    """Rebuild a full ReconResult from to_dict(full=True) output — used to restore
+    a persisted reconciliation session across restarts/reloads."""
+    return ReconResult(
+        index=d["index"], buyer_number=d.get("buyer_number", ""),
+        incoming_name=d.get("incoming_name", ""),
+        classification=Classification(d["classification"]),
+        recommendation=Recommendation(d["recommendation"]),
+        confidence=float(d.get("confidence", 0.0)),
+        matched_by=list(d.get("matched_by", [])),
+        master_ref=d.get("master_ref"), master_name=d.get("master_name", ""),
+        changed_fields=list(d.get("changed_fields", [])),
+        diffs=[field_diff_from_dict(x) for x in d.get("diffs", [])],
+        incoming=d.get("incoming", {}), master=d.get("master", {}),
+        lots=d.get("lots", []),
+        action=Action(d.get("action", "MANUAL_REVIEW")),
+    )
+
+
 @dataclass
 class ReconSummary:
     total:            int = 0

@@ -126,3 +126,43 @@ def test_end_to_end_engine_summary():
     incoming = load_incoming(incoming_csv, is_path=False)
     results, summary = eng.run(incoming)
     assert summary.total == 2 and summary.new == 1 and summary.retain == 1
+
+
+# ── Round 2: seller detection, decide scope, session round-trip, xlsx/pdf ────
+def test_detect_and_load_seller_export():
+    from reconciliation.repository import load_upload
+    seller_csv = ("Seller Ref,First Name,Last Name,Company,Commission,VAT Rate,Telephone,Mobile,Email,\n"
+                  "1106,James,Philips,Aline Office Furniture Limited,Default 10% +V,Margin,01-288 7796,,info@aline.ie,\n")
+    kind, recs = load_upload(seller_csv)
+    assert kind == "sellers" and len(recs) == 1
+    assert recs[0]["company"] == "Aline Office Furniture Limited"
+    buyer_csv = ("Lot Number,Lot Title,Buyer Number,First Name,Last Name,Email,Address 1,Address 2,Town,County,Postcode,Country,Phone,Winning Bid\n"
+                 "1,Chair,7,A,B,a@b.ie,,,,,,,,500\n")
+    kind2, recs2 = load_upload(buyer_csv)
+    assert kind2 == "buyers" and len(recs2) == 1
+
+def test_load_upload_rejects_unknown_format():
+    from reconciliation.repository import load_upload
+    with pytest.raises(ValueError):
+        load_upload("Foo,Bar\n1,2\n")
+
+def test_recon_result_round_trip():
+    from reconciliation.models import recon_result_from_dict
+    m = [{"client_ref": "1", "first_name": "John", "last_name": "Smith", "email": "john@old.ie",
+          "phone": "087 2986710", "mobile": ""}]
+    eng = _engine(m)
+    r = eng.reconcile_one(0, {"buyer_number": "1", "first_name": "John", "last_name": "Smith",
+                              "email": "john.smith@new.ie", "phone": "087 2986710"})
+    r2 = recon_result_from_dict(r.to_dict(full=True))
+    assert r2.classification == r.classification and r2.action == r.action
+    assert len(r2.diffs) == len(r.diffs) and r2.confidence == pytest.approx(r.confidence)
+
+def test_xlsx_and_pdf_exports():
+    m = [{"client_ref": "1", "first_name": "John", "last_name": "Smith", "email": "john@x.ie",
+          "phone": "0872986710", "mobile": ""}]
+    eng = _engine(m)
+    results, summary = eng.run([{"buyer_number": "1", "first_name": "John", "last_name": "Smith",
+                                 "email": "john@x.ie", "phone": "+353872986710", "lots": []}])
+    from reconciliation.export import to_xlsx, to_pdf_summary
+    x = to_xlsx(results, summary); assert x[:2] == b"PK"          # zip magic
+    p = to_pdf_summary(results, summary); assert p[:4] == b"%PDF"

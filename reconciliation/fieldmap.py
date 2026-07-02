@@ -52,6 +52,17 @@ INCOMING_MAP = {
     "winning_bid":  "Winning Bid",
 }
 
+# Seller List Export column → canonical field (vendors/consignors from Blue Cubes)
+SELLER_MAP = {
+    "buyer_number": "Seller Ref",     # reused as the source reference key
+    "first_name":   "First Name",
+    "last_name":    "Last Name",
+    "company":      "Company",
+    "phone":        "Telephone",
+    "mobile":       "Mobile",
+    "email":        "Email",
+}
+
 # Lot List Export column → canonical lot field
 LOT_MAP = {
     "lot_number":   "Lot Number",
