@@ -1,0 +1,289 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ======================================================================
+         T3: WINDOW ACTIONS (must appear before view records that reference them)
+         ====================================================================== -->
+
+    <!-- Window action: open lots filtered by auction_id = active event
+         Referenced by the lot_count stat button on sor.event form view (T1). -->
+    <record id="sor_lot_action_from_event" model="ir.actions.act_window">
+        <field name="name">Lots</field>
+        <field name="res_model">sor.lot</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('auction_id', '=', active_id)]</field>
+        <field name="context">{'default_auction_id': active_id}</field>
+    </record>
+
+    <!-- Standalone list view for auction events — used by All, Live, Upcoming, Past actions -->
+    <record id="sor_auction_view_list" model="ir.ui.view">
+        <field name="name">sor.event.view.list.auction</field>
+        <field name="model">sor.event</field>
+        <field name="arch" type="xml">
+            <list string="Auctions">
+                <field name="name"/>
+                <field name="sale_number"/>
+                <field name="auction_subtype"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="lot_count"/>
+                <field name="status"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Window action: All Auctions — primary management action on the root menu.
+         No status filter so newly created events are always accessible regardless
+         of their lifecycle state. -->
+    <record id="sor_auction_action_all" model="ir.actions.act_window">
+        <field name="name">Auctions</field>
+        <field name="res_model">sor.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('event_type', '=', 'auction')]</field>
+        <field name="context">{'default_event_type': 'auction'}</field>
+        <field name="view_id" ref="sor_auction_view_list"/>
+    </record>
+
+    <!-- Window action: Live Auctions (currently active) -->
+    <record id="sor_auction_action_live" model="ir.actions.act_window">
+        <field name="name">Live</field>
+        <field name="res_model">sor.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('event_type', '=', 'auction'), ('status', '=', 'active')]</field>
+        <field name="context">{'default_event_type': 'auction'}</field>
+        <field name="view_id" ref="sor_auction_view_list"/>
+    </record>
+
+    <!-- Window action: Upcoming Auctions (draft or published) -->
+    <record id="sor_auction_action_upcoming" model="ir.actions.act_window">
+        <field name="name">Upcoming</field>
+        <field name="res_model">sor.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('event_type', '=', 'auction'), ('status', 'in', ['draft', 'published'])]</field>
+        <field name="context">{'default_event_type': 'auction'}</field>
+        <field name="view_id" ref="sor_auction_view_list"/>
+    </record>
+
+    <!-- Window action: Past Auctions (closed or archived) -->
+    <record id="sor_auction_action_past" model="ir.actions.act_window">
+        <field name="name">Past</field>
+        <field name="res_model">sor.event</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('event_type', '=', 'auction'), ('status', 'in', ['closed', 'archived'])]</field>
+        <field name="view_id" ref="sor_auction_view_list"/>
+    </record>
+
+    <!-- ======================================================================
+         T1: sor.event FORM VIEW PATCHES
+         Base view confirmed: sor_events.sor_event_view_form
+         - event_type IS declared in the base arch (Identification group) — no
+           invisible declaration needed.
+         - No button_box div exists in the base form — must create it inside
+           <sheet> before the main <group>.
+         ====================================================================== -->
+
+    <!-- Go Live header button on sor.event form view.
+         Visible on auction events that have not yet opened (draft or published).
+         action_go_live() enforces published-only at the model layer — the button
+         intentionally shows in draft state so staff see a clear UserError rather
+         than a hidden button. This is consistent with Odoo's pre-condition error
+         pattern for action buttons. -->
+    <record id="sor_event_view_form_go_live_button" model="ir.ui.view">
+        <field name="name">sor.event.view.form.go.live.button</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/field[@name='status']" position="before">
+                <button name="action_go_live" string="Go Live" type="object"
+                        class="btn-primary"
+                        invisible="event_type != 'auction' or status != 'published'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Hide the generic Activate button on auction events — Go Live takes its place
+         and additionally cascades the live state to catalogued lots. -->
+    <record id="sor_event_view_form_activate_hidden" model="ir.ui.view">
+        <field name="name">sor.event.view.form.activate.hidden</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//button[@name='action_activate']" position="attributes">
+                <attribute name="invisible">event_type == 'auction' or status != 'published'</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- event_type readonly after creation — once an event is saved the type is fixed. -->
+    <record id="sor_event_view_form_event_type_readonly" model="ir.ui.view">
+        <field name="name">sor.event.view.form.event.type.readonly</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='event_type']" position="attributes">
+                <attribute name="readonly">id</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- lot_count stat button on sor.event form view.
+         sor_events base view provides the button_box div — inject into it. -->
+    <record id="sor_event_view_form_lots_button" model="ir.ui.view">
+        <field name="name">sor.event.view.form.lots.button</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    class="oe_stat_button"
+                    type="action"
+                    name="%(sor_events_auction.sor_lot_action_from_event)d"
+                    icon="fa-list-ol"
+                    invisible="event_type != 'auction'">
+                    <field name="lot_count" widget="statinfo" string="Lots"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Auction Details tab on sor.event form view — details only, no lot list.
+         Placed before Internal Notes via position="before" on the named page. -->
+    <record id="sor_event_view_form_auction_tab" model="ir.ui.view">
+        <field name="name">sor.event.view.form.auction.tab</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='internal_notes']" position="before">
+                <page string="Auction Details" name="auction_details"
+                      invisible="event_type != 'auction'">
+                    <group>
+                        <group>
+                            <field name="auction_subtype"/>
+                            <field name="sale_number"/>
+                        </group>
+                        <group>
+                            <field name="preview_start"/>
+                            <field name="preview_end"/>
+                        </group>
+                    </group>
+                </page>
+                <page string="Lots" name="auction_lots"
+                      invisible="event_type != 'auction'">
+                    <field name="lot_ids">
+                        <list create="0" delete="0">
+                            <field name="currency_id" column_invisible="1"/>
+                            <field name="lot_number"/>
+                            <field name="lot_suffix"/>
+                            <field name="product_id"/>
+                            <field name="state"/>
+                            <field name="reserve_price"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ======================================================================
+         T2: sor.lot FORM AND LIST VIEW PATCHES
+         Base form confirmed: sor_lotting.sor_lot_view_form
+         Base list confirmed: sor_lotting.sor_lot_view_list
+         - D2 injection comment is present in the form arch between the main
+           <group> and <notebook>. Anchor on <notebook> position="before" to
+           insert the auction_id group at that injection point.
+         - Current statusbar_visible: draft,catalogued,sold,passed,withdrawn
+           Patch adds 'live' after 'catalogued'.
+         ====================================================================== -->
+
+    <!-- auction_id field on sor.lot form view.
+         Inserted inside the Identification group after lot_suffix. Readonly once the
+         lot moves past Draft — auction assignment is locked when the lot is Catalogued. -->
+    <record id="sor_lot_view_form_auction_id" model="ir.ui.view">
+        <field name="name">sor.lot.view.form.auction.id</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='lot_suffix']" position="after">
+                <field name="auction_id" readonly="state != 'draft'"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- 'live' state is excluded from the statusbar stepper — it is a transient
+         operational state, not a lifecycle milestone. A green badge in the header
+         indicates Live status instead. The statusbar_visible value is unchanged
+         from the sor_lotting default. -->
+
+    <!-- Green Live badge — visible only when lot state is 'live'.
+         Inserted in the header before the statusbar widget. -->
+    <record id="sor_lot_view_form_live_badge" model="ir.ui.view">
+        <field name="name">sor.lot.view.form.live.badge</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/field[@name='state']" position="before">
+                <span class="badge rounded-pill text-bg-success align-self-center px-3 py-2"
+                      invisible="state != 'live'">● Live</span>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- auction_id column on sor.lot list view.
+         Inserted after lot_reference so Lot Reference is always the first identifier column. -->
+    <record id="sor_lot_view_list_auction_id" model="ir.ui.view">
+        <field name="name">sor.lot.view.list.auction.id</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='lot_reference']" position="after">
+                <field name="auction_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Story 04 (sor_bidding) will add a bid_count stat button to sor.lot form
+         via a separate view inheritance record. -->
+
+    <!-- ======================================================================
+         T3: MENUS
+         sor_lotting creates menu_sor_lots_root with no parent (sequence 120).
+         The Auctions grouping is placed at the same level (no parent) with a
+         lower sequence so it appears before Lots in the navigation sidebar.
+         ====================================================================== -->
+
+    <!-- Auctions root menu — action shows all auctions regardless of status.
+         A root action is required so newly created events (default status=draft)
+         are always accessible from the primary entry point, not just via the
+         filtered Live/Upcoming/Past sub-items. Sequence 110 places Auctions
+         before Lots (sequence 120) in the SOR business navigation. -->
+    <menuitem
+        id="menu_sor_auctions_root"
+        name="Auctions"
+        action="sor_auction_action_all"
+        sequence="110"/>
+
+    <!-- Live: auctions currently in progress (status = active) -->
+    <menuitem
+        id="menu_sor_auctions_live"
+        name="Live"
+        parent="menu_sor_auctions_root"
+        action="sor_auction_action_live"
+        sequence="10"/>
+
+    <!-- Upcoming: auctions not yet started (status in draft, published) -->
+    <menuitem
+        id="menu_sor_auctions_upcoming"
+        name="Upcoming"
+        parent="menu_sor_auctions_root"
+        action="sor_auction_action_upcoming"
+        sequence="20"/>
+
+    <!-- Past: concluded auctions (status in closed, archived) -->
+    <menuitem
+        id="menu_sor_auctions_past"
+        name="Past"
+        parent="menu_sor_auctions_root"
+        action="sor_auction_action_past"
+        sequence="30"/>
+
+</odoo>

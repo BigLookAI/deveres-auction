@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Form View - Inherit from product.template -->
+        <record id="view_product_template_form_artwork" model="ir.ui.view">
+            <field name="name">product.template.form.artwork</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view"/>
+            <field name="arch" type="xml">
+                <!-- Override the default product name placeholder -->
+                <xpath expr="//field[@name='name']" position="attributes">
+                    <attribute name="placeholder">e.g. Untitled</attribute>
+                </xpath>
+
+                <!-- Add product type fields in General Information tab after the categ_id field -->
+                <xpath expr="//page[@name='general_information']//field[@name='categ_id']" position="after">
+                    <field name="product_type" invisible="1"/>
+                    <field name="product_subtype_whitelist" invisible="1" readonly="1"/>
+                    <field name="product_subtype" 
+                           invisible="product_type == False"
+                           readonly="product_type == False"
+                           widget="filterable_selection"
+                           options="{'no_create': True, 'no_open': True, 'whitelist_fname': 'product_subtype_whitelist'}"
+                           placeholder="Sub-type (auto-selected based on type)"/>
+                    <field name="creator_id"
+                           string="Creator/Artist"
+                           required="product_type == 'artwork'"
+                           invisible="product_type != 'artwork'"
+                           placeholder="Select or create artist/creator"/>
+                    <field name="creation_year" 
+                           string="Creation Year"
+                           invisible="product_type != 'artwork'"
+                           placeholder="Year artwork was created"/>
+                </xpath>
+                <xpath expr="//notebook" position="inside">
+                    <page string="Product Details" name="product_details" invisible="product_type == False">
+                        <group>
+                            <group string="Dimensions" invisible="product_type != 'artwork'">
+                                <field name="dimensions_width"
+                                       required="product_type == 'artwork'"
+                                       invisible="product_type != 'artwork'"/>
+                                <field name="dimensions_height"
+                                       required="product_type == 'artwork'"
+                                       invisible="product_type != 'artwork'"/>
+                                <field name="dimensions_depth" 
+                                       invisible="not (product_type == 'artwork' and product_subtype in ['sculpture', 'print'])"
+                                       placeholder="Depth (for sculptures and 3D artworks)"/>
+                            </group>
+                            <group string="Details" invisible="product_type == False">
+                                <field name="medium" 
+                                       invisible="product_type == False"
+                                       placeholder="e.g., oil, acrylic, bronze, marble for artwork; wood, metal for furniture"/>
+                                <field name="edition_info" 
+                                       invisible="not (product_type == 'artwork' and product_subtype in ['sculpture', 'print'])"
+                                       placeholder="Edition number, total editions, etc."/>
+                            </group>
+                        </group>
+                    </page>
+                    
+                    <page string="Optional Information" name="optional_info" invisible="product_type == False">
+                        <group>
+                            <group>
+                                <field name="condition" placeholder="Condition of the product"/>
+                                <field name="provenance" placeholder="Provenance/history of ownership"/>
+                            </group>
+                        </group>
+                    </page>
+                    
+                    <page string="Certificates" name="certificates" invisible="product_type == False">
+                        <group>
+                            <group>
+                                <field name="certificate_of_authenticity"/>
+                                <field name="certificate_attachment_ids" nolabel="1">
+                                    <list string="Certificate Attachments">
+                                        <field name="name"/>
+                                        <field name="mimetype"/>
+                                        <field name="file_size"/>
+                                        <field name="create_date"/>
+                                    </list>
+                                </field>
+                            </group>
+                        </group>
+                    </page>
+                    
+                    <page string="Images" name="images" invisible="product_type != 'artwork'">
+                        <group>
+                            <field name="work_image_ids" nolabel="1" context="{'default_work_id': id}">
+                                <list string="Product Images" default_order="sequence, id" editable="bottom">
+                                    <field name="sequence" widget="handle"/>
+                                    <field name="image" widget="image" class="oe_avatar"/>
+                                    <field name="name" placeholder="e.g., Front view, Detail shot, etc."/>
+                                </list>
+                            </field>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- List/Tree View - Inherit from product.template -->
+        <record id="view_product_template_tree_artwork" model="ir.ui.view">
+            <field name="name">product.template.tree.artwork</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_tree_view"/>
+            <field name="arch" type="xml">
+                <field name="name" position="after">
+                    <field name="product_type" string="Type" widget="badge"
+                           decoration-info="product_type == 'artwork'"
+                           optional="show"/>
+                    <field name="product_subtype" string="Sub-type" optional="show"/>
+                    <field name="creation_year" string="Year" 
+                           invisible="product_type != 'artwork'"
+                           optional="hide"/>
+                    <field name="dimensions_width" string="Width" 
+                           invisible="product_type not in ['artwork', 'furniture']"
+                           optional="hide"/>
+                    <field name="dimensions_height" string="Height" 
+                           invisible="product_type not in ['artwork', 'furniture']"
+                           optional="hide"/>
+                    <field name="medium" optional="hide"/>
+                    <field name="creator_id" 
+                           invisible="product_type != 'artwork'"
+                           optional="hide"/>
+                </field>
+            </field>
+        </record>
+
+        <!-- Search View - Inherit from product.template -->
+        <record id="view_product_template_search_artwork" model="ir.ui.view">
+            <field name="name">product.template.search.artwork</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_search_view"/>
+            <field name="arch" type="xml">
+                <field name="name" position="after">
+                    <field name="product_type"/>
+                    <field name="product_subtype"/>
+                    <field name="creator_id"/>
+                    <field name="medium"/>
+                    <field name="creation_year"/>
+                    <field name="condition"/>
+                    <field name="provenance"/>
+                </field>
+                <filter name="inactive" position="after">
+                    <separator/>
+                    <filter string="Paintings" name="filter_paintings" domain="[('product_subtype', '=', 'painting')]"/>
+                    <filter string="Sculptures" name="filter_sculptures" domain="[('product_subtype', '=', 'sculpture')]"/>
+                    <filter string="Prints" name="filter_prints" domain="[('product_subtype', '=', 'print')]"/>
+                    <separator/>
+                    <filter string="With Certificate" name="filter_with_certificate" domain="[('certificate_of_authenticity', '=', True)]"/>
+                    <filter string="Without Certificate" name="filter_without_certificate" domain="[('certificate_of_authenticity', '=', False)]"/>
+                </filter>
+                <group position="inside">
+                    <filter string="Type" name="group_product_type" context="{'group_by': 'product_type'}"/>
+                    <filter string="Sub-type" name="group_product_subtype" context="{'group_by': 'product_subtype'}"/>
+                    <filter string="Medium" name="group_medium" context="{'group_by': 'medium'}"/>
+                    <filter string="Creator" name="group_creator" context="{'group_by': 'creator_id'}"/>
+                    <filter string="Creation Year" name="group_creation_year" context="{'group_by': 'creation_year'}"/>
+                </group>
+            </field>
+        </record>
+
+        <!-- Action: SOR Products -->
+        <record id="action_sor_art_product" model="ir.actions.act_window">
+            <field name="name">Artworks</field>
+            <field name="res_model">product.template</field>
+            <field name="view_mode">kanban,list,form</field>
+            <field name="domain">[('product_type', '!=', False)]</field>
+            <field name="context">{'search_default_active': 1, 'default_product_type': 'artwork'}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first product!
+                </p>
+                <p>
+                    Artworks include paintings, sculptures, and prints. Additional asset types
+                    are available when vertical modules (e.g. SOR Furniture, SOR Jewellery) are installed.
+                </p>
+            </field>
+        </record>
+
+        <!-- Menu Items -->
+        <!-- Primary: Add SOR Products menu as top-level menu -->
+        <!-- Note: If sale module is installed, this can be moved under sale.product_menu_catalog -->
+        <menuitem id="menu_sor_products"
+                  name="Artworks"
+                  sequence="100"
+                  groups="base.group_user"/>
+
+        <menuitem id="menu_sor_products_config"
+                  name="Configuration"
+                  parent="sor_artwork.menu_sor_products"
+                  sequence="90"
+                  groups="stock.group_stock_manager"/>
+
+        <menuitem id="menu_sor_art_products"
+                  name="All Products"
+                  parent="menu_sor_products"
+                  action="action_sor_art_product"
+                  sequence="10"
+                  groups="base.group_user"/>
+    </data>
+</odoo>

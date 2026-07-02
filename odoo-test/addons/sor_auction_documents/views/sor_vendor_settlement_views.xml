@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- VSS list view -->
+    <record id="view_sor_vendor_settlement_list" model="ir.ui.view">
+        <field name="name">sor.vendor.settlement.list</field>
+        <field name="model">sor.vendor.settlement</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'sent'"
+                       decoration-info="state == 'payment_confirmed'"
+                       decoration-muted="state == 'cancelled'"/>
+                <field name="event_id"/>
+                <field name="consignor_id"/>
+                <field name="total_hammer" widget="monetary"
+                       options="{'currency_field': 'currency_id'}"/>
+                <field name="total_commission" widget="monetary"
+                       options="{'currency_field': 'currency_id'}"/>
+                <field name="net_proceeds" widget="monetary"
+                       options="{'currency_field': 'currency_id'}"/>
+                <field name="currency_id" column_invisible="1"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- VSS form view -->
+    <record id="view_sor_vendor_settlement_form" model="ir.ui.view">
+        <field name="name">sor.vendor.settlement.form</field>
+        <field name="model">sor.vendor.settlement</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,payment_confirmed,sent"/>
+                    <button name="action_confirm_payment" type="object"
+                            string="Confirm Payment" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_send_by_email" type="object"
+                            string="Send to Consignor" class="btn-primary"
+                            invisible="state != 'payment_confirmed'"/>
+                    <button name="%(action_report_sor_vendor_settlement)d" type="action"
+                            string="Print" class="btn-secondary"/>
+                    <button name="action_cancel" type="object"
+                            string="Void"
+                            confirm="This will permanently void the Vendor Settlement Statement and cannot be undone. Are you sure?"
+                            invisible="state != 'draft'"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="event_id" readonly="state != 'draft'"
+                                   options="{'no_open': True}"/>
+                            <field name="consignor_id" readonly="state != 'draft'"
+                                   options="{'no_open': True}"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"
+                                   readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="lots" string="Lots">
+                            <field name="lot_ids" readonly="state != 'draft'">
+                                <list>
+                                    <field name="lot_reference"/>
+                                    <field name="lot_number"/>
+                                    <field name="product_id" string="Description"/>
+                                    <field name="state" string="Lot Status"/>
+                                    <field name="hammer_price" widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="sellers_commission_pct" string="Commission %"/>
+                                    <field name="hammer_price_vat_included" optional="hide"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page name="totals" string="Totals">
+                            <group>
+                                <field name="total_hammer" widget="monetary"/>
+                                <field name="total_commission" widget="monetary"/>
+                                <field name="net_proceeds" widget="monetary"/>
+                                <field name="currency_id" invisible="1"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- VSS window action -->
+    <record id="action_sor_vendor_settlement" model="ir.actions.act_window">
+        <field name="name">Vendor Settlements</field>
+        <field name="res_model">sor.vendor.settlement</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Bulk-send server action (list action) -->
+    <record id="action_server_vss_bulk_mark_sent" model="ir.actions.server">
+        <field name="name">Send to Consignors</field>
+        <field name="model_id" ref="model_sor_vendor_settlement"/>
+        <field name="binding_model_id" ref="model_sor_vendor_settlement"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_bulk_mark_sent()</field>
+    </record>
+
+    <!-- Smart button on auction event form -->
+    <record id="view_sor_event_form_inherit_vss_smart_button" model="ir.ui.view">
+        <field name="name">sor.event.form.inherit.vss.smart.button</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button class="oe_stat_button" type="object"
+                        name="action_view_vendor_settlements"
+                        icon="fa-money"
+                        invisible="vendor_settlement_count == 0">
+                    <field name="vendor_settlement_count" widget="statinfo"
+                           string="Vendor Settlements"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

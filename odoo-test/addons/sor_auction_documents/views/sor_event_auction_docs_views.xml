@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Document generation buttons on the auction event form.
+         Visible only for commercial auction events (is_commercial from
+         sor_commercial_auction_house). is_commercial must be declared in the
+         arch for Odoo 19 FormArchParser to resolve the invisible expression. -->
+    <record id="view_sor_event_form_inherit_auction_docs_buttons" model="ir.ui.view">
+        <field name="name">sor.event.form.inherit.auction.docs.buttons</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Declare is_commercial in the arch — required by Odoo 19 FormArchParser -->
+            <xpath expr="//header/field[@name='status']" position="before">
+                <field name="is_commercial" invisible="1"/>
+                <button name="action_generate_pre_sale_advices"
+                        string="Pre-Sale Advice"
+                        type="object"
+                        invisible="not is_commercial or status in ('closed', 'archived')"/>
+                <button name="action_send_all_pre_sale_advices"
+                        string="Send Pre-Sale Advices"
+                        type="object"
+                        invisible="not is_commercial or status in ('closed', 'archived')"/>
+                <button name="action_generate_post_sale_advices"
+                        string="Post-Sale Advice"
+                        type="object"
+                        invisible="not is_commercial or status not in ('active', 'closed')"/>
+                <button name="action_generate_vendor_settlements"
+                        string="Vendor Settlements"
+                        type="object"
+                        invisible="not is_commercial or status not in ('active', 'closed')"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

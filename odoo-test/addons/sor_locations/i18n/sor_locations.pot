@@ -1,0 +1,179 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sor_locations
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-08 22:34+0000\n"
+"PO-Revision-Date: 2026-04-08 22:34+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sor_locations
+#. odoo-python
+#: code:addons/sor_locations/models/stock_location.py:0
+msgid ""
+"A Room's parent must be a Viewing Location, not another Room. Please select "
+"a Viewing Location as the parent."
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.actions.act_window,help:sor_locations.action_viewing_location_form
+msgid ""
+"A Viewing Location represents a physical gallery, auction room,\n"
+"                or collection building where artworks are displayed or stored.\n"
+"                Each Viewing Location can contain multiple Rooms."
+msgstr ""
+
+#. module: sor_locations
+#. odoo-python
+#: code:addons/sor_locations/models/stock_warehouse.py:0
+msgid ""
+"A Viewing Location requires an address. Please set an address before saving."
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_external_location_search
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_room_search
+msgid "Archived"
+msgstr ""
+
+#. module: sor_locations
+#. odoo-python
+#: code:addons/sor_locations/models/stock_warehouse.py:0
+msgid ""
+"Company '%(name)s' has no address configured. Go to Settings → Companies to "
+"add one."
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.actions.act_window,help:sor_locations.action_external_location_form
+msgid "Create your first External Location"
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.actions.act_window,help:sor_locations.action_room_form
+msgid "Create your first Room"
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.actions.act_window,help:sor_locations.action_viewing_location_form
+msgid "Create your first Viewing Location"
+msgstr ""
+
+#. module: sor_locations
+#: model:ir.model.fields,field_description:sor_locations.field_stock_location__display_name
+#: model:ir.model.fields,field_description:sor_locations.field_stock_warehouse__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_external_location_list
+msgid "External Location"
+msgstr ""
+
+#. module: sor_locations
+#: model:ir.actions.act_window,name:sor_locations.action_external_location_form
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_external_location_list
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_external_location_search
+msgid "External Locations"
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.actions.act_window,help:sor_locations.action_external_location_form
+msgid ""
+"External locations represent where artworks are held outside the gallery:\n"
+"                at a buyer, borrower, institution, or in transit.\n"
+"                Enable \"External Locations\" in Inventory → Configuration → Settings first,\n"
+"                then create locations here or directly from a customer contact record."
+msgstr ""
+
+#. module: sor_locations
+#: model:ir.model.fields,field_description:sor_locations.field_stock_location__id
+#: model:ir.model.fields,field_description:sor_locations.field_stock_warehouse__id
+msgid "ID"
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_room_search
+msgid "Internal Rooms"
+msgstr ""
+
+#. module: sor_locations
+#: model:ir.model,name:sor_locations.model_stock_location
+msgid "Inventory Locations"
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_external_location_form
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_external_location_list
+msgid "Location Group"
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_external_location_search
+msgid "Location Name"
+msgstr ""
+
+#. module: sor_locations
+#. odoo-python
+#: code:addons/sor_locations/models/stock_warehouse.py:0
+msgid "No Company Address"
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_room_list
+msgid "Room"
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_room_search
+msgid "Room Name"
+msgstr ""
+
+#. module: sor_locations
+#: model:ir.actions.act_window,name:sor_locations.action_room_form
+#: model:ir.ui.menu,name:sor_locations.menu_rooms
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_room_list
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_room_search
+msgid "Rooms"
+msgstr ""
+
+#. module: sor_locations
+#: model_terms:ir.actions.act_window,help:sor_locations.action_room_form
+msgid ""
+"Rooms are internal storage or display spaces within a Viewing Location.\n"
+"                Create a Viewing Location first, then add Rooms beneath it."
+msgstr ""
+
+#. module: sor_locations
+#: model:ir.model.fields,help:sor_locations.field_stock_location__viewing_location_id
+msgid "The Viewing Location (warehouse) this Room belongs to."
+msgstr ""
+
+#. module: sor_locations
+#: model:ir.model.fields,field_description:sor_locations.field_stock_location__viewing_location_id
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_room_form
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_room_list
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_room_search
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_viewing_location_form
+msgid "Viewing Location"
+msgstr ""
+
+#. module: sor_locations
+#: model:ir.actions.act_window,name:sor_locations.action_viewing_location_form
+#: model:ir.ui.menu,name:sor_locations.menu_viewing_locations
+#: model_terms:ir.ui.view,arch_db:sor_locations.view_viewing_location_list
+msgid "Viewing Locations"
+msgstr ""
+
+#. module: sor_locations
+#: model:ir.model,name:sor_locations.model_stock_warehouse
+msgid "Warehouse"
+msgstr ""

@@ -1,0 +1,20 @@
+{
+    'name': 'SOR Tracking',
+    'version': '19.0.1.6.0',
+    'summary': 'Physical movement infrastructure for external artwork flows',
+    'author': 'BigLookAI',
+    'license': 'LGPL-3',
+    'category': 'Inventory',
+    'depends': ['stock'],
+    'application': False,
+    'auto_install': False,
+    'post_init_hook': 'post_init_hook',
+    'data': [
+        'security/ir.model.access.csv',
+        'views/stock_picking_views.xml',
+        'views/sor_movement_location_confirm_views.xml',
+        'views/sor_movement_source_location_confirm_views.xml',
+        'views/sor_tracking_dashboard_views.xml',
+        'views/menus.xml',
+    ],
+}

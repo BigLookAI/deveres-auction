@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Add is_commercial toggle to the auction event form view.
+         Inherits the base sor.event form (defined in sor_events).
+         The field is hidden on non-auction events (event_type != 'auction').
+         event_type is declared in the base form arch. -->
+    <record id="sor_event_view_form_commercial" model="ir.ui.view">
+        <field name="name">sor.event.view.form.commercial</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='event_type']" position="after">
+                <field name="is_commercial"
+                       invisible="event_type != 'auction'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

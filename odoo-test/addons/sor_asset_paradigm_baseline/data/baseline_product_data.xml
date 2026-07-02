@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Baseline product is created by post_init_hook to avoid ORM constraints
+     from vertical modules (e.g. sor_artwork requires creator_id for artworks).
+     This file is intentionally empty. -->
+<odoo/>

@@ -1,0 +1,14 @@
+///
+/// Pattern Lab token entry. All tokens from Supernova (no _shared).
+/// Path: addons/sor_theme/static/src/scss/tokens/pl/
+///
+@import "tokens_supernova";
+@import "colors";
+@import "measures";
+@import "gradients";
+@import "borders";
+@import "typography";
+
+// Map design token to Odoo/backend variables so same tokens drive both PL and Odoo
+$o-brand-primary: $colorColorsTheme01;
+$primary: $colorColorsTheme01;

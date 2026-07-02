@@ -1,0 +1,95 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sor_buyer_invoice
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-26 13:03+0000\n"
+"PO-Revision-Date: 2026-05-26 13:03+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "<strong>Bank Details</strong>"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "<strong>Company Reg. No.:</strong>"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "<strong>PSRA Licence No.:</strong>"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#. odoo-python
+#: code:addons/sor_buyer_invoice/models/sor_event.py:0
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.sor_event_view_form_buyer_invoice_button
+msgid "Buyer Invoices"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model:ir.model,name:sor_buyer_invoice.model_res_company
+msgid "Companies"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_account_move__display_name
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_res_company__display_name
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_sor_event__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_account_bank_statement_line__sor_event_id
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_account_move__sor_event_id
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.account_move_view_form_sor_buyer_invoice
+msgid "Event"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "IBAN:"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_account_move__id
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_res_company__id
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_sor_event__id
+msgid "ID"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_sor_event__invoice_count
+msgid "Invoice Count"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model:ir.model,name:sor_buyer_invoice.model_account_move
+msgid "Journal Entry"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_res_company__auction_psra_number
+msgid "PSRA Licence Number"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model:ir.model,name:sor_buyer_invoice.model_sor_event
+msgid "SOR Event"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#. odoo-python
+#: code:addons/sor_buyer_invoice/models/sor_event.py:0
+msgid "sor_event_id"
+msgstr ""

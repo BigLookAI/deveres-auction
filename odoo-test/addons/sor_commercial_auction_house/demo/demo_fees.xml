@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Set company business model to auction_house for the auction scenario -->
+        <record id="base.main_company" model="res.company">
+            <field name="business_model">auction_house</field>
+        </record>
+
+        <!-- Fee defaults for auction house -->
+        <record id="demo_fee_sellers_commission" model="sor.fee.default">
+            <field name="fee_type">sellers_commission</field>
+            <field name="rate_pct">15.0</field>
+        </record>
+
+        <record id="demo_fee_withdrawal" model="sor.fee.default">
+            <field name="fee_type">withdrawal_fee</field>
+            <field name="rate_pct">5.0</field>
+        </record>
+
+        <!-- Buyer's premium tiers: 25% up to 50k, 20% above -->
+        <record id="demo_premium_tier_low" model="sor.buyers.premium.tier">
+            <field name="threshold_from">0.0</field>
+            <field name="rate_pct">25.0</field>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="demo_premium_tier_high" model="sor.buyers.premium.tier">
+            <field name="threshold_from">50000.0</field>
+            <field name="rate_pct">20.0</field>
+            <field name="sequence">20</field>
+        </record>
+    </data>
+</odoo>

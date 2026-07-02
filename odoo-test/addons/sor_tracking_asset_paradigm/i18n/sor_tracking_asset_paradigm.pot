@@ -1,0 +1,43 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sor_tracking_asset_paradigm
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-05 22:34+0000\n"
+"PO-Revision-Date: 2026-05-05 22:34+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sor_tracking_asset_paradigm
+#: model:ir.model.fields,field_description:sor_tracking_asset_paradigm.field_stock_picking__sor_all_unique_objects
+msgid "All Unique Objects"
+msgstr ""
+
+#. module: sor_tracking_asset_paradigm
+#: model:ir.model.fields,field_description:sor_tracking_asset_paradigm.field_stock_move__display_name
+#: model:ir.model.fields,field_description:sor_tracking_asset_paradigm.field_stock_picking__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: sor_tracking_asset_paradigm
+#: model:ir.model.fields,field_description:sor_tracking_asset_paradigm.field_stock_move__id
+#: model:ir.model.fields,field_description:sor_tracking_asset_paradigm.field_stock_picking__id
+msgid "ID"
+msgstr ""
+
+#. module: sor_tracking_asset_paradigm
+#: model:ir.model,name:sor_tracking_asset_paradigm.model_stock_move
+msgid "Stock Move"
+msgstr ""
+
+#. module: sor_tracking_asset_paradigm
+#: model:ir.model,name:sor_tracking_asset_paradigm.model_stock_picking
+msgid "Transfer"
+msgstr ""

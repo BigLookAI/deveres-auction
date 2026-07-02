@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Relabel Lot/Serial Number column to "Serial Number" in the Detailed
+         Operations dialog inner line list. SOR reserves "Lot" for auction
+         catalogue lots (sor.lot) — the terminology collision must be avoided. -->
+    <record id="view_stock_move_line_operation_tree_sor_tracking_artwork" model="ir.ui.view">
+        <field name="name">stock.move.line.operations.list.sor_tracking_artwork</field>
+        <field name="model">stock.move.line</field>
+        <field name="inherit_id" ref="stock.view_stock_move_line_operation_tree"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='lot_id']" position="attributes">
+                <attribute name="string">Serial Number</attribute>
+                <attribute name="options">{"no_create": True}</attribute>
+            </xpath>
+
+            <xpath expr="//field[@name='lot_name']" position="attributes">
+                <attribute name="string">Serial Number</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+
+    <!-- Surface the Serial Number column on the main movement form line.
+         The native lot_ids column is hidden in draft state (column_invisible) and
+         optional=hide by default; both conditions prevent serial assignment before
+         confirmation. SOR requires serial numbers on the main form line so staff
+         can assign them on queued movements without opening Detailed Operations.
+
+         In Draft state, a sor_draft_lot_name Char column is shown instead of lot_ids.
+         Entering a serial name here avoids creating a move line in Draft (which would
+         trigger Odoo stock reservation and auto-advance the picking to Ready state).
+         The name is converted to a stock.lot at Mark as Todo (action_confirm).
+
+         Also suppresses the Details button entirely for unique-object artworks —
+         the Detailed Operations modal surfaces no information not already visible
+         inline, and exposes paradigm violations (Generate/Import/Add a line) that
+         cannot be cleanly suppressed at all states inside the modal. -->
+    <record id="view_picking_form_lot_ids_sor_tracking_artwork" model="ir.ui.view">
+        <field name="name">stock.picking.form.lot_ids.sor_tracking_artwork</field>
+        <field name="model">stock.picking</field>
+        <field name="inherit_id" ref="stock.view_picking_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Draft serial pre-assignment: show sor_draft_lot_name in Draft only.
+                 MovesListRenderer.evalColumnInvisible only supports parent.* field references
+                 in dynamic column_invisible expressions — bare field names (state, has_tracking)
+                 raise EvalError: Name not defined. Use parent.state for picking-level state.
+                 The native lot_ids column uses the same pattern: column_invisible="parent.state == 'draft'".
+                 When picking moves to Ready (assigned), sor_draft_lot_name hides and lot_ids shows. -->
+            <xpath expr="//field[@name='lot_ids'][@optional='hide']" position="before">
+                <field name="sor_draft_lot_name"
+                       string="Serial Number"
+                       column_invisible="parent.state != 'draft'"/>
+            </xpath>
+
+            <!-- lot_ids: change optional to show; disable lot creation (no_create).
+                 column_invisible and invisible are intentionally NOT overridden here —
+                 the native values (parent.state == 'draft' and not show_details_visible
+                 or has_tracking == 'none') are exactly correct for SOR's use case. -->
+            <xpath expr="//field[@name='lot_ids'][@optional='hide']" position="attributes">
+                <attribute name="optional">show</attribute>
+                <attribute name="options">{"no_create": True}</attribute>
+            </xpath>
+
+            <!-- Declare sor_all_unique_objects so OWL fetches it for each move row.
+                 Relational traversal (product_id.asset_paradigm) is not reliably
+                 evaluated in list row invisible expressions unless the field is
+                 declared in the arch. sor_all_unique_objects is a direct Boolean
+                 on stock.move that is safe to reference here. -->
+            <xpath expr="//field[@name='show_details_visible']" position="before">
+                <field name="sor_all_unique_objects" column_invisible="True"/>
+            </xpath>
+
+            <xpath expr="//button[@name='action_show_details']" position="attributes">
+                <attribute name="invisible">not show_details_visible or sor_all_unique_objects</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+
+    <!-- Suppress Generate/Import serial actions and Add a line in the Detailed
+         Operations modal for unique-object artworks. These controls allow adding
+         multiple serials to a single move, violating the unique-object paradigm.
+         After Fix A (BUG-14), the assigned serial is visible inline via lot_ids;
+         editing the serial happens via the lot_ids widget, not this modal. -->
+    <record id="view_stock_move_operations_sor_tracking_artwork" model="ir.ui.view">
+        <field name="name">stock.move.operations.form.sor_tracking_artwork</field>
+        <field name="model">stock.move</field>
+        <field name="inherit_id" ref="stock.view_stock_move_operations"/>
+        <field name="arch" type="xml">
+
+            <!-- Hide Generate Serials/Lots and Import Serials/Lots buttons.
+                 The div is uniquely identified by the generate_serials widget inside it. -->
+            <xpath expr="//div[hasclass('d-flex')][.//widget[@name='generate_serials']]" position="attributes">
+                <attribute name="invisible">product_id.asset_paradigm == 'unique_object'</attribute>
+            </xpath>
+
+            <!-- Make move_line_ids readonly for unique-object artworks to suppress
+                 Add a line. Extends the existing readonly condition with an 'or'. -->
+            <xpath expr="//field[@name='move_line_ids']" position="attributes">
+                <attribute name="readonly">state == 'cancel' or (state == 'done' and is_locked) or not product_id or product_id.asset_paradigm == 'unique_object'</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+
+    <!-- Replace the Serial Numbers smart button with a Traceability button on
+         artwork product forms. SOR reserves "Lot" for sor.lot auction catalogue
+         entries; the Serial Numbers / Lots kanban view is not suitable for the
+         art market use case. The Traceability button surfaces confirmed movement
+         history via stock.move.line records. -->
+    <record id="product_template_form_view_procurement_button_sor_tracking_artwork" model="ir.ui.view">
+        <field name="name">product.template.procurement.sor_tracking_artwork</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="stock.product_template_form_view_procurement_button"/>
+        <field name="arch" type="xml">
+
+            <!-- Declare product_type so invisible expressions resolve correctly -->
+            <xpath expr="//field[@name='tracking']" position="after">
+                <field name="product_type" invisible="1"/>
+            </xpath>
+
+            <!-- Hide the Serial Numbers button for artwork products -->
+            <xpath expr="//button[@name='action_open_product_lot']" position="attributes">
+                <attribute name="invisible">tracking == 'none' or product_type == 'artwork'</attribute>
+            </xpath>
+
+            <!-- Add Traceability button after the Serial Numbers button -->
+            <xpath expr="//button[@name='action_open_product_lot']" position="after">
+                <button type="object"
+                    name="action_view_traceability"
+                    class="oe_stat_button" icon="fa-history"
+                    invisible="product_type != 'artwork'">
+                    <field name="sor_movement_count" widget="statinfo" string="Traceability"/>
+                </button>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

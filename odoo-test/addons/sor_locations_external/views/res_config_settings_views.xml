@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Add External Locations opt-in setting to Inventory → Configuration → Settings,
+         immediately after the Artist Studios setting (same Warehouse block). -->
+    <record id="sor_external_locations_config_settings_view" model="ir.ui.view">
+        <field name="name">sor.external.locations.config.settings</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="stock.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='track_product_location']" position="after">
+                <setting id="sor_external_locations"
+                         title="External Locations"
+                         help="Track artworks held at specific external (customer) locations linked to contacts. Creates an 'External Locations' parent for this company when enabled.">
+                    <field name="sor_external_locations_enabled"/>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

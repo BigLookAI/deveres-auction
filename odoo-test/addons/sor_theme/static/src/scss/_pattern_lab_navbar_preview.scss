@@ -1,0 +1,49 @@
+// Pattern Lab preview only: navbar layout and dropdown positioning (identical to Odoo).
+// Used when building Pattern Lab CSS from mapping (pattern_lab_overrides).
+// No id on dropdown (DOM identical to Odoo); use class selectors only.
+
+// Apps dropdown: when opened (.show), position below button like Odoo (not as sidebar)
+.o_navbar_apps_menu {
+  position: relative;
+  background-color: transparent !important;
+
+  .dropdown .o-dropdown--menu.dropdown-menu.show,
+  .dropdown .dropdown-menu.show {
+    display: block !important;
+    position: absolute !important;
+    top: 100% !important;
+    left: 0 !important;
+    margin: 0 !important;
+    margin-top: 0.125rem !important;
+    z-index: 1002;
+    min-width: 12rem;
+  }
+}
+
+.o_navbar_apps_menu .o_app_icon {
+  height: 3em;
+  width: 3em;
+  min-width: 3em;
+  border-radius: 0.25rem;
+  object-fit: cover;
+}
+
+// Systray: spacing between items (matches Odoo)
+.o_menu_systray {
+  gap: 0.5rem;
+  .o_messaging_menu,
+  .o_activity_icon,
+  .o_switch_company_menu,
+  .o_user_menu {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+    white-space: nowrap;
+  }
+  .badge {
+    position: absolute;
+    top: -4px;
+    right: -6px;
+    font-size: 0.65rem;
+    min-width: 1rem;
+  }
+}

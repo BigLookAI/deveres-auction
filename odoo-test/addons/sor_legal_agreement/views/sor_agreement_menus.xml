@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Window action -->
+    <record id="action_sor_agreement" model="ir.actions.act_window">
+        <field name="name">Agreements</field>
+        <field name="res_model">sor.agreement</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="view_sor_agreement_list"/>
+        <field name="search_view_id" ref="view_sor_agreement_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first agreement
+            </p>
+            <p>
+                Agreements record the legal basis for physical movements of goods.
+                Create an agreement, add the products involved, and send it for
+                signature before triggering any stock movements.
+            </p>
+        </field>
+    </record>
+
+    <!-- Developer utility: Settings → Technical → SOR → Agreements -->
+    <menuitem
+        id="menu_sor_technical_agreements"
+        name="Agreements"
+        parent="sor_technical_menu.menu_sor_technical_root"
+        action="action_sor_agreement"
+        sequence="30"
+        groups="base.group_no_one"/>
+
+    <!-- User-facing menu: top-level SOR root and Agreements entry -->
+    <menuitem id="menu_sor_root"
+              name="Legal"
+              sequence="110"/>
+
+    <menuitem id="menu_sor_agreements"
+              name="Legal"
+              parent="menu_sor_root"
+              action="action_sor_agreement"
+              sequence="10"/>
+
+</odoo>

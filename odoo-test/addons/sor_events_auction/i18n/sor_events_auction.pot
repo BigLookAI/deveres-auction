@@ -1,0 +1,149 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sor_events_auction
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-24 10:24+0000\n"
+"PO-Revision-Date: 2026-04-24 10:24+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sor_events_auction
+#. odoo-python
+#: code:addons/sor_events_auction/models/sor_event_auction.py:0
+msgid "%d lot(s) transitioned to Live."
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_lot__auction_id
+msgid "Auction"
+msgstr ""
+
+#. module: sor_events_auction
+#: model_terms:ir.ui.view,arch_db:sor_events_auction.sor_event_view_form_auction_tab
+msgid "Auction Details"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_event__auction_subtype
+msgid "Auction Subtype"
+msgstr ""
+
+#. module: sor_events_auction
+#. odoo-python
+#: code:addons/sor_events_auction/models/sor_event_auction.py:0
+msgid "Auction opened — Go Live triggered."
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.ui.menu,name:sor_events_auction.menu_sor_auctions_root
+#: model_terms:ir.ui.view,arch_db:sor_events_auction.sor_auction_view_list
+msgid "Auctions"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_event__display_name
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_lot__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: sor_events_auction
+#: model_terms:ir.ui.view,arch_db:sor_events_auction.sor_event_view_form_go_live_button
+msgid "Go Live"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields.selection,name:sor_events_auction.selection__sor_event__auction_subtype__hybrid
+msgid "Hybrid"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_event__id
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_lot__id
+msgid "ID"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.actions.act_window,name:sor_events_auction.sor_auction_action_live
+#: model:ir.model.fields.selection,name:sor_events_auction.selection__sor_event__auction_subtype__live
+#: model:ir.model.fields.selection,name:sor_events_auction.selection__sor_lot__state__live
+#: model:ir.ui.menu,name:sor_events_auction.menu_sor_auctions_live
+msgid "Live"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_event__lot_count
+msgid "Lot Count"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.constraint,message:sor_events_auction.constraint_sor_lot_auction_lot_number_unique
+msgid "Lot number must be unique within an auction."
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.actions.act_window,name:sor_events_auction.sor_lot_action_from_event
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_event__lot_ids
+#: model_terms:ir.ui.view,arch_db:sor_events_auction.sor_event_view_form_lots_button
+msgid "Lots"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields.selection,name:sor_events_auction.selection__sor_event__auction_subtype__online_only
+msgid "Online Only"
+msgstr ""
+
+#. module: sor_events_auction
+#. odoo-python
+#: code:addons/sor_events_auction/models/sor_event_auction.py:0
+msgid "Only a Published auction can be opened. Auction \"%s\" is currently %s."
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.actions.act_window,name:sor_events_auction.sor_auction_action_past
+#: model:ir.ui.menu,name:sor_events_auction.menu_sor_auctions_past
+msgid "Past"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_event__preview_end
+msgid "Preview End"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_event__preview_start
+msgid "Preview Start"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model,name:sor_events_auction.model_sor_event
+msgid "SOR Event"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model,name:sor_events_auction.model_sor_lot
+msgid "SOR Lot"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_event__sale_number
+msgid "Sale Number"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.model.fields,field_description:sor_events_auction.field_sor_lot__state
+msgid "State"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.actions.act_window,name:sor_events_auction.sor_auction_action_upcoming
+#: model:ir.ui.menu,name:sor_events_auction.menu_sor_auctions_upcoming
+msgid "Upcoming"
+msgstr ""

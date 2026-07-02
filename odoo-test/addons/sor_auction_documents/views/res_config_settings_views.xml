@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_inherit_auction_docs" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.sor.auction.docs</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <!-- business_model declared by sor_business_model — no redeclaration needed.
+                 Placed after the fee schedules block from sor_commercial_auction_house. -->
+            <xpath expr="//block[@name='sor_fee_schedules_container']" position="after">
+                <block title="Auction Documents" name="sor_auction_documents_container"
+                       invisible="business_model != 'auction_house'">
+                    <setting string="Auction Sale Terms"
+                             help="Terms and conditions printed on Pre-Sale Advice documents."
+                             class="col-lg-12">
+                        <field name="auction_sale_terms" nolabel="1"/>
+                    </setting>
+                    <setting string="Bank Account Details"
+                             help="Bank details printed on Vendor Settlement Statements.">
+                        <field name="auction_bank_details" nolabel="1"/>
+                    </setting>
+                    <setting string="Hammer Price VAT Included"
+                             help="Default margin scheme flag for new lots. Can be overridden per lot.">
+                        <field name="hammer_price_vat_included"/>
+                    </setting>
+                    <setting string="Auction VAT Notice"
+                             help="Statutory notice text printed on buyer invoices when Hammer Price VAT Included is enabled. Leave empty to suppress the notice block.">
+                        <field name="auction_vat_notice" nolabel="1"/>
+                    </setting>
+                    <setting string="Auction Licence Reference"
+                             help="e.g. PSRA Licence No. 002261 — printed in PDF footer on Pre-Sale Advice, Post-Sale Advice, and Vendor Settlement Statement.">
+                        <field name="auction_licence_ref"/>
+                    </setting>
+                    <setting string="Director Signature"
+                             help="e.g. Rory Guthrie, Director — printed as sign-off block in PDFs.">
+                        <field name="auction_director_signature" nolabel="1"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

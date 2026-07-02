@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="param_debug_show_quant_ui" model="ir.config_parameter">
+            <field name="key">sor_asset_paradigm.debug_show_quant_ui</field>
+            <field name="value">False</field>
+        </record>
+    </data>
+</odoo>

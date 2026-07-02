@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Standalone root for sor_locations — works without sor_artwork installed.
+         When sor_artwork is present, sor_locations_artwork (future bridge) may add
+         additional entries under the Artworks hierarchy pointing to the same actions. -->
+    <menuitem
+        id="menu_sor_locations"
+        name="Locations"
+        sequence="105"
+        groups="stock.group_stock_manager"/>
+
+    <menuitem
+        id="menu_viewing_locations"
+        name="Viewing Locations"
+        parent="sor_locations.menu_sor_locations"
+        action="sor_locations.action_viewing_location_form"
+        sequence="10"
+        groups="stock.group_stock_manager"/>
+
+    <menuitem
+        id="menu_rooms"
+        name="Rooms"
+        parent="sor_locations.menu_sor_locations"
+        action="sor_locations.action_room_form"
+        sequence="20"
+        groups="stock.group_stock_multi_locations"/>
+
+</odoo>

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sor_lot_form_inherit_auction_docs" model="ir.ui.view">
+        <field name="name">sor.lot.form.inherit.auction.docs</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Place Consignor after company_id (last row in the Identification group).
+                 Editable in Draft and Catalogued; read-only in Sold/Passed/Withdrawn.
+                 no_open suppresses built-in nav link — preserves form context.
+                 company_id carries groups="base.group_multi_company" making it uniquely
+                 identifiable — @string selectors are forbidden in Odoo 19. -->
+            <xpath expr="//field[@name='company_id'][@groups='base.group_multi_company']"
+                   position="after">
+                <field name="consignor_id"
+                       readonly="state not in ('draft', 'catalogued')"
+                       options="{'no_open': True}"/>
+                <field name="hammer_price_vat_included"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- List view: Consignor optional column, hidden by default. -->
+    <record id="view_sor_lot_list_inherit_auction_docs" model="ir.ui.view">
+        <field name="name">sor.lot.list.inherit.auction.docs</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='reserve_price']" position="after">
+                <field name="consignor_id" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

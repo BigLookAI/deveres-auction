@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Run on upgrade: align legacy seeded codes to new role codes and migrate partner links -->
+    <!-- Note: This is only needed for upgrades, not fresh installations -->
+</odoo>
+

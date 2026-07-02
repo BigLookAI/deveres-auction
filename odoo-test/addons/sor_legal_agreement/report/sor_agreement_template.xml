@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_sor_agreement">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>
+                            Agreement
+                            <span t-field="doc.name"/>
+                        </h2>
+
+                        <p>
+                            <strong>Type:</strong>
+                            <span t-field="doc.agreement_type"/>
+                        </p>
+                        <p>
+                            <strong>Counterparty:</strong>
+                            <span t-field="doc.primary_partner_id"/>
+                        </p>
+                        <p>
+                            <strong>Effective Date:</strong>
+                            <span t-field="doc.date_start"/>
+                        </p>
+                        <p t-if="doc.date_end">
+                            <strong>End Date:</strong>
+                            <span t-field="doc.date_end"/>
+                        </p>
+
+                        <h3>Items</h3>
+                        <table class="table table-sm" style="width:100%; table-layout:fixed;">
+                            <colgroup>
+                                <col style="width:100%;"/>
+                            </colgroup>
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr t-foreach="doc.line_ids" t-as="line">
+                                    <td style="word-wrap:break-word; overflow-wrap:break-word;">
+                                        <span t-field="line.product_id"/>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Terms and Conditions</h3>
+                        <div t-field="doc.terms"/>
+
+                        <!-- Signature block -->
+                        <div style="margin-top:48pt;">
+                            <table style="width:100%; border-collapse:collapse;">
+                                <tr>
+                                    <td style="width:45%; padding-right:16pt; vertical-align:bottom;">
+                                        <p style="margin-bottom:4pt; font-weight:bold;">
+                                            Signed on behalf of
+                                            <span t-field="doc.company_id"/>
+                                        </p>
+                                        <div style="border-bottom:1px solid #000; height:32pt; margin-bottom:4pt;"/>
+                                        <p style="margin:0; font-size:9pt;">Name / Title / Date</p>
+                                    </td>
+                                    <td style="width:10%;"/>
+                                    <td style="width:45%; padding-left:16pt; vertical-align:bottom;">
+                                        <p style="margin-bottom:4pt; font-weight:bold;">
+                                            Signed by
+                                            <span t-field="doc.primary_partner_id"/>
+                                        </p>
+                                        <div style="border-bottom:1px solid #000; height:32pt; margin-bottom:4pt;"/>
+                                        <p style="margin:0; font-size:9pt;">Name / Title / Date</p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

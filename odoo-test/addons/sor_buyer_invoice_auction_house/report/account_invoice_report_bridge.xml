@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend the SOR buyer invoice PDF to add auction-house-specific content:
+         - Buyer's Premium column in the lot breakdown table
+         - VAT treatment indicator and VAT on Hammer columns (when hammer_price_vat_included)
+         - Summary rows: Total Hammer, Total Buyer's Premium, Invoice Total
+         - Statutory VAT notice text (when hammer_price_vat_included and notice is set) -->
+    <template id="report_invoice_document_sor_auction_house_bridge"
+              inherit_id="sor_buyer_invoice.report_invoice_document_sor_buyer_invoice">
+        <xpath expr="//div[@name='sor_auction_footer']" position="before">
+            <t t-if="o.sor_event_id">
+                <t t-set="hammer_lines"
+                   t-value="o.invoice_line_ids.filtered(lambda l: l.sor_line_type == 'hammer')"/>
+                <t t-set="premium_lines"
+                   t-value="o.invoice_line_ids.filtered(lambda l: l.sor_line_type == 'buyers_premium')"/>
+                <t t-if="hammer_lines">
+                    <t t-set="vat_included"
+                       t-value="o.company_id.hammer_price_vat_included"/>
+                    <t t-set="total_hammer"
+                       t-value="sum(hammer_lines.mapped('price_unit'))"/>
+                    <t t-set="total_premium"
+                       t-value="sum(premium_lines.mapped('price_unit'))"/>
+
+                    <!-- Lot breakdown table -->
+                    <div class="mt-3 mb-3" name="sor_lot_breakdown">
+                        <table class="table table-sm o_main_table" style="font-size:0.9em;">
+                            <thead>
+                                <tr>
+                                    <th>Lot No</th>
+                                    <th>Description</th>
+                                    <t t-if="vat_included">
+                                        <th class="text-center">VAT</th>
+                                    </t>
+                                    <th class="text-end">Hammer</th>
+                                    <t t-if="vat_included">
+                                        <th class="text-end">VAT on Hammer</th>
+                                    </t>
+                                    <th class="text-end">Buyer's Premium</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="o.sor_lot_ids" t-as="lot">
+                                    <t t-set="h_line"
+                                       t-value="hammer_lines.filtered(lambda l: l.sor_lot_id.id == lot.id)[:1]"/>
+                                    <t t-set="p_line"
+                                       t-value="premium_lines.filtered(lambda l: l.sor_lot_id.id == lot.id)[:1]"/>
+                                    <t t-if="h_line">
+                                        <tr>
+                                            <td><span t-out="lot.lot_number or ''"/></td>
+                                            <td>
+                                                <t t-if="lot.product_id">
+                                                    <span t-out="lot.product_id.name"/>
+                                                </t>
+                                            </td>
+                                            <t t-if="vat_included">
+                                                <td class="text-center">M-</td>
+                                            </t>
+                                            <td class="text-end">
+                                                <span t-out="h_line.price_unit"
+                                                      t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                            </td>
+                                            <t t-if="vat_included">
+                                                <td class="text-end">
+                                                    <span t-out="0.0"
+                                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                                </td>
+                                            </t>
+                                            <td class="text-end">
+                                                <t t-if="p_line">
+                                                    <span t-out="p_line.price_unit"
+                                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                                </t>
+                                                <t t-else="">—</t>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </t>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Total Hammer</strong></td>
+                                    <t t-if="vat_included"><td/><td/></t>
+                                    <td class="text-end">
+                                        <strong>
+                                            <span t-out="total_hammer"
+                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                        </strong>
+                                    </td>
+                                    <td class="text-end"/>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Total Buyer's Premium</strong></td>
+                                    <t t-if="vat_included"><td/><td/></t>
+                                    <td class="text-end"/>
+                                    <td class="text-end">
+                                        <strong>
+                                            <span t-out="total_premium"
+                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                        </strong>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td colspan="2" class="text-end"><strong>Invoice Total</strong></td>
+                                    <t t-if="vat_included"><td/><td/></t>
+                                    <td colspan="2" class="text-end">
+                                        <strong>
+                                            <span t-out="total_hammer + total_premium"
+                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                        </strong>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+
+                    <!-- Statutory VAT notice (margin scheme) -->
+                    <t t-if="vat_included and o.company_id.auction_vat_notice">
+                        <div class="mt-2 mb-3" name="sor_vat_notice"
+                             style="font-size:0.85em; border-top:1px solid #ccc; padding-top:0.5em;">
+                            <span t-out="o.company_id.auction_vat_notice"/>
+                        </div>
+                    </t>
+                </t>
+            </t>
+        </xpath>
+    </template>
+</odoo>

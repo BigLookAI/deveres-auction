@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Creators — window action (filtered to Creator parent type) -->
+    <record id="action_sor_creators" model="ir.actions.act_window">
+        <field name="name">Creators</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('contact_types.code', '=', 'creator')]</field>
+        <field name="context">{'default_contact_type_code': 'creator'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first creator!
+            </p>
+            <p>
+                Creators are contacts with the Creator parent type assigned
+                (artists, makers, and other creative contributors).
+            </p>
+        </field>
+    </record>
+
+    <record id="action_sor_creators_view_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_partner_tree_artists"/>
+        <field name="act_window_id" ref="action_sor_creators"/>
+    </record>
+
+    <!-- Contacts — window action (filtered to Contact parent type) -->
+    <record id="action_sor_contacts" model="ir.actions.act_window">
+        <field name="name">Contacts</field>
+        <field name="res_model">res.partner</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('contact_types.code', '=', 'contact')]</field>
+        <field name="context">{'default_contact_type_code': 'contact'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first contact!
+            </p>
+            <p>
+                Contacts are partners with the Contact parent type assigned
+                (collectors, buyers, donors, and other transactional contacts).
+            </p>
+        </field>
+    </record>
+
+    <record id="action_sor_contacts_view_list" model="ir.actions.act_window.view">
+        <field name="sequence">1</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_partner_tree_contacts"/>
+        <field name="act_window_id" ref="action_sor_contacts"/>
+    </record>
+
+    <!-- Top-level menu items — visible to all staff (no developer mode required) -->
+    <menuitem id="menu_sor_creators"
+              name="Creators"
+              action="action_sor_creators"
+              sequence="10"
+              groups="base.group_user"/>
+
+    <menuitem id="menu_sor_contacts"
+              name="Contacts"
+              action="action_sor_contacts"
+              sequence="20"
+              groups="base.group_user"/>
+
+    <!-- Hide the default Odoo Contacts top-level menu.
+         contacts.menu_contacts is owned by the contacts module, which
+         sor_contact_roles depends on — the same pattern used by sor_artwork
+         to hide stock.menu_stock_root. -->
+    <record id="contacts.menu_contacts" model="ir.ui.menu">
+        <field name="active" eval="False"/>
+    </record>
+
+</odoo>

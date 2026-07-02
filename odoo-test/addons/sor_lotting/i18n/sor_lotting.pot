@@ -1,0 +1,299 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sor_lotting
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-24 10:24+0000\n"
+"PO-Revision-Date: 2026-04-24 10:24+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__break_even_value
+msgid "Break-Even Value"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Catalogue"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields.selection,name:sor_lotting.selection__sor_lot__state__catalogued
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_search
+msgid "Catalogued"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model,name:sor_lotting.model_res_company
+msgid "Companies"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__company_id
+msgid "Company"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.actions.act_window,help:sor_lotting.sor_lot_action
+msgid "Create your first lot"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__currency_id
+msgid "Currency"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_product_template__display_name
+#: model:ir.model.fields,field_description:sor_lotting.field_res_company__display_name
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields.selection,name:sor_lotting.selection__sor_lot__state__draft
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_search
+msgid "Draft"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Financial"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__hammer_price
+msgid "Hammer Price"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__estimate_high
+msgid "High Estimate"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_product_template__id
+#: model:ir.model.fields,field_description:sor_lotting.field_res_company__id
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__id
+msgid "ID"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Identification"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__internal_notes
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Internal Notes"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_search
+msgid "Live"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Lot"
+msgstr ""
+
+#. module: sor_lotting
+#. odoo-python
+#: code:addons/sor_lotting/models/sor_lot.py:0
+msgid ""
+"Lot \"%s\" cannot be deleted because it is %s. Only Draft lots may be "
+"deleted."
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__lot_number
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_search
+msgid "Lot Number"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__lot_reference
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_search
+msgid "Lot Reference"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.actions.act_window,name:sor_lotting.sor_lot_action
+#: model:ir.ui.menu,name:sor_lotting.menu_sor_lots
+#: model:ir.ui.menu,name:sor_lotting.menu_sor_lots_root
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_list
+msgid "Lots"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.actions.act_window,help:sor_lotting.sor_lot_action
+msgid ""
+"Lots are the individual catalogue entries for a sale.\n"
+"                Each lot links a product to its estimates, reserve price, and sale outcome."
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__estimate_low
+msgid "Low Estimate"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.constraint,message:sor_lotting.constraint_sor_lot_estimate_check
+msgid "Low estimate must not exceed high estimate."
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Mark Passed"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Mark Sold"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Mark this lot as Passed? This cannot be undone."
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Mark this lot as Sold? This cannot be undone."
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,help:sor_lotting.field_sor_lot__break_even_value
+msgid ""
+"Minimum hammer price for house profitability. Currently reflects reserve "
+"price; fee data is added by sor_commercial_auction_house."
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__no_reserve
+msgid "No Reserve"
+msgstr ""
+
+#. module: sor_lotting
+#. odoo-python
+#: code:addons/sor_lotting/models/sor_lot.py:0
+msgid "Only a Catalogued or Live lot can be marked Passed."
+msgstr ""
+
+#. module: sor_lotting
+#. odoo-python
+#: code:addons/sor_lotting/models/sor_lot.py:0
+msgid "Only a Catalogued or Live lot can be marked Sold."
+msgstr ""
+
+#. module: sor_lotting
+#. odoo-python
+#: code:addons/sor_lotting/models/sor_lot.py:0
+msgid "Only a Draft lot can be catalogued."
+msgstr ""
+
+#. module: sor_lotting
+#. odoo-python
+#: code:addons/sor_lotting/models/sor_lot.py:0
+msgid "Only a Draft or Catalogued lot can be withdrawn."
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Open Product"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields.selection,name:sor_lotting.selection__sor_lot__state__passed
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_search
+msgid "Passed"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model,name:sor_lotting.model_product_template
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__product_id
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_search
+msgid "Product"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__reserve_price
+msgid "Reserve Price"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model,name:sor_lotting.model_sor_lot
+msgid "SOR Lot"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_search
+msgid "Search Lots"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields.selection,name:sor_lotting.selection__sor_lot__state__sold
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_search
+msgid "Sold"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__starting_bid
+msgid "Starting Bid"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__state
+msgid "State"
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields,field_description:sor_lotting.field_sor_lot__lot_suffix
+msgid "Suffix"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Withdraw"
+msgstr ""
+
+#. module: sor_lotting
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_form
+msgid "Withdraw this lot? This cannot be undone."
+msgstr ""
+
+#. module: sor_lotting
+#: model:ir.model.fields.selection,name:sor_lotting.selection__sor_lot__state__withdrawn
+#: model_terms:ir.ui.view,arch_db:sor_lotting.sor_lot_view_search
+msgid "Withdrawn"
+msgstr ""

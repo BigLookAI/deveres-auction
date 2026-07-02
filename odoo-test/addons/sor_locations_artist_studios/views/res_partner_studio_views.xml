@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Extend the partner form with Studios smart button and Create Studio action.
+         Both elements are visible only when the contact has is_artist = True. -->
+    <record id="view_partner_form_inherit_studios" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.sor_locations_artist_studios</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Load is_artist and sor_artist_studios_enabled as invisible fields so
+                 they can be used in invisible= attributes throughout this view. -->
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="is_artist" invisible="1"/>
+                <field name="sor_artist_studios_enabled" invisible="1"/>
+            </xpath>
+
+            <!-- Studios stat button: shows studio count; navigates to Studios list
+                 filtered to this artist. Visible only for artist/creator contacts
+                 when Artist Studios is enabled for the current company. -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_studios"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-map-marker"
+                        invisible="not is_artist or not sor_artist_studios_enabled">
+                    <field name="studio_count" widget="statinfo" string="Studios"/>
+                </button>
+                <button name="action_create_studio"
+                        type="object"
+                        string="Create Studio"
+                        class="oe_stat_button"
+                        icon="fa-plus-circle"
+                        invisible="not is_artist or not sor_artist_studios_enabled"/>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Gate the External Locations buttons (contributed by sor_locations_external) on the
+         Artist Studios toggle for artist contacts. Inheriting from the external view ensures
+         these XPaths are applied after those buttons exist in the arch.
+         sor_locations_external always auto-installs when sor_locations_artist_studios is
+         installed (shared dependency chain via sor_contact_roles). -->
+    <record id="view_partner_form_inherit_studios_external_gate" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.sor_locations_artist_studios.external_gate</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="sor_locations_external.view_partner_form_inherit_external"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//button[@name='action_open_external_locations']" position="attributes">
+                <attribute name="invisible">not is_contact or (is_artist and not sor_artist_studios_enabled)</attribute>
+            </xpath>
+            <xpath expr="//button[@name='action_create_external_location']" position="attributes">
+                <attribute name="invisible">not is_contact or (is_artist and not sor_artist_studios_enabled)</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

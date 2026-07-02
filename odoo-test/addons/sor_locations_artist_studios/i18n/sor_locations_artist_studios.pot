@@ -1,0 +1,216 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sor_locations_artist_studios
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-12 17:29+0000\n"
+"PO-Revision-Date: 2026-05-12 17:29+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sor_locations_artist_studios
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_search
+msgid "Archived"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_stock_location__artist_id
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_list
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_search
+msgid "Artist"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.actions.act_window,name:sor_locations_artist_studios.action_artist_studio_form
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_config_settings__sor_artist_studios_enabled
+#: model:ir.ui.menu,name:sor_locations_artist_studios.menu_artist_studios
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.sor_artist_studios_config_settings_view
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_form
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_search
+msgid "Artist Studios"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_partner__sor_artist_studios_enabled
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_users__sor_artist_studios_enabled
+msgid "Artist Studios Enabled"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#. odoo-python
+#: code:addons/sor_locations_artist_studios/models/res_config_settings.py:0
+msgid ""
+"Artist Studios cannot be disabled for %(company)s — %(count)d Artist Studio "
+"location(s) currently hold stock. Move all stock out of Artist Studio "
+"locations before disabling."
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_stock_location__studio_city
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_form
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_list
+msgid "City"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#. odoo-python
+#: code:addons/sor_locations_artist_studios/models/stock_warehouse.py:0
+msgid ""
+"Company '%s' has no address configured. Go to Settings → Companies to add "
+"one before enabling Artist Studios."
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model,name:sor_locations_artist_studios.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model,name:sor_locations_artist_studios.model_res_partner
+msgid "Contact"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_stock_location__studio_country_id
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_list
+msgid "Country"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_partner_form_inherit_studios
+msgid "Create Studio"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model_terms:ir.actions.act_window,help:sor_locations_artist_studios.action_artist_studio_form
+msgid "Create your first Artist Studio"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_partner__display_name
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_stock_location__display_name
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_stock_warehouse__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_config_settings__id
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_partner__id
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_stock_location__id
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_stock_warehouse__id
+msgid "ID"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model,name:sor_locations_artist_studios.model_stock_location
+msgid "Inventory Locations"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#. odoo-python
+#: code:addons/sor_locations_artist_studios/models/res_partner.py:0
+msgid "New Studio"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_stock_location__studio_street
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_form
+msgid "Street"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_list
+msgid "Studio"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_form
+msgid "Studio Address"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_partner__studio_ids
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_users__studio_ids
+msgid "Studio Locations"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_search
+msgid "Studio Name"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#. odoo-python
+#: code:addons/sor_locations_artist_studios/models/res_partner.py:0
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_partner__studio_count
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_res_users__studio_count
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_partner_form_inherit_studios
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_list
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_search
+msgid "Studios"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model_terms:ir.actions.act_window,help:sor_locations_artist_studios.action_artist_studio_form
+msgid ""
+"Studios are off-premises locations linked to an artist contact.\n"
+"                Enable \"Artist Studios\" in Inventory → Configuration → Settings first,\n"
+"                then create Studios here or directly from an artist's contact record."
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#. odoo-python
+#: code:addons/sor_locations_artist_studios/models/res_partner.py:0
+msgid ""
+"The Artist Studios Viewing Location has not been enabled. Go to Inventory → "
+"Configuration → Settings and enable \"Artist Studios\" first."
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,help:sor_locations_artist_studios.field_stock_location__artist_id
+msgid "The artist whose studio this location represents."
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,help:sor_locations_artist_studios.field_res_config_settings__sor_artist_studios_enabled
+msgid ""
+"Track artworks held at artists' studios. Creates an \"Artist Studios\" "
+"Viewing Location for this company when enabled."
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.sor_artist_studios_config_settings_view
+msgid ""
+"Track artworks held at artists' studios. Creates an 'Artist Studios' Viewing"
+" Location for this company when enabled."
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_list
+msgid "Viewing Location"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model,name:sor_locations_artist_studios.model_stock_warehouse
+msgid "Warehouse"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#: model:ir.model.fields,field_description:sor_locations_artist_studios.field_stock_location__studio_zip
+#: model_terms:ir.ui.view,arch_db:sor_locations_artist_studios.view_studio_form
+msgid "ZIP / Postcode"
+msgstr ""
+
+#. module: sor_locations_artist_studios
+#. odoo-python
+#: code:addons/sor_locations_artist_studios/models/res_partner.py:0
+msgid "artist_id"
+msgstr ""

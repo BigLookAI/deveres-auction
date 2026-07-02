@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quant-UI suppression for product.product (variant) form view. -->
+<odoo>
+    <data>
+
+        <!-- ── Variant form: stat buttons (stock.product_form_view_procurement_button) ── -->
+
+        <record id="view_product_procurement_btn_suppress"
+                model="ir.ui.view">
+            <field name="name">product.product.procurement.suppress.artwork</field>
+            <field name="model">product.product</field>
+            <field name="inherit_id" ref="stock.product_form_view_procurement_button"/>
+            <field name="arch" type="xml">
+
+                <!-- Inject suppression booleans (related from product.template) -->
+                <xpath expr="//field[@name='show_forecasted_qty_status_button']"
+                       position="after">
+                    <field name="is_forecast_btn_suppressed"     invisible="1"/>
+                    <field name="is_reorder_btn_suppressed"      invisible="1"/>
+                    <field name="is_moves_btn_suppressed"        invisible="1"/>
+                    <field name="is_putaway_btn_suppressed"      invisible="1"/>
+                    <field name="is_storage_cap_btn_suppressed"  invisible="1"/>
+                </xpath>
+
+                <!-- Forecast / On Hand stat button -->
+                <xpath expr="//button[@name='action_product_forecast_report']"
+                       position="attributes">
+                    <attribute name="invisible">not show_forecasted_qty_status_button or is_forecast_btn_suppressed</attribute>
+                </xpath>
+
+                <!-- Moves In/Out stat button -->
+                <xpath expr="//button[@name='action_view_stock_move_lines']"
+                       position="attributes">
+                    <attribute name="invisible">type != 'consu' or is_moves_btn_suppressed</attribute>
+                </xpath>
+
+                <!-- Reorder Rules — single-rule variant -->
+                <xpath expr="(//button[@name='action_view_orderpoints'])[1]"
+                       position="attributes">
+                    <attribute name="invisible">not is_storable or nbr_reordering_rules != 1 or is_reorder_btn_suppressed</attribute>
+                </xpath>
+
+                <!-- Reorder Rules — multi-rule variant -->
+                <xpath expr="(//button[@name='action_view_orderpoints'])[2]"
+                       position="attributes">
+                    <attribute name="invisible">not is_storable or nbr_reordering_rules == 1 or is_reorder_btn_suppressed</attribute>
+                </xpath>
+
+                <!-- Putaway Rules stat button -->
+                <xpath expr="//button[@name='action_view_related_putaway_rules']"
+                       position="attributes">
+                    <attribute name="invisible">type == 'service' or is_putaway_btn_suppressed</attribute>
+                </xpath>
+
+                <!-- Storage Capacities stat button -->
+                <xpath expr="//button[@name='action_view_storage_category_capacity']"
+                       position="attributes">
+                    <attribute name="invisible">type == 'service' or is_storage_cap_btn_suppressed</attribute>
+                </xpath>
+
+            </field>
+        </record>
+
+    </data>
+</odoo>

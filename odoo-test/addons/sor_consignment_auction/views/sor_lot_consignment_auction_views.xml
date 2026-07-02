@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Replaces the plain consignor_id field added by sor_auction_documents with a
+         label+inline-button layout. The bridge becomes the sole write mechanism for
+         consignor_id; the field is rendered readonly here (system-populated).
+         Inherits from sor_auction_documents view so the XPath anchor exists at load time. -->
+    <record id="view_sor_lot_form_inherit_consignment_auction" model="ir.ui.view">
+        <field name="name">sor.lot.form.inherit.consignment.auction</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_auction_documents.view_sor_lot_form_inherit_auction_docs"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='consignor_id']" position="replace">
+                <label for="consignor_id"/>
+                <div class="d-flex align-items-center gap-2">
+                    <field name="consignor_id" nolabel="1" readonly="1"
+                           options="{'no_open': True}"/>
+                    <button name="action_fetch_consignor"
+                            type="object"
+                            icon="fa-user-plus"
+                            title="Fetch Consignor"
+                            class="btn btn-link p-0"
+                            invisible="consignor_id != False or state not in ('draft', 'catalogued')"/>
+                    <button name="action_fetch_consignor"
+                            type="object"
+                            icon="fa-refresh"
+                            title="Refresh Consignor"
+                            class="btn btn-link p-0"
+                            invisible="consignor_id == False or state not in ('draft', 'catalogued')"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

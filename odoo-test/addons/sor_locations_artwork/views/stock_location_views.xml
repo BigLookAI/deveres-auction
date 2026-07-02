@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Add Artworks smart button and suppress warehouse logistics UI elements
+         that are irrelevant when locations are used to manage unique object artworks.
+         Applies to ALL location form views (Rooms, Studios, External Locations) since
+         none of these location types require inventory logistics when managing artworks.
+         A future asset bridge (e.g. sor_locations_furniture) would make its own
+         decision about whether to apply these suppressions. -->
+    <record id="view_location_form_inherit_artworks" model="ir.ui.view">
+        <field name="name">stock.location.form.inherit.sor_locations_artwork</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="stock.view_location_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Artworks smart button -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_artworks"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-picture-o">
+                    <field name="artwork_count" widget="statinfo" string="Artworks"/>
+                </button>
+            </xpath>
+
+            <!-- Putaway Rules button: auto-routing rules for incoming stock have no
+                 meaning for artwork locations where pieces are placed manually.
+                 Targeted by icon (fa-random) — unique to this button in the button_box. -->
+            <xpath expr="//button[@icon='fa-random']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Products button: shows quant-based stock counts. Artworks are tracked
+                 via current_location_id (direct field), not the quant system. The
+                 Artworks smart button above is the correct entry point.
+                 Targeted by action name reference. -->
+            <xpath expr="//button[@name='stock.act_product_location_open']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Cyclic Counting section: automated periodic inventory counts are
+                 irrelevant for unique object artworks tracked individually.
+                 Uses descendant axis (.//field) because cyclic_inventory_frequency
+                 is nested inside a <div class="o_row"> within the group. -->
+            <xpath expr="//group[.//field[@name='cyclic_inventory_frequency']]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Logistics section: removal strategy (FIFO/FEFO/LIFO) applies to
+                 fungible stock, not to unique objects selected individually.
+                 removal_strategy_id is a direct child of the group. -->
+            <xpath expr="//group[field[@name='removal_strategy_id']]" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

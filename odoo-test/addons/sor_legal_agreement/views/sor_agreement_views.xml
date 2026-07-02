@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form view -->
+    <record id="view_sor_agreement_form" model="ir.ui.view">
+        <field name="name">sor.agreement.form</field>
+        <field name="model">sor.agreement</field>
+        <field name="arch" type="xml">
+            <form string="Agreement">
+                <header>
+                    <button name="action_send_for_signature"
+                            string="Mark as Sent for Signature"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_confirm_signed"
+                            string="Confirm Signed"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'pending_signature'"/>
+                    <button name="action_close"
+                            string="Close Agreement"
+                            type="object"
+                            invisible="state != 'active'"/>
+                    <button name="action_rescind"
+                            string="Rescind"
+                            type="object"
+                            invisible="state not in ('pending_signature', 'active')"
+                            confirm="This will void the agreement and create a new Draft replacement. Continue?"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,pending_signature,active,closed,revoked"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name" readonly="1"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="agreement_type" readonly="state != 'draft'"/>
+                            <field name="primary_partner_id" readonly="state != 'draft'"/>
+                            <field name="company_id" groups="base.group_multi_company"
+                                   readonly="state != 'draft'"/>
+                        </group>
+                        <group>
+                            <field name="date_start" readonly="state != 'draft'"/>
+                            <field name="date_end" readonly="state != 'draft'"/>
+                        </group>
+                    </group>
+                    <group string="Supersession"
+                           invisible="not supersedes_id and not superseded_by_id">
+                        <field name="supersedes_id" readonly="1"
+                               invisible="not supersedes_id"/>
+                        <field name="superseded_by_id" readonly="1"
+                               invisible="not superseded_by_id"/>
+                    </group>
+                    <notebook>
+                        <page string="Lines" name="lines">
+                            <field name="line_ids" readonly="state != 'draft'">
+                                <list editable="bottom">
+                                    <field name="product_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Terms and Conditions" name="terms">
+                            <field name="terms" nolabel="1" readonly="state != 'draft'"/>
+                        </page>
+                        <page string="Internal" name="internal">
+                            <group>
+                                <field name="notes" nolabel="1"
+                                       placeholder="Internal notes — not included in the PDF"/>
+                            </group>
+                            <separator string="Linked Stock Movements"/>
+                            <field name="picking_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="state"/>
+                                    <field name="scheduled_date"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- List view -->
+    <record id="view_sor_agreement_list" model="ir.ui.view">
+        <field name="name">sor.agreement.list</field>
+        <field name="model">sor.agreement</field>
+        <field name="arch" type="xml">
+            <list string="Agreements"
+                  decoration-muted="state in ('closed', 'revoked')"
+                  decoration-warning="is_stale">
+                <field name="is_stale" column_invisible="1"/>
+                <field name="name"/>
+                <field name="agreement_type"/>
+                <field name="primary_partner_id"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'active'"
+                       decoration-warning="state == 'pending_signature'"
+                       decoration-info="state == 'draft'"
+                       decoration-muted="state == 'closed'"
+                       decoration-danger="state == 'revoked'"/>
+                <field name="stale_indicator" string="" nolabel="1" readonly="1"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Search view -->
+    <record id="view_sor_agreement_search" model="ir.ui.view">
+        <field name="name">sor.agreement.search</field>
+        <field name="model">sor.agreement</field>
+        <field name="arch" type="xml">
+            <search string="Search Agreements">
+                <field name="name" string="Reference"/>
+                <field name="primary_partner_id" string="Counterparty"/>
+                <separator/>
+                <filter string="Draft" name="filter_draft"
+                        domain="[('state', '=', 'draft')]"/>
+                <filter string="Pending Signature" name="filter_pending"
+                        domain="[('state', '=', 'pending_signature')]"/>
+                <filter string="Active" name="filter_active"
+                        domain="[('state', '=', 'active')]"/>
+                <filter string="Closed" name="filter_closed"
+                        domain="[('state', '=', 'closed')]"/>
+                <filter string="Revoked" name="filter_revoked"
+                        domain="[('state', '=', 'revoked')]"/>
+                <separator/>
+                <filter string="Overdue" name="filter_overdue"
+                        domain="[('is_stale', '=', True)]"/>
+                <separator/>
+                <group>
+                    <filter string="Counterparty" name="group_counterparty"
+                            context="{'group_by': 'primary_partner_id'}"/>
+                    <filter string="State" name="group_state"
+                            context="{'group_by': 'state'}"/>
+                    <filter string="Agreement Type" name="group_type"
+                            context="{'group_by': 'agreement_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

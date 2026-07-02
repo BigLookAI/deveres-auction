@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- "Generate Buyer Invoices" button on the auction event form.
+         Auction-specific: only visible when event_type == 'auction'. -->
+    <record id="sor_event_view_form_generate_invoice_button" model="ir.ui.view">
+        <field name="name">sor.event.view.form.generate.invoice.button</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_generate_buyer_invoices"
+                    type="object"
+                    string="Generate Buyer Invoices"
+                    class="btn-primary"
+                    invisible="event_type != 'auction'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

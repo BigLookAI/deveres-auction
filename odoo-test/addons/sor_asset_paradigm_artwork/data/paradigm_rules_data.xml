@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Suppression rules for the unique_object paradigm (artworks).
+     noupdate="0": module upgrade restores any accidentally deleted rules.
+     To re-enable an element for debugging, uncheck Suppressed on the rule
+     in Technical > SOR > Paradigm Rules. Do not delete rules. -->
+<odoo>
+    <data noupdate="1">
+
+        <record id="rule_unique_object_forecast_button" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">forecast_button</field>
+            <field name="description">Forecasted Qty stat button — always 1 for a unique object; the button adds confusion</field>
+        </record>
+
+        <record id="rule_unique_object_reorder_button" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">reorder_button</field>
+            <field name="description">Reorder Rules stat button — unique objects are never automatically reordered</field>
+        </record>
+
+        <record id="rule_unique_object_moves_button" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">moves_button</field>
+            <field name="description">Moves In/Out stat button — stock move terminology is misleading for unique art objects</field>
+        </record>
+
+        <record id="rule_unique_object_putaway_button" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">putaway_button</field>
+            <field name="description">Putaway Rules stat button — putaway rules are irrelevant for individually tracked objects</field>
+        </record>
+
+        <record id="rule_unique_object_storage_capacity_button" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">storage_capacity_button</field>
+            <field name="description">Storage Capacities stat button — capacity rules do not apply to unique objects</field>
+        </record>
+
+        <record id="rule_unique_object_qty_available_field" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">qty_available_field</field>
+            <field name="description">Qty Available inline field — quantity is always 1; the field is noise</field>
+        </record>
+
+        <record id="rule_unique_object_qty_column" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">qty_column</field>
+            <field name="description">Qty Available / Forecasted list and kanban columns — no analytical value for unique objects</field>
+        </record>
+
+        <record id="rule_unique_object_operations_group" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">operations_group</field>
+            <field name="description">Operations (routes) group on Inventory tab — route configuration is irrelevant for unique objects</field>
+        </record>
+
+        <record id="rule_unique_object_replenish_action" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">replenish_action</field>
+            <field name="description">Replenish action menu entry — unique objects cannot be replenished via reorder</field>
+        </record>
+
+        <record id="rule_unique_object_odoo_product_type_field" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">odoo_product_type_field</field>
+            <field name="description">Unique Object: hide Odoo Product Type (Goods/Service/Combo — always Goods)</field>
+        </record>
+
+        <record id="rule_unique_object_product_type_field" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">product_type_field</field>
+            <field name="description">Unique Object: hide SOR Type field (always artwork)</field>
+        </record>
+
+        <record id="rule_unique_object_track_inventory_field" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">track_inventory_field</field>
+            <field name="description">Unique Object: hide Track Inventory checkbox (always tracked)</field>
+        </record>
+
+        <record id="rule_unique_object_inventory_tab" model="sor.asset.paradigm.rule">
+            <field name="paradigm">unique_object</field>
+            <field name="element_key">inventory_tab</field>
+            <field name="description">Unique Object: hide Inventory tab (logistics, weight, lead time, locations) — SOR operations modules will replace this with their own UI when in scope</field>
+        </record>
+
+    </data>
+</odoo>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Extend the partner form with External Locations smart button and Create action.
+         Both elements are visible only when the contact has is_contact = True. -->
+    <record id="view_partner_form_inherit_external" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.sor_locations_external</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Load is_contact as an invisible field so it can be used in
+                 invisible= attributes throughout this view inheritance. -->
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="is_contact" invisible="1"/>
+            </xpath>
+
+            <!-- External Locations stat button: shows location count; navigates to the
+                 External Locations list filtered to this contact. Visible only for
+                 contact-type contacts. -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_external_locations"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-map-marker"
+                        invisible="not is_contact">
+                    <field name="external_location_count" widget="statinfo" string="Locations"/>
+                </button>
+                <button name="action_create_external_location"
+                        type="object"
+                        string="Create External Location"
+                        class="oe_stat_button"
+                        icon="fa-plus-circle"
+                        invisible="not is_contact"/>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

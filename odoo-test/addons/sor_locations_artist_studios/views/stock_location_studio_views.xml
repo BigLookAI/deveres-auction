@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- List view: Studios with artist and address summary. -->
+    <record id="view_studio_list" model="ir.ui.view">
+        <field name="name">sor.studio.list</field>
+        <field name="model">stock.location</field>
+        <field name="arch" type="xml">
+            <list string="Studios">
+                <field name="name" string="Studio"/>
+                <field name="artist_id" string="Artist"/>
+                <field name="studio_city" string="City"/>
+                <field name="studio_country_id" string="Country"/>
+                <field name="warehouse_id" string="Viewing Location"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Search view: search by name or artist; filter and group by artist. -->
+    <record id="view_studio_search" model="ir.ui.view">
+        <field name="name">sor.studio.search</field>
+        <field name="model">stock.location</field>
+        <field name="arch" type="xml">
+            <search string="Studios">
+                <field name="name" string="Studio Name"/>
+                <field name="artist_id" string="Artist"/>
+                <filter string="Artist Studios"
+                        name="filter_artist_studios"
+                        domain="[('usage', '=', 'internal'), ('warehouse_id.name', '=', 'Artist Studios')]"/>
+                <separator/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Artist" name="group_by_artist"
+                            domain="[]" context="{'group_by': 'artist_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Form view (primary): Studio fields layered on the standard location form.
+         mode=primary keeps this separate from the standard Locations form.
+         The stock form structure is:
+           <sheet>
+             <div name="button_box"/>
+             <h1><field name="name"/></h1>
+             <h2><field name="location_id"/></h2>
+             <group>
+               <group name="additional_info">...</group>
+               ...
+             </group>
+           </sheet>
+    -->
+    <record id="view_studio_form" model="ir.ui.view">
+        <field name="name">sor.studio.form</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="stock.view_location_form"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <!-- Relabel location_id and restrict to Artist Studios view location only.
+                 Readonly on existing records (readonly="id"); on new records default_get
+                 pre-populates it with the AS view location and the domain restricts the
+                 dropdown to AS only, so it is functionally locked either way. -->
+            <xpath expr="//h2/field[@name='location_id']" position="attributes">
+                <attribute name="string">Artist Studios</attribute>
+                <attribute name="domain">[('warehouse_view_ids.code', '=', 'AS')]</attribute>
+                <attribute name="readonly">id</attribute>
+            </xpath>
+            <!-- Insert artist_id as the first field in the Additional Information group.
+                 Make usage (Location Type) readonly — Studios are always Internal. -->
+            <xpath expr="//group[@name='additional_info']/field[@name='usage']" position="before">
+                <field name="artist_id"/>
+            </xpath>
+            <xpath expr="//group[@name='additional_info']/field[@name='usage']" position="attributes">
+                <attribute name="readonly">1</attribute>
+            </xpath>
+            <!-- Add Studio Address section after the main group block. -->
+            <xpath expr="//sheet/group" position="after">
+                <group string="Studio Address">
+                    <group>
+                        <field name="studio_street" placeholder="Street"/>
+                        <field name="studio_city" placeholder="City"/>
+                    </group>
+                    <group>
+                        <field name="studio_zip" placeholder="ZIP / Postcode"/>
+                        <field name="studio_country_id"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Window action: scoped to Studios (internal locations under Artist Studios warehouse). -->
+    <record id="action_artist_studio_form" model="ir.actions.act_window">
+        <field name="name">Artist Studios</field>
+        <field name="res_model">stock.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('usage', '=', 'internal'), ('warehouse_id.name', '=', 'Artist Studios')]</field>
+        <field name="view_ids" eval="[
+            (5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_studio_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_studio_form')}),
+        ]"/>
+        <field name="search_view_id" ref="view_studio_search"/>
+        <field name="context">{'default_usage': 'internal', 'sor_studio_context': True}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Artist Studio
+            </p>
+            <p>
+                Studios are off-premises locations linked to an artist contact.
+                Enable "Artist Studios" in Inventory → Configuration → Settings first,
+                then create Studios here or directly from an artist's contact record.
+            </p>
+        </field>
+    </record>
+
+    <!-- Exclude Artist Studios locations from the Rooms list when this bridge is active.
+         Studios and Rooms are separate concepts; Studios should not appear in Rooms. -->
+    <record id="sor_locations.action_room_form" model="ir.actions.act_window">
+        <field name="domain">[('usage', '=', 'internal'), ('warehouse_id', '!=', False), ('warehouse_id.name', '!=', 'Artist Studios')]</field>
+    </record>
+
+    <!-- Exclude Artist Studios from the Viewing Locations list when this bridge is active.
+         Artist Studios warehouses (code='AS') are off-premises locations for artists —
+         they are not Viewing Locations and must not appear in the Viewing Locations list. -->
+    <record id="sor_locations.action_viewing_location_form" model="ir.actions.act_window">
+        <field name="domain">[('code', '!=', 'AS')]</field>
+    </record>
+
+    <!-- Restrict the Room form's Parent Viewing Location dropdown to exclude Artist Studios.
+         The base domain matches all warehouse view locations; this override adds warehouse_id.code != 'AS'
+         so the AS view location cannot be selected as a Room parent. -->
+    <record id="view_room_form_restrict_as_parent" model="ir.ui.view">
+        <field name="name">stock.location.room.form.restrict.as.parent</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="sor_locations.view_room_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='location_id']" position="attributes">
+                <attribute name="domain">[('usage', '=', 'view'), ('warehouse_view_ids', '!=', False), ('warehouse_view_ids.code', '!=', 'AS')]</attribute>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

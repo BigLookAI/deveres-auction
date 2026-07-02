@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- T3: Artwork Locations Dashboard menu item.
+         Parent: sor_artwork.menu_sor_products (Artworks top-level).
+         sequence=20 places it after All Products (sequence=10). -->
+    <menuitem
+        id="menu_artwork_locations"
+        name="Artwork Locations"
+        parent="sor_artwork.menu_sor_products"
+        action="sor_locations_artwork.action_artwork_location_dashboard"
+        sequence="20"
+        groups="stock.group_stock_user"/>
+
+</odoo>

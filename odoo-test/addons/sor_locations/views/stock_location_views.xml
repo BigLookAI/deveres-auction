@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- List view for Rooms: internal locations belonging to a Viewing Location. -->
+    <record id="view_room_list" model="ir.ui.view">
+        <field name="name">sor.room.list</field>
+        <field name="model">stock.location</field>
+        <field name="arch" type="xml">
+            <list string="Rooms">
+                <field name="complete_name" string="Room"/>
+                <field name="warehouse_id" string="Viewing Location"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Search view for Rooms.
+         Uses warehouse_id (stored) directly — viewing_location_id is store=False
+         and cannot be used in search <field> elements or group_by contexts.
+         <group> must have no attributes; group_by filters require domain="[]". -->
+    <record id="view_room_search" model="ir.ui.view">
+        <field name="name">sor.room.search</field>
+        <field name="model">stock.location</field>
+        <field name="arch" type="xml">
+            <search string="Rooms">
+                <field name="name" string="Room Name"/>
+                <field name="warehouse_id" string="Viewing Location"/>
+                <filter string="Internal Rooms" name="filter_rooms"
+                        domain="[('usage', '=', 'internal'), ('warehouse_id', '!=', False)]"/>
+                <separator/>
+                <filter string="Archived" name="inactive" domain="[('active', '=', False)]"/>
+                <group>
+                    <filter string="Viewing Location" name="group_by_viewing_location"
+                            domain="[]" context="{'group_by': 'warehouse_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Form view for Rooms: inherits standard location form but restricts the
+         parent location_id to warehouse view locations only (mode=primary so it
+         does not affect the standard Locations form elsewhere). -->
+    <record id="view_room_form" model="ir.ui.view">
+        <field name="name">sor.room.form</field>
+        <field name="model">stock.location</field>
+        <field name="inherit_id" ref="stock.view_location_form"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='location_id']" position="attributes">
+                <attribute name="string">Viewing Location</attribute>
+                <attribute name="domain">[('usage', '=', 'view'), ('warehouse_view_ids', '!=', False)]</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Window action for Rooms: filtered to internal locations under a warehouse. -->
+    <record id="action_room_form" model="ir.actions.act_window">
+        <field name="name">Rooms</field>
+        <field name="res_model">stock.location</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('usage', '=', 'internal'), ('warehouse_id', '!=', False)]</field>
+        <field name="view_ids" eval="[
+            (5, 0, 0),
+            (0, 0, {'view_mode': 'list', 'view_id': ref('view_room_list')}),
+            (0, 0, {'view_mode': 'form', 'view_id': ref('view_room_form')}),
+        ]"/>
+        <field name="search_view_id" ref="view_room_search"/>
+        <field name="context">{'default_usage': 'internal'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first Room
+            </p>
+            <p>
+                Rooms are internal storage or display spaces within a Viewing Location.
+                Create a Viewing Location first, then add Rooms beneath it.
+            </p>
+        </field>
+    </record>
+
+</odoo>

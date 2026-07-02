@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem
+        id="menu_sor_technical_root"
+        name="SOR"
+        parent="base.menu_custom"
+        groups="base.group_no_one"
+        sequence="100"/>
+</odoo>

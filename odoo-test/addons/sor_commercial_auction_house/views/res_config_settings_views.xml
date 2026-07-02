@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Fee Schedule blocks in General Settings — visible for Auction House companies only.
+         Buyer's Premium and Vendor Fee Schedule rendered side-by-side within a single block. -->
+    <record id="res_config_settings_view_form_auction_fees" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.auction.fees</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <!-- business_model is declared in the arch by sor_business_model — no redeclaration needed -->
+            <xpath expr="//block[@name='sor_business_model_setting_container']" position="after">
+                <block name="sor_fee_schedules_container"
+                       invisible="business_model != 'auction_house'">
+                    <setting
+                        string="Buyer's Premium Tiers"
+                        help="Define buyer's premium rate tiers. For a single flat rate, keep one tier with Hammer Price From = 0.">
+                        <field name="buyers_premium_tier_ids">
+                            <list editable="bottom">
+                                <field name="sequence" widget="handle"/>
+                                <field name="threshold_from"/>
+                                <field name="rate_pct" string="Rate %"/>
+                                <field name="currency_id" column_invisible="1"/>
+                            </list>
+                        </field>
+                    </setting>
+                    <setting
+                        string="Vendor Fee Schedule"
+                        help="Default rates for vendor-side fees. These cascade to new lots.">
+                        <field name="fee_default_ids">
+                            <list editable="bottom">
+                                <field name="fee_type"/>
+                                <field name="rate_pct" string="Rate %"/>
+                            </list>
+                        </field>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,16 @@
+// Form controller overrides – edit here; used in both Pattern Lab and Odoo.
+// Tokens: $o-brand-primary (mapped from $colorColorsTheme01), plus direct Supernova tokens below.
+// After editing: Pattern Lab → run `npm run build:css` in pattern-lab; Odoo → restart or upgrade BL Modern Theme + refresh.
+
+.o_form_view {
+  .o_form_button_save {
+    background-color: $o-brand-primary;
+  }
+  .o_form_button_cancel,
+  .o_form_button_create {
+    background-color: $colorColorsTheme02;  // verify: change tokens/pl/colors.scss $colorColorsTheme02
+  }
+  .o_cp_buttons {
+    gap: $measureDimensionMeasuresMeasureX2;  // verify: change tokens/pl/measures.scss MeasureX2
+  }
+}

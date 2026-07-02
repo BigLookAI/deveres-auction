@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        Override web.external_layout_standard to use a PNG version of the company logo.
+        Odoo 19 stores images as WebP; wkhtmltopdf 0.12.6 does not support WebP.
+        logo_pdf (computed on res.company) converts logo_web to PNG on demand.
+    -->
+    <template id="external_layout_logo_pdf" inherit_id="web.external_layout_standard" priority="16">
+        <xpath expr="//img[hasclass('o_company_logo_small')]" position="replace">
+            <!-- logo_pdf exists only on res.company; base.document.layout (Send & Print wizard)
+                 has only company.logo. Without the model guard, Send & Print crashes with
+                 AttributeError: 'base.document.layout' object has no attribute 'logo_pdf'. -->
+            <img t-if="company._name == 'res.company' and company.logo_pdf"
+                 class="o_company_logo_small"
+                 t-att-src="image_data_uri(company.logo_pdf)" alt="Logo"/>
+            <img t-elif="company.logo" class="o_company_logo_small"
+                 t-att-src="image_data_uri(company.logo)" alt="Logo"/>
+        </xpath>
+    </template>
+
+    <record id="action_report_sor_agreement" model="ir.actions.report">
+        <field name="name">Agreement</field>
+        <field name="model">sor.agreement</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sor_legal_agreement.report_sor_agreement</field>
+        <field name="report_file">sor_legal_agreement.report_sor_agreement</field>
+        <field name="binding_model_id" ref="model_sor_agreement"/>
+        <field name="binding_type">report</field>
+    </record>
+</odoo>

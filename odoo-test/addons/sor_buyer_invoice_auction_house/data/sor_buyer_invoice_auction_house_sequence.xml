@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="seq_sor_buyer_invoice" model="ir.sequence">
+            <field name="name">Buyer Invoice</field>
+            <field name="code">sor.buyer.invoice</field>
+            <field name="prefix"></field>
+            <field name="padding">6</field>
+            <field name="number_increment">1</field>
+            <field name="number_next">1</field>
+            <field name="use_date_range" eval="False"/>
+            <field name="company_id" ref="base.main_company"/>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Action: open baseline product (developer mode only) -->
+    <record id="action_baseline_product" model="ir.actions.act_window">
+        <field name="name">Baseline Product</field>
+        <field name="res_model">product.template</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('asset_paradigm', '=', 'standard')]</field>
+        <field name="context">{'active_test': False}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Baseline Product not found.
+            </p>
+            <p>
+                The Baseline Product is the reference for full OOTB Odoo quant UI.
+                It uses the <strong>Standard</strong> paradigm with zero suppression rules,
+                so all stock stat buttons and quantity fields remain visible.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu item under SOR Technical root (developer mode only) -->
+    <menuitem
+        id="menu_sor_baseline_product"
+        name="Baseline Product"
+        parent="sor_technical_menu.menu_sor_technical_root"
+        action="action_baseline_product"
+        groups="base.group_no_one"
+        sequence="20"/>
+
+</odoo>

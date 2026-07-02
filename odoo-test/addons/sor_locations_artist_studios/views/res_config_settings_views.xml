@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Add Artist Studios opt-in setting to Inventory → Configuration → Settings,
+         immediately after the Storage Locations setting (same Warehouse block). -->
+    <record id="sor_artist_studios_config_settings_view" model="ir.ui.view">
+        <field name="name">sor.artist.studios.config.settings</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="stock.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//setting[@id='track_product_location']" position="after">
+                <setting id="sor_artist_studios"
+                         title="Artist Studios"
+                         help="Track artworks held at artists' studios. Creates an 'Artist Studios' Viewing Location for this company when enabled.">
+                    <field name="sor_artist_studios_enabled"/>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

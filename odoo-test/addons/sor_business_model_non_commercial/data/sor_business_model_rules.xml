@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+
+    <record id="rule_non_commercial_can_be_sold" model="sor.business.model.rule">
+        <field name="business_model">non_commercial</field>
+        <field name="field_key">can_be_sold</field>
+        <field name="active" eval="True"/>
+        <field name="description">Non-commercial: hide Can be Sold toggle</field>
+    </record>
+
+    <record id="rule_non_commercial_sale_price" model="sor.business.model.rule">
+        <field name="business_model">non_commercial</field>
+        <field name="field_key">sale_price_field</field>
+        <field name="active" eval="True"/>
+        <field name="description">Non-commercial: hide Sales Price field</field>
+    </record>
+
+    <record id="rule_non_commercial_sales_tab" model="sor.business.model.rule">
+        <field name="business_model">non_commercial</field>
+        <field name="field_key">sales_tab</field>
+        <field name="active" eval="True"/>
+        <field name="description">Non-commercial: hide Sales tab</field>
+    </record>
+
+    <record id="rule_non_commercial_sale_price_tab" model="sor.business.model.rule">
+        <field name="business_model">non_commercial</field>
+        <field name="field_key">sale_price_tab</field>
+        <field name="active" eval="True"/>
+        <field name="description">Non-commercial: hide Prices tab</field>
+    </record>
+
+</odoo>

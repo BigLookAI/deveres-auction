@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- UI manifestation records for the non_commercial business model rules.
+     Each record is one physical Odoo UI element suppressed by its parent rule.
+     element_key here is the Odoo field/page/span name targeted by the XPath,
+     distinct from the parent rule's feature key.
+     noupdate="0": upgrade restores any accidentally deleted records. -->
+<odoo>
+    <data noupdate="0">
+
+        <!-- can_be_sold -->
+        <record id="manifestation_can_be_sold_form" model="sor.business.model.rule.manifestation">
+            <field name="rule_id" ref="rule_non_commercial_can_be_sold"/>
+            <field name="element_name">Can be Sold Toggle</field>
+            <field name="element_key">sale_ok</field>
+            <field name="ui_element_type">Toggle</field>
+            <field name="ui_location">Product Template Form > Header Options</field>
+        </record>
+
+        <!-- sale_price_field — three UI locations -->
+        <record id="manifestation_sale_price_form" model="sor.business.model.rule.manifestation">
+            <field name="rule_id" ref="rule_non_commercial_sale_price"/>
+            <field name="element_name">Sales Price Label and Field</field>
+            <field name="element_key">list_price</field>
+            <field name="ui_element_type">Field</field>
+            <field name="ui_location">Product Template Form > General Information Tab</field>
+        </record>
+        <record id="manifestation_sale_price_kanban" model="sor.business.model.rule.manifestation">
+            <field name="rule_id" ref="rule_non_commercial_sale_price"/>
+            <field name="element_name">Price Span</field>
+            <field name="element_key">list_price</field>
+            <field name="ui_element_type">Kanban Card Element</field>
+            <field name="ui_location">Product Kanban Card</field>
+        </record>
+        <record id="manifestation_sale_price_list" model="sor.business.model.rule.manifestation">
+            <field name="rule_id" ref="rule_non_commercial_sale_price"/>
+            <field name="element_name">Sales Price Column</field>
+            <field name="element_key">list_price</field>
+            <field name="ui_element_type">List Column</field>
+            <field name="ui_location">Product Template List View</field>
+            <field name="is_static" eval="True"/>
+        </record>
+
+        <!-- sales_tab — two UI locations -->
+        <record id="manifestation_sales_tab_form" model="sor.business.model.rule.manifestation">
+            <field name="rule_id" ref="rule_non_commercial_sales_tab"/>
+            <field name="element_name">Sales Tab</field>
+            <field name="element_key">sales</field>
+            <field name="ui_element_type">Form Tab</field>
+            <field name="ui_location">Product Template Form</field>
+        </record>
+        <record id="manifestation_sales_purchases_tab_partner" model="sor.business.model.rule.manifestation">
+            <field name="rule_id" ref="rule_non_commercial_sales_tab"/>
+            <field name="element_name">Sales &amp; Purchase Tab</field>
+            <field name="element_key">sales_purchases</field>
+            <field name="ui_element_type">Form Tab</field>
+            <field name="ui_location">Contact Form</field>
+        </record>
+
+        <!-- sale_price_tab -->
+        <record id="manifestation_sale_price_tab_form" model="sor.business.model.rule.manifestation">
+            <field name="rule_id" ref="rule_non_commercial_sale_price_tab"/>
+            <field name="element_name">Prices Tab</field>
+            <field name="element_key">sales_price</field>
+            <field name="ui_element_type">Form Tab</field>
+            <field name="ui_location">Product Template Form</field>
+        </record>
+
+    </data>
+</odoo>

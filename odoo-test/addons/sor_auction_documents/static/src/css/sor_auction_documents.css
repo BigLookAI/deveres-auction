@@ -1,0 +1,11 @@
+/* Odoo's settings SCSS limits o_field_widget to 50% width inside o_setting_right_pane.
+   For the HTML editor (auction_sale_terms) this is too narrow — override to full width
+   and set a minimum editor height so the rich-text area is usable. */
+
+.o_setting_right_pane .o_field_widget.o_field_html {
+    width: 100%;
+}
+
+.o_setting_right_pane .o_field_html .odoo-editor-editable {
+    min-height: 150px;
+}

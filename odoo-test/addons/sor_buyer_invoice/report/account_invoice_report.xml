@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend the Odoo invoice PDF to add SOR auction-specific content:
+         - PSRA Licence Number from company.auction_psra_number
+         - Company Registration Number from company.company_registry
+         - VAT number from company.vat (not rendered by web.external_layout automatically;
+           the native template only renders fiscal_position_id.foreign_vat as forced_vat)
+         - Bank account details (IBAN) from company.bank_ids -->
+    <template id="report_invoice_document_sor_buyer_invoice"
+              inherit_id="account.report_invoice_document">
+        <!-- Append SOR regulatory/bank details block below the invoice content,
+             only on buyer invoices linked to an auction event. -->
+        <xpath expr="//t[@t-call='web.external_layout']" position="inside">
+            <t t-if="o.sor_event_id">
+                <div class="mt-4" name="sor_auction_footer">
+                    <div class="row">
+                        <div class="col-6" t-if="o.company_id.bank_ids">
+                            <strong>Bank Details</strong>
+                            <t t-foreach="o.company_id.bank_ids" t-as="bank">
+                                <div t-if="bank.acc_number">
+                                    <t t-if="bank.bank_id">
+                                        <span t-out="bank.bank_id.name"/>:
+                                    </t>
+                                    IBAN: <span t-out="bank.acc_number"/>
+                                </div>
+                            </t>
+                        </div>
+                        <div class="col-6">
+                            <t t-if="o.company_id.auction_psra_number">
+                                <div>
+                                    <strong>PSRA Licence No.:</strong>
+                                    <span t-out="o.company_id.auction_psra_number"/>
+                                </div>
+                            </t>
+                            <t t-if="o.company_id.company_registry">
+                                <div>
+                                    <strong>Company Reg. No.:</strong>
+                                    <span t-out="o.company_id.company_registry"/>
+                                </div>
+                            </t>
+                            <t t-if="o.company_id.vat">
+                                <div>
+                                    <strong>VAT No.:</strong>
+                                    <span t-out="o.company_id.vat"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>

@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_sor_post_sale_advice" model="ir.actions.report">
+        <field name="name">Post-Sale Advice</field>
+        <field name="model">sor.post.sale.advice</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sor_auction_documents.report_sor_post_sale_advice</field>
+        <field name="report_file">sor_auction_documents.report_sor_post_sale_advice</field>
+        <field name="print_report_name">'Post-Sale Advice - %s' % object.name</field>
+    </record>
+
+    <template id="report_sor_post_sale_advice">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h2>Post-Sale Advice</h2>
+
+                        <!-- Consignor and event details -->
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <strong>To:</strong><br/>
+                                <t t-out="doc.consignor_id.name"/><br/>
+                                <t t-if="doc.consignor_id.street">
+                                    <t t-out="doc.consignor_id.street"/><br/>
+                                </t>
+                                <t t-if="doc.consignor_id.city">
+                                    <t t-out="doc.consignor_id.city"/>
+                                </t>
+                                <t t-if="doc.consignor_id.vat">
+                                    <br/>VAT: <t t-out="doc.consignor_id.vat"/>
+                                </t>
+                            </div>
+                            <div class="col-6">
+                                <t t-if="doc.consignor_id.ref">
+                                    <strong>Seller Reference:</strong>
+                                    <t t-out="doc.consignor_id.ref"/><br/>
+                                </t>
+                                <strong>Sale:</strong>
+                                <t t-out="doc.event_id.name"/>
+                                <t t-if="doc.event_id.sale_number">
+                                    (<t t-out="doc.event_id.sale_number"/>)
+                                </t>
+                                <br/>
+                                <strong>Reference:</strong>
+                                <t t-out="doc.name"/>
+                            </div>
+                        </div>
+
+                        <!-- Results table -->
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Lot Ref</th>
+                                    <th class="text-center">Lot No.</th>
+                                    <th>Description</th>
+                                    <th class="text-end">Hammer Price</th>
+                                    <th class="text-end">VAT</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.lot_ids.sorted('lot_number')" t-as="lot">
+                                    <tr>
+                                        <td><t t-out="lot.lot_reference or ''"/></td>
+                                        <td class="text-center"><t t-out="lot.lot_number or ''"/></td>
+                                        <td><t t-out="lot.product_id.name or ''"/></td>
+                                        <!-- Passed lots: hammer and VAT shown as zero in company currency -->
+                                        <t t-if="lot.state == 'passed'">
+                                            <td class="text-end">
+                                                <t t-out="lot.hammer_price"
+                                                   t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
+                                            </td>
+                                            <td class="text-end">
+                                                <t t-out="lot.hammer_price"
+                                                   t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
+                                            </td>
+                                        </t>
+                                        <!-- Margin scheme lots -->
+                                        <t t-elif="lot.hammer_price_vat_included">
+                                            <td class="text-end">
+                                                <t t-out="lot.hammer_price"
+                                                   t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
+                                                M-
+                                            </td>
+                                            <td class="text-end">
+                                                <t t-out="lot.hammer_price * 0"
+                                                   t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
+                                            </td>
+                                        </t>
+                                        <!-- Standard sold lots -->
+                                        <t t-else="">
+                                            <td class="text-end">
+                                                <t t-out="lot.hammer_price"
+                                                   t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
+                                            </td>
+                                            <td class="text-end">—</td>
+                                        </t>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <!-- Auction sale terms -->
+                        <t t-if="doc.company_id.auction_sale_terms">
+                            <div class="mt-4">
+                                <t t-out="doc.company_id.auction_sale_terms"/>
+                            </div>
+                        </t>
+
+                        <!-- Footer: licence reference and director signature -->
+                        <div class="mt-4">
+                            <t t-if="doc.company_id.auction_licence_ref">
+                                <p><t t-out="doc.company_id.auction_licence_ref"/></p>
+                            </t>
+                            <t t-if="doc.company_id.auction_director_signature">
+                                <p><t t-out="doc.company_id.auction_director_signature"/></p>
+                            </t>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

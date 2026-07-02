@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Parent types -->
+        <record id="sor_contact_type_creator" model="sor.contact.type">
+            <field name="name">Creator</field>
+            <field name="code">creator</field>
+            <field name="type_category">creator</field>
+            <field name="sequence">10</field>
+            <field name="color">1</field>
+        </record>
+
+        <record id="sor_contact_type_contact" model="sor.contact.type">
+            <field name="name">Contact</field>
+            <field name="code">contact</field>
+            <field name="type_category">contact</field>
+            <field name="sequence">20</field>
+            <field name="color">10</field>
+        </record>
+
+        <!-- Creator sub-types (staff-assigned) -->
+        <record id="sor_contact_type_artist" model="sor.contact.type">
+            <field name="name">Artist</field>
+            <field name="code">artist</field>
+            <field name="parent_type_id" ref="sor_contact_type_creator"/>
+            <field name="type_category">creator</field>
+            <field name="sequence">11</field>
+            <field name="color">1</field>
+        </record>
+
+        <!-- Contact sub-types (activity-earned — auto-assigned by bridge modules) -->
+        <record id="sor_contact_type_bidder" model="sor.contact.type">
+            <field name="name">Bidder</field>
+            <field name="code">bidder</field>
+            <field name="parent_type_id" ref="sor_contact_type_contact"/>
+            <field name="type_category">contact</field>
+            <field name="sequence">21</field>
+            <field name="description">Auction participant</field>
+        </record>
+
+        <record id="sor_contact_type_buyer" model="sor.contact.type">
+            <field name="name">Buyer</field>
+            <field name="code">buyer</field>
+            <field name="parent_type_id" ref="sor_contact_type_contact"/>
+            <field name="type_category">contact</field>
+            <field name="sequence">22</field>
+        </record>
+
+        <record id="sor_contact_type_consignor" model="sor.contact.type">
+            <field name="name">Consignor</field>
+            <field name="code">consignor</field>
+            <field name="parent_type_id" ref="sor_contact_type_contact"/>
+            <field name="type_category">contact</field>
+            <field name="sequence">23</field>
+            <field name="description">Auction seller</field>
+        </record>
+
+        <record id="sor_contact_type_donor" model="sor.contact.type">
+            <field name="name">Donor</field>
+            <field name="code">donor</field>
+            <field name="parent_type_id" ref="sor_contact_type_contact"/>
+            <field name="type_category">contact</field>
+            <field name="sequence">24</field>
+            <field name="description">Museum contributor</field>
+        </record>
+
+        <record id="sor_contact_type_lender" model="sor.contact.type">
+            <field name="name">Lender</field>
+            <field name="code">lender</field>
+            <field name="parent_type_id" ref="sor_contact_type_contact"/>
+            <field name="type_category">contact</field>
+            <field name="sequence">25</field>
+        </record>
+    </data>
+</odoo>

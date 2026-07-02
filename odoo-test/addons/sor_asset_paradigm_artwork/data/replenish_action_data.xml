@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Replenish action suppression for unique_object paradigm is handled
+     additively in models/product_replenish.py via action_replenish override. -->
+<odoo/>

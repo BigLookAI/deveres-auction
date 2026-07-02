@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Arch recovered verbatim from ir_ui_view
+     'res.partner.form.inherit.sor_lotting_contact_roles' in the April-test DB. -->
+<odoo>
+    <record id="view_partner_form_inherit_lotting_contact_roles" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.sor_lotting_contact_roles</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <data>
+                <!-- Declare consigned_lot_count in the arch so it is available
+                     for invisible= expressions on the smart button and notebook tab. -->
+                <xpath expr="//field[@name='name']" position="before">
+                    <field name="consigned_lot_count" invisible="1"/>
+                </xpath>
+
+                <!-- Consigned Lots smart button: shows lot count; opens a lot list
+                     filtered to this consignor and the current company. -->
+                <xpath expr="//div[@name='button_box']" position="inside">
+                    <button name="action_view_consigned_lots" type="object" class="oe_stat_button" icon="fa-gavel" invisible="not consigned_lot_count">
+                        <field name="consigned_lot_count" widget="statinfo" string="Lots"/>
+                    </button>
+                </xpath>
+
+                <!-- Consigned Lots notebook tab: inline read-only list of lots.
+                     Visible only when the partner has consigned lots. -->
+                <xpath expr="//notebook" position="inside">
+                    <page name="consigned_lots" string="Consigned Lots" invisible="not consigned_lot_count">
+                        <field name="consigned_lot_ids" readonly="1" mode="list">
+                            <list>
+                                <field name="lot_reference" string="Lot Reference"/>
+                                <field name="lot_number" string="Lot No."/>
+                                <field name="lot_item_name" string="Item"/>
+                                <field name="state" string="State"/>
+                            </list>
+                        </field>
+                    </page>
+                </xpath>
+
+            </data>
+        </field>
+    </record>
+</odoo>

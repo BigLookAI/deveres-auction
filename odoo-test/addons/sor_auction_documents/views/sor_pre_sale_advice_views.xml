@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Pre-Sale Advice list view -->
+    <record id="view_sor_pre_sale_advice_list" model="ir.ui.view">
+        <field name="name">sor.pre.sale.advice.list</field>
+        <field name="model">sor.pre.sale.advice</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="event_id"/>
+                <field name="consignor_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- Pre-Sale Advice form view -->
+    <record id="view_sor_pre_sale_advice_form" model="ir.ui.view">
+        <field name="name">sor.pre.sale.advice.form</field>
+        <field name="model">sor.pre.sale.advice</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_send_by_email" type="object"
+                            string="Send by Email" class="btn-primary"/>
+                    <button name="%(action_report_sor_pre_sale_advice)d" type="action"
+                            string="Print" class="btn-secondary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" readonly="1"/>
+                            <field name="event_id" readonly="1"/>
+                            <field name="consignor_id" readonly="1"
+                                   options="{'no_open': True}"/>
+                        </group>
+                        <group>
+                            <field name="company_id" groups="base.group_multi_company"
+                                   readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="lots" string="Lots">
+                            <field name="lot_ids" readonly="1">
+                                <list>
+                                    <field name="lot_reference"/>
+                                    <field name="lot_number"/>
+                                    <field name="product_id" string="Description"/>
+                                    <field name="estimate_low" widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="estimate_high" widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="reserve_price" widget="monetary"
+                                           options="{'currency_field': 'currency_id'}"/>
+                                    <field name="currency_id" column_invisible="1"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Pre-Sale Advice window action -->
+    <record id="action_sor_pre_sale_advice" model="ir.actions.act_window">
+        <field name="name">Pre-Sale Advices</field>
+        <field name="res_model">sor.pre.sale.advice</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <!-- Smart button on auction event form -->
+    <record id="view_sor_event_form_inherit_psa_smart_button" model="ir.ui.view">
+        <field name="name">sor.event.form.inherit.psa.smart.button</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button class="oe_stat_button" type="object"
+                        name="action_view_pre_sale_advices"
+                        icon="fa-file-text-o"
+                        invisible="pre_sale_advice_count == 0">
+                    <field name="pre_sale_advice_count" widget="statinfo"
+                           string="Pre-Sale Advices"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

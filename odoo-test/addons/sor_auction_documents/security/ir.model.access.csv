@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sor_pre_sale_advice_user,sor.pre.sale.advice user,model_sor_pre_sale_advice,,1,1,1,0
+access_sor_pre_sale_advice_manager,sor.pre.sale.advice manager,model_sor_pre_sale_advice,base.group_system,1,1,1,1
+access_sor_post_sale_advice_user,sor.post.sale.advice user,model_sor_post_sale_advice,,1,1,1,0
+access_sor_post_sale_advice_manager,sor.post.sale.advice manager,model_sor_post_sale_advice,base.group_system,1,1,1,1
+access_sor_vendor_settlement_user,sor.vendor.settlement user,model_sor_vendor_settlement,,1,1,1,0
+access_sor_vendor_settlement_manager,sor.vendor.settlement manager,model_sor_vendor_settlement,base.group_system,1,1,1,1

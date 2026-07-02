@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Bids on sold lot 01 — escalating bids; winning bid sets is_winning_bid -->
+        <record id="demo_bid_sold01_01" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_01"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_john"/>
+            <field name="bid_type">floor</field>
+            <field name="amount">3800.0</field>
+        </record>
+
+        <record id="demo_bid_sold01_02" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_01"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_bridget"/>
+            <field name="bid_type">absentee</field>
+            <field name="amount">4200.0</field>
+        </record>
+
+        <record id="demo_bid_sold01_03" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_01"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_john"/>
+            <field name="bid_type">floor</field>
+            <field name="amount">4800.0</field>
+            <field name="is_winning_bid" eval="True"/>
+        </record>
+
+        <!-- Bids on sold lot 02 — winning bid for Thomas Brennan -->
+        <record id="demo_bid_sold02_01" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_02"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_bridget"/>
+            <field name="bid_type">phone</field>
+            <field name="amount">9500.0</field>
+        </record>
+
+        <record id="demo_bid_sold02_02" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_02"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_thomas"/>
+            <field name="bid_type">online</field>
+            <field name="amount">11000.0</field>
+            <field name="is_winning_bid" eval="True"/>
+        </record>
+
+        <!-- Bids on passed lot 01 — below reserve, lot passed -->
+        <record id="demo_bid_passed01_01" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_passed_01"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_dealer_william"/>
+            <field name="bid_type">floor</field>
+            <field name="amount">1100.0</field>
+        </record>
+
+        <record id="demo_bid_passed01_02" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_passed_01"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_dealer_patricia"/>
+            <field name="bid_type">commission</field>
+            <field name="amount">1250.0</field>
+        </record>
+
+        <!-- Bids on passed lot 02 — single bid below reserve -->
+        <record id="demo_bid_passed02_01" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_passed_02"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_john"/>
+            <field name="bid_type">floor</field>
+            <field name="amount">320.0</field>
+        </record>
+
+        <!-- Bids on Important Irish Art 2026 lots — three sold lots, two buyers.
+             John wins lots 201 (€6,200) and 203 (€9,500) → one invoice with two lines.
+             Thomas wins lot 202 (€3,800) → separate invoice with one line.
+             These match the hammer_price values set in sor_lotting demo_lots.xml. -->
+        <record id="demo_bid_sold03_01" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_03"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_bridget"/>
+            <field name="bid_type">phone</field>
+            <field name="amount">5800.0</field>
+        </record>
+
+        <record id="demo_bid_sold03_02" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_03"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_john"/>
+            <field name="bid_type">floor</field>
+            <field name="amount">6200.0</field>
+            <field name="is_winning_bid" eval="True"/>
+        </record>
+
+        <record id="demo_bid_sold04_01" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_04"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_john"/>
+            <field name="bid_type">floor</field>
+            <field name="amount">3400.0</field>
+        </record>
+
+        <record id="demo_bid_sold04_02" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_04"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_thomas"/>
+            <field name="bid_type">absentee</field>
+            <field name="amount">3800.0</field>
+            <field name="is_winning_bid" eval="True"/>
+        </record>
+
+        <record id="demo_bid_sold05_01" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_05"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_thomas"/>
+            <field name="bid_type">phone</field>
+            <field name="amount">8500.0</field>
+        </record>
+
+        <record id="demo_bid_sold05_02" model="sor.bid">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_05"/>
+            <field name="bidder_id" ref="sor_contact_roles.demo_collector_john"/>
+            <field name="bid_type">floor</field>
+            <field name="amount">9500.0</field>
+            <field name="is_winning_bid" eval="True"/>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,68 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sor_tracking_artwork
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-12 17:42+0000\n"
+"PO-Revision-Date: 2026-05-12 17:42+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sor_tracking_artwork
+#: model:ir.model,name:sor_tracking_artwork.model_res_company
+msgid "Companies"
+msgstr ""
+
+#. module: sor_tracking_artwork
+#: model:ir.model.fields,field_description:sor_tracking_artwork.field_product_product__display_name
+#: model:ir.model.fields,field_description:sor_tracking_artwork.field_product_template__display_name
+#: model:ir.model.fields,field_description:sor_tracking_artwork.field_res_company__display_name
+#: model:ir.model.fields,field_description:sor_tracking_artwork.field_stock_move_line__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: sor_tracking_artwork
+#: model:ir.model.fields,field_description:sor_tracking_artwork.field_product_product__id
+#: model:ir.model.fields,field_description:sor_tracking_artwork.field_product_template__id
+#: model:ir.model.fields,field_description:sor_tracking_artwork.field_res_company__id
+#: model:ir.model.fields,field_description:sor_tracking_artwork.field_stock_move_line__id
+msgid "ID"
+msgstr ""
+
+#. module: sor_tracking_artwork
+#: model:ir.model.fields,field_description:sor_tracking_artwork.field_product_product__sor_movement_count
+#: model:ir.model.fields,field_description:sor_tracking_artwork.field_product_template__sor_movement_count
+msgid "Movements"
+msgstr ""
+
+#. module: sor_tracking_artwork
+#: model:ir.model,name:sor_tracking_artwork.model_product_template
+msgid "Product"
+msgstr ""
+
+#. module: sor_tracking_artwork
+#: model:ir.model,name:sor_tracking_artwork.model_stock_move_line
+msgid "Product Moves (Stock Move Line)"
+msgstr ""
+
+#. module: sor_tracking_artwork
+#: model:ir.model,name:sor_tracking_artwork.model_product_product
+msgid "Product Variant"
+msgstr ""
+
+#. module: sor_tracking_artwork
+#: model_terms:ir.ui.view,arch_db:sor_tracking_artwork.view_stock_move_line_operation_tree_sor_tracking_artwork
+msgid "Serial Number"
+msgstr ""
+
+#. module: sor_tracking_artwork
+#: model_terms:ir.ui.view,arch_db:sor_tracking_artwork.product_template_form_view_procurement_button_sor_tracking_artwork
+msgid "Traceability"
+msgstr ""

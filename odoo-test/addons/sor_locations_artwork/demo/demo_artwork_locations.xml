@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!--
+            Artwork–Location demo assignments.
+            Sets current_location_id on 15 demo artworks, distributing them evenly
+            across the three demo Viewing Locations (Main Gallery, Secondary Space,
+            Collection Storage). Uses lot_stock_id (internal usage) since
+            current_location_id domain requires usage in ['internal','customer','supplier'].
+
+            Note: sor_locations_artwork is auto_install=True; auto-installed bridges
+            do not inherit the demo flag when triggered by parent module installs, so
+            this file may not load during reset scripts. The reset scripts include
+            equivalent SQL to guarantee these assignments regardless.
+        -->
+
+        <!-- Main Gallery (MAIN) — artworks 01–05 -->
+        <record id="sor_artwork.demo_artwork_01" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','MAIN')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_02" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','MAIN')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_03" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','MAIN')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_04" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','MAIN')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_05" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','MAIN')], limit=1).lot_stock_id.id"/>
+        </record>
+
+        <!-- Secondary Space (SEC) — artworks 06–10 -->
+        <record id="sor_artwork.demo_artwork_06" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','SEC')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_07" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','SEC')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_08" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','SEC')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_09" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','SEC')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_10" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','SEC')], limit=1).lot_stock_id.id"/>
+        </record>
+
+        <!-- Collection Storage (STOR) — artworks 11–15 -->
+        <record id="sor_artwork.demo_artwork_11" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','STOR')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_12" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','STOR')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_13" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','STOR')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_14" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','STOR')], limit=1).lot_stock_id.id"/>
+        </record>
+        <record id="sor_artwork.demo_artwork_15" model="product.template">
+            <field name="current_location_id" eval="env['stock.warehouse'].search([('code','=','STOR')], limit=1).lot_stock_id.id"/>
+        </record>
+    </data>
+</odoo>

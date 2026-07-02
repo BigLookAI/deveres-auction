@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Window action: standalone bid list/form -->
+    <record id="sor_bid_action" model="ir.actions.act_window">
+        <field name="name">Bids</field>
+        <field name="res_model">sor.bid</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('company_id', '=', allowed_company_ids[0])]</field>
+    </record>
+
+    <!-- Standalone sor.bid form view -->
+    <record id="sor_bid_view_form" model="ir.ui.view">
+        <field name="name">sor.bid.view.form</field>
+        <field name="model">sor.bid</field>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <!-- currency_id declared invisible — required for Monetary widget resolution in Odoo 19 -->
+                    <field name="currency_id" invisible="1"/>
+                    <!-- is_winning_bid declared for readonly expression evaluation -->
+                    <field name="is_winning_bid" invisible="1"/>
+                    <group>
+                        <group>
+                            <!-- lot_id readonly — lot assignment is fixed at bid creation -->
+                            <field name="lot_id" readonly="1"/>
+                            <field name="bidder_id" readonly="is_winning_bid"/>
+                            <field name="bid_type" readonly="is_winning_bid"/>
+                        </group>
+                        <group>
+                            <field name="amount" readonly="is_winning_bid"/>
+                            <field name="max_amount" invisible="bid_type != 'commission'"
+                                   readonly="is_winning_bid"/>
+                            <field name="bid_datetime" readonly="is_winning_bid"/>
+                        </group>
+                    </group>
+                    <group>
+                        <field name="external_bid_id" readonly="is_winning_bid"/>
+                    </group>
+                    <field name="notes" placeholder="Internal notes..."/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Standalone sor.bid list view -->
+    <record id="sor_bid_view_list" model="ir.ui.view">
+        <field name="name">sor.bid.view.list</field>
+        <field name="model">sor.bid</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="lot_id"/>
+                <field name="bid_datetime"/>
+                <field name="bidder_id"/>
+                <field name="bid_type"/>
+                <field name="amount"/>
+                <field name="max_amount" optional="hide"/>
+                <field name="is_winning_bid" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- sor.lot form patch — Bids tab.
+         Placed before Internal Notes. Hidden in Draft state — bids are only
+         relevant once the lot is Catalogued or beyond. -->
+    <record id="sor_lot_view_form_bids_tab" model="ir.ui.view">
+        <field name="name">sor.lot.view.form.bids.tab</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='internal_notes']" position="before">
+                <page string="Bids" name="bids" invisible="state == 'draft'">
+                    <field name="bid_ids" context="{'default_lot_id': id}">
+                        <list editable="bottom">
+                            <!-- currency_id declared column_invisible — required for Monetary
+                                 widget resolution in Odoo 19 list views -->
+                            <field name="currency_id" column_invisible="1"/>
+                            <!-- is_winning_bid declared column_invisible — drives readonly
+                                 expressions on row fields; winning bid rows are locked -->
+                            <field name="is_winning_bid" column_invisible="1"/>
+                            <field name="bid_datetime" readonly="is_winning_bid"/>
+                            <field name="bidder_id" readonly="is_winning_bid"/>
+                            <field name="bid_type" readonly="is_winning_bid"/>
+                            <field name="amount" readonly="is_winning_bid"/>
+                            <field name="max_amount" optional="hide" readonly="is_winning_bid"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- sor.lot form patch — hammer_price readonly when Sold.
+         Prevents modification of the hammer price after the lot outcome is confirmed. -->
+    <record id="sor_lot_view_form_hammer_price_readonly" model="ir.ui.view">
+        <field name="name">sor.lot.view.form.hammer.price.readonly</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='hammer_price']" position="attributes">
+                <attribute name="readonly">state == 'sold'</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- sor.lot form patch — bid_count stat button.
+         No button_box exists in the base sor.lot form — create it by inserting
+         before the first group inside <sheet>. -->
+    <record id="sor_lot_view_form_bid_count_button" model="ir.ui.view">
+        <field name="name">sor.lot.view.form.bid.count.button</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet/group[1]" position="before">
+                <div name="button_box" class="oe_button_box">
+                    <button
+                        class="oe_stat_button"
+                        type="object"
+                        name="action_view_bids"
+                        icon="fa-gavel">
+                        <field name="bid_count" widget="statinfo" string="Bids"/>
+                    </button>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- sor.lot list patch — bid_count column -->
+    <record id="sor_lot_view_list_bid_count" model="ir.ui.view">
+        <field name="name">sor.lot.view.list.bid.count</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_list"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list/field[@name='state']" position="after">
+                <field name="bid_count" string="Bids"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- res.partner form patch — bid_count stat button + Bid History tab -->
+    <record id="res_partner_view_form_bid_history" model="ir.ui.view">
+        <field name="name">res.partner.view.form.bid.history</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <!-- Stat button — shows bid count and opens the bid list action -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button class="oe_stat_button" type="object"
+                        name="action_view_bids" icon="fa-gavel"
+                        invisible="bid_count == 0">
+                    <field name="bid_count" widget="statinfo" string="Bids"/>
+                </button>
+            </xpath>
+            <!-- Bid History tab — embedded list of bids for this contact -->
+            <xpath expr="//notebook" position="inside">
+                <page string="Bid History" name="bid_history"
+                      invisible="bid_count == 0">
+                    <field name="bid_ids">
+                        <list create="0" delete="0">
+                            <field name="bid_datetime"/>
+                            <field name="lot_id"/>
+                            <field name="bid_type"/>
+                            <field name="amount"/>
+                            <field name="is_winning_bid"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+</odoo>

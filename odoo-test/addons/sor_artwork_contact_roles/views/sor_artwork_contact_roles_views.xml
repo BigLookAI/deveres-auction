@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Patch creator_id to restrict to Creator contacts when sor_contact_roles is active -->
+        <record id="view_product_template_form_creator_domain" model="ir.ui.view">
+            <field name="name">product.template.form.creator.domain</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="sor_artwork.view_product_template_form_artwork"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='creator_id']" position="attributes">
+                    <attribute name="domain">[('is_creator', '=', True)]</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Partner form: artwork stat button and Artworks tab (active when bridge installed) -->
+        <record id="view_partner_form_artworks" model="ir.ui.view">
+            <field name="name">res.partner.form.artworks</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <!-- Add smart button for artwork count -->
+                <xpath expr="//div[@name='button_box']" position="inside">
+                    <button class="oe_stat_button"
+                            type="object"
+                            name="action_view_artworks"
+                            icon="fa-paint-brush"
+                            invisible="not is_creator or artwork_count == 0"
+                            context="{'default_product_type': 'artwork', 'default_creator_id': id}">
+                        <field name="artwork_count" widget="statinfo" string="Artwork"/>
+                    </button>
+                </xpath>
+
+                <!-- Remove autofocus from Contacts tab so Artworks tab becomes the default -->
+                <xpath expr="//page[@name='contact_addresses']" position="attributes">
+                    <attribute name="autofocus"></attribute>
+                </xpath>
+
+                <!-- Add Artworks tab/page — positioned first in the notebook -->
+                <xpath expr="//page[@name='contact_addresses']" position="before">
+                    <page string="Artworks"
+                          name="artworks"
+                          autofocus="autofocus"
+                          invisible="not is_creator">
+                        <field name="artwork_ids" nolabel="1" context="{'default_product_type': 'artwork', 'default_creator_id': id}">
+                            <list string="Artworks" default_order="name">
+                                <field name="name" string="Artwork Name"/>
+                                <field name="product_subtype" string="Type" widget="badge"
+                                       decoration-info="product_subtype == 'painting'"
+                                       decoration-success="product_subtype == 'sculpture'"
+                                       decoration-warning="product_subtype == 'print'"/>
+                                <field name="creation_year" string="Year"/>
+                                <field name="medium" string="Medium"/>
+                                <field name="dimensions_width" string="Width"/>
+                                <field name="dimensions_height" string="Height"/>
+                                <field name="active" widget="boolean_toggle"/>
+                            </list>
+                        </field>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>

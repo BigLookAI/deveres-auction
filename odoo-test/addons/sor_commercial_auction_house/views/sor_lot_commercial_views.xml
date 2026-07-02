@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Lot form view patches: commercial auction fee fields.
+         is_commercial_auction must be declared in the arch for Odoo 19 JS parser. -->
+    <record id="sor_lot_view_form_fees" model="ir.ui.view">
+        <field name="name">sor.lot.view.form.fees</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Declare is_commercial_auction in the arch — required by Odoo 19 FormArchParser
+                 for invisible expression evaluation at parse time. -->
+            <xpath expr="//notebook" position="before">
+                <field name="is_commercial_auction" invisible="1"/>
+            </xpath>
+            <!-- Fees tab: placed before Internal Notes; visible only for commercial auction lots.
+                 Fields locked at Catalogued — core lot financials committed to printed catalogue. -->
+            <xpath expr="//page[@name='internal_notes']" position="before">
+                <page string="Fees" invisible="not is_commercial_auction">
+                    <group>
+                        <group string="Fee Rates">
+                            <field name="sellers_commission_pct" readonly="state != 'draft'"/>
+                            <field name="withdrawal_fee_pct" readonly="state != 'draft'"/>
+                            <field name="buyers_premium_pct" readonly="state != 'draft'"/>
+                        </group>
+                        <group string="Break-Even">
+                            <field name="break_even_value" widget="monetary" readonly="1"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+            <!-- Hide break_even_value from the main Financial group when the lot is
+                 a commercial auction lot — break-even is surfaced in the Fees tab instead. -->
+            <xpath expr="//group[@name='financial']/field[@name='break_even_value']" position="attributes">
+                <attribute name="invisible">is_commercial_auction</attribute>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Partner form view patch: Default Seller's Commission % in a dedicated Seller tab.
+         The tab is always visible when this bridge is installed (auction house deployments only). -->
+    <record id="res_partner_view_form_auction_house" model="ir.ui.view">
+        <field name="name">res.partner.view.form.auction.house</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Seller" name="seller_auction">
+                    <group>
+                        <field name="default_sellers_commission_pct"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Quant-UI suppression for product.template views (form, list, kanban).
+     Each XPath replaces the existing invisible expression with one that also
+     checks the per-record paradigm suppression boolean. -->
+<odoo>
+    <data>
+
+        <!-- ── Form: stat buttons (stock.product_template_form_view_procurement_button) ── -->
+
+        <record id="view_product_tmpl_procurement_btn_suppress"
+                model="ir.ui.view">
+            <field name="name">product.template.procurement.suppress.artwork</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="stock.product_template_form_view_procurement_button"/>
+            <field name="arch" type="xml">
+
+                <!-- Inject suppression booleans so the JS client loads them -->
+                <xpath expr="//field[@name='show_forecasted_qty_status_button']"
+                       position="after">
+                    <field name="is_forecast_btn_suppressed"     invisible="1"/>
+                    <field name="is_reorder_btn_suppressed"      invisible="1"/>
+                    <field name="is_moves_btn_suppressed"        invisible="1"/>
+                    <field name="is_putaway_btn_suppressed"      invisible="1"/>
+                    <field name="is_storage_cap_btn_suppressed"  invisible="1"/>
+                </xpath>
+
+                <!-- Forecast / On Hand stat button -->
+                <xpath expr="//button[@name='action_product_tmpl_forecast_report']"
+                       position="attributes">
+                    <attribute name="invisible">not show_forecasted_qty_status_button or is_forecast_btn_suppressed</attribute>
+                </xpath>
+
+                <!-- Reorder Rules — single-rule variant (shows min/max) -->
+                <xpath expr="(//button[@name='action_view_orderpoints'])[1]"
+                       position="attributes">
+                    <attribute name="invisible">not is_storable or nbr_reordering_rules != 1 or is_reorder_btn_suppressed</attribute>
+                </xpath>
+
+                <!-- Reorder Rules — multi-rule variant (shows count) -->
+                <xpath expr="(//button[@name='action_view_orderpoints'])[2]"
+                       position="attributes">
+                    <attribute name="invisible">not is_storable or nbr_reordering_rules == 1 or is_reorder_btn_suppressed</attribute>
+                </xpath>
+
+                <!-- Moves In/Out stat button -->
+                <xpath expr="//button[@name='action_view_stock_move_lines']"
+                       position="attributes">
+                    <attribute name="invisible">type != 'consu' or is_moves_btn_suppressed</attribute>
+                </xpath>
+
+                <!-- Putaway Rules stat button -->
+                <xpath expr="//button[@name='action_view_related_putaway_rules']"
+                       position="attributes">
+                    <attribute name="invisible">type == 'service' or is_putaway_btn_suppressed</attribute>
+                </xpath>
+
+                <!-- Storage Capacities stat button -->
+                <xpath expr="//button[@name='action_view_storage_category_capacity']"
+                       position="attributes">
+                    <attribute name="invisible">type == 'service' or is_storage_cap_btn_suppressed</attribute>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- ── Form: qty_available inline field + Operations group (stock.view_template_property_form) ── -->
+
+        <record id="view_product_tmpl_property_form_suppress"
+                model="ir.ui.view">
+            <field name="name">product.template.property.form.suppress.artwork</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="stock.view_template_property_form"/>
+            <field name="arch" type="xml">
+
+                <!-- Inject suppression booleans -->
+                <xpath expr="//field[@name='show_qty_update_button']"
+                       position="after">
+                    <field name="is_qty_available_suppressed"   invisible="1"/>
+                    <field name="is_operations_group_suppressed" invisible="1"/>
+                    <field name="is_inventory_tab_suppressed"   invisible="1"/>
+                </xpath>
+
+                <!-- Qty Available label -->
+                <xpath expr="//label[@for='qty_available']"
+                       position="attributes">
+                    <attribute name="invisible">not is_storable or is_qty_available_suppressed</attribute>
+                </xpath>
+
+                <!-- Qty Available row div (contains the clickable field / quants link) -->
+                <xpath expr="//div[@class='o_row'][field[@name='qty_available']]"
+                       position="attributes">
+                    <attribute name="invisible">not is_storable or is_qty_available_suppressed</attribute>
+                </xpath>
+
+                <!-- Operations (routes) group -->
+                <xpath expr="//group[@name='operations']"
+                       position="attributes">
+                    <attribute name="invisible">not (has_available_route_ids or route_from_categ_ids) or is_operations_group_suppressed</attribute>
+                </xpath>
+
+                <!-- Inventory tab (logistics, weight, lead time, counterpart locations).
+                     Hidden for unique_object paradigm — SOR operations modules will
+                     introduce their own tab when Consignments/Agreements/Loans are in scope.
+                     Restores automatically when is_inventory_tab_suppressed is False
+                     (no paradigm set, or developer toggled the rule off). -->
+                <xpath expr="//page[@name='inventory']"
+                       position="attributes">
+                    <attribute name="invisible">is_inventory_tab_suppressed</attribute>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- ── List view: Qty Available / Forecasted columns (stock.view_stock_product_template_tree) ── -->
+
+        <record id="view_product_tmpl_tree_suppress"
+                model="ir.ui.view">
+            <field name="name">product.template.stock.list.suppress.artwork</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="stock.view_stock_product_template_tree"/>
+            <field name="arch" type="xml">
+
+                <!-- Load suppression boolean as a hidden helper column -->
+                <xpath expr="//field[@name='show_on_hand_qty_status_button']"
+                       position="after">
+                    <field name="is_qty_column_suppressed" column_invisible="True"
+                           groups="stock.group_stock_user"/>
+                </xpath>
+
+                <!-- Qty Available column — per-cell suppression only.
+                     column_invisible cannot reference model fields in Odoo 19;
+                     full column-header hiding requires a dedicated artwork list view. -->
+                <xpath expr="//field[@name='qty_available']"
+                       position="attributes">
+                    <attribute name="invisible">not show_on_hand_qty_status_button or is_qty_column_suppressed</attribute>
+                </xpath>
+
+                <!-- Forecasted Qty column -->
+                <xpath expr="//field[@name='virtual_available']"
+                       position="attributes">
+                    <attribute name="invisible">not show_on_hand_qty_status_button or is_qty_column_suppressed</attribute>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- ── Form: product type fields + track inventory (product.product_template_form_view) ── -->
+        <!-- Suppresses:
+             - type         (Odoo native "Product Type" radio: Goods/Service/Combo)
+             - product_type (SOR "Type" field: Artwork/Furniture/etc.)
+             - is_storable  (Track Inventory checkbox) + its label
+             All three are always fixed for unique art objects. -->
+
+        <record id="view_product_tmpl_form_type_suppress"
+                model="ir.ui.view">
+            <field name="name">product.template.form.type.suppress.artwork</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_form_view"/>
+            <field name="arch" type="xml">
+
+                <!-- Inject suppression booleans before name so the JS client loads them -->
+                <xpath expr="//field[@name='name']" position="before">
+                    <field name="is_odoo_product_type_field_suppressed" invisible="1"/>
+                    <field name="is_product_type_field_suppressed" invisible="1"/>
+                    <field name="is_track_inventory_field_suppressed" invisible="1"/>
+                </xpath>
+
+                <!-- Odoo Product Type radio (Goods / Service / Combo) -->
+                <xpath expr="//field[@name='type']" position="attributes">
+                    <attribute name="invisible">is_odoo_product_type_field_suppressed</attribute>
+                </xpath>
+
+                <!-- SOR product_type field (Artwork / Furniture / etc.) -->
+                <xpath expr="//field[@name='product_type']" position="attributes">
+                    <attribute name="invisible">is_product_type_field_suppressed</attribute>
+                </xpath>
+
+                <!-- Track Inventory label (only visible for Goods) -->
+                <xpath expr="//label[@for='is_storable']" position="attributes">
+                    <attribute name="invisible">type != 'consu' or is_track_inventory_field_suppressed</attribute>
+                </xpath>
+
+                <!-- Track Inventory div (contains is_storable checkbox + tracking field) -->
+                <xpath expr="//div[field[@name='is_storable']]" position="attributes">
+                    <attribute name="invisible">type != 'consu' or is_track_inventory_field_suppressed</attribute>
+                </xpath>
+
+                <!-- General Information left column (group_general).
+                     Contains: type, combo_ids, service_tracking, product_tooltip.
+                     All are invisible for Goods/artwork records, leaving an empty column.
+                     Hide the group itself when the artwork paradigm suppression is active
+                     so the right column (pricing) spans the full width.
+                     Restores automatically when is_odoo_product_type_field_suppressed is
+                     False (developer toggled rule off + refreshed). -->
+                <xpath expr="//group[@name='group_general']" position="attributes">
+                    <attribute name="invisible">is_odoo_product_type_field_suppressed</attribute>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- ── Kanban: On Hand div (stock.product_template_kanban_stock_view) ── -->
+
+        <record id="view_product_tmpl_kanban_suppress"
+                model="ir.ui.view">
+            <field name="name">product.template.kanban.stock.suppress.artwork</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="stock.product_template_kanban_stock_view"/>
+            <field name="arch" type="xml">
+
+                <!-- Load suppression boolean into every kanban card -->
+                <xpath expr="//field[@name='show_on_hand_qty_status_button']"
+                       position="after">
+                    <field name="is_qty_column_suppressed" groups="stock.group_stock_user"/>
+                </xpath>
+
+                <!-- Suppress the "On hand: X" div -->
+                <xpath expr="//div[field[@name='qty_available']]"
+                       position="attributes">
+                    <attribute name="t-if">record.show_on_hand_qty_status_button.raw_value &amp;&amp; !record.is_qty_column_suppressed.raw_value</attribute>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- ── Artwork list view: unconditionally hide Qty/Forecasted column headers ── -->
+        <!-- column_invisible="True" is evaluated at view parse time (static).
+             This is the correct approach — dynamic field-based column_invisible
+             does not work in Odoo 19. The artwork list is always unique objects,
+             so unconditional suppression is correct. -->
+
+        <record id="sor_artwork_paradigm_product_list_view" model="ir.ui.view">
+            <field name="name">sor.artwork.paradigm.product.list</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="stock.view_stock_product_template_tree"/>
+            <field name="arch" type="xml">
+
+                <!-- Hide Qty Available column header and all cells -->
+                <xpath expr="//field[@name='qty_available']" position="attributes">
+                    <attribute name="column_invisible">True</attribute>
+                </xpath>
+
+                <!-- Hide Forecasted Qty column header and all cells -->
+                <xpath expr="//field[@name='virtual_available']" position="attributes">
+                    <attribute name="column_invisible">True</attribute>
+                </xpath>
+
+            </field>
+        </record>
+
+        <!-- ── Search view: Odoo native type filters + group-by (product.product_template_search_view) ── -->
+        <!-- Static suppression — search view <filter> elements do not support runtime
+             invisible expressions. These are removed at module-install time and are
+             not affected by the odoo_product_type_field paradigm rule toggle.
+             Documented as is_static=True manifestations under that rule. -->
+
+        <record id="view_product_tmpl_search_type_suppress" model="ir.ui.view">
+            <field name="name">product.template.search.type.suppress.artwork</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="product.product_template_search_view"/>
+            <field name="arch" type="xml">
+                <!-- Remove Goods / Services / Combo type filters -->
+                <xpath expr="//filter[@name='goods']" position="replace"/>
+                <xpath expr="//filter[@name='services']" position="replace"/>
+                <xpath expr="//filter[@name='combo']" position="replace"/>
+                <!-- Remove Product Type group-by (inside <group> element) -->
+                <xpath expr="//group/filter[@name='group_by_type']" position="replace"/>
+            </field>
+        </record>
+
+        <!-- ── Search view: SOR product_type Group By (sor_artwork.view_product_template_search_artwork) ── -->
+        <!-- Static suppression — same limitation as above.
+             Documented as is_static=True manifestation under product_type_field rule. -->
+
+        <record id="view_product_tmpl_search_product_type_groupby_suppress" model="ir.ui.view">
+            <field name="name">product.template.search.product.type.groupby.suppress.artwork</field>
+            <field name="model">product.template</field>
+            <field name="inherit_id" ref="sor_artwork.view_product_template_search_artwork"/>
+            <field name="arch" type="xml">
+                <xpath expr="//group/filter[@name='group_product_type']" position="replace"/>
+            </field>
+        </record>
+
+    </data>
+</odoo>

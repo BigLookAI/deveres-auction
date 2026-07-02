@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Add Artworks smart button and suppress warehouse logistics UI elements
+         that are irrelevant when Viewing Locations are used for unique object artworks.
+         Unique objects move individually and never require multi-step routing or
+         replenishment configuration. A future asset bridge (e.g. sor_locations_furniture)
+         would make its own decision about whether to apply these suppressions. -->
+    <record id="view_warehouse_form_inherit_artworks" model="ir.ui.view">
+        <field name="name">stock.warehouse.form.inherit.sor_locations_artwork</field>
+        <field name="model">stock.warehouse</field>
+        <field name="inherit_id" ref="stock.view_warehouse"/>
+        <field name="arch" type="xml">
+
+            <!-- Artworks smart button -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_open_artworks"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-picture-o">
+                    <field name="artwork_count" widget="statinfo" string="Artworks"/>
+                </button>
+            </xpath>
+
+            <!-- Routes stat button: procurement route configuration has no meaning
+                 for Viewing Locations managing unique object artworks. -->
+            <xpath expr="//button[@name='action_view_all_routes']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Warehouse Configuration: shipment routing and resupply settings are
+                 logistics concepts irrelevant to artwork Viewing Locations. -->
+            <xpath expr="//page[@name='warehouse_config']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Technical Information: internal location IDs and operation types are
+                 Odoo logistics internals with no meaning for artwork locations.
+                 Suppressed here because the base groups="base.group_no_one" guard
+                 is insufficient when multi-warehouse groups are active. -->
+            <xpath expr="//page[@name='technical_info']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>
