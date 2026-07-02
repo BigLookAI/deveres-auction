@@ -110,6 +110,7 @@
         <li><b>Batch approve → export</b> — CSV, JSON, Excel, PDF + an Odoo-ready model</li>
         <li><b>Auto-detects</b> buyer and seller exports; decisions persist across restarts</li>
       </ul>
+      <div class="cred"><b>Sign in (browser prompt):</b> admin@deviours.ie / Admin2026!</div>
       <div class="btnrow"><a class="btn" href="/reconcile">Open reconciliation demo →</a></div>
     </div>
 
@@ -166,7 +167,7 @@
   <details><summary>Is this a prototype?</summary><p>It's working software running against real data: 13,682 real client records, real Blue Cubes exports, 21 automated tests, persistent review sessions, four export formats, and a documented path into Odoo. The remaining engineering (Odoo importer, authentication, very-large-file UI) is listed and scoped.</p></details>
   <details><summary>What's next on the roadmap?</summary><p>1) The Odoo importer — approved changes flow into the system of record automatically. 2) Authentication + audit log on reconciliation. 3) A data-quality pass on the master list itself (the tool already surfaced misfiled Eircodes and internal duplicates). 4) Scale-out UI for 50k+ row results. Longer-term: reconciliation becomes the standard gate for buyers → lots → bids, and thresholds learn from reviewer decisions.</p></details>
 
-  <div class="note"><b>Demo tips:</b> the reconciliation page is pre-loaded — you don't need to upload anything. If you want the full effect, drag in a Blue Cubes CSV (buyer or seller export — it auto-detects). Everything on this page is reachable from this one URL.</div>
+  <div class="note"><b>Demo tips:</b> the reconciliation page is pre-loaded — you don't need to upload anything. It is protected by a sign-in (same admin credentials); your browser remembers them after the first prompt. If you want the full effect, drag in a Blue Cubes CSV (buyer or seller export — it auto-detects). Everything on this page is reachable from this one URL.</div>
 
   <div class="foot">Deviours Auction · by Cimelium · on-prem AI for the art market · <a href="/reconcile">Reconciliation</a> · <a href="/">Bidder Evaluation</a> · <a href="/docs">API</a></div>
 </div>

@@ -166,3 +166,70 @@ def test_xlsx_and_pdf_exports():
     from reconciliation.export import to_xlsx, to_pdf_summary
     x = to_xlsx(results, summary); assert x[:2] == b"PK"          # zip magic
     p = to_pdf_summary(results, summary); assert p[:4] == b"%PDF"
+
+
+# ── Round 3: Odoo importer plan, auth, sessions, master-quality, 50k scale ───
+def test_odoo_import_plan_mapping_and_id_check():
+    from reconciliation.odoo_import import plan, ID_CHECK_THRESHOLD_EUR
+    intermediate = [
+        {"action": "ADD", "buyer_number": "9",
+         "incoming_record": {"first_name": "Zoe", "last_name": "New", "email": "z@n.ie",
+                             "address1": "1 Oak Rd", "town": "Bray", "postcode": "A98X1Y2"},
+         "canonical_record": None, "canonical_ref": None, "difference_report": [],
+         "lots": [{"winning_bid": "12000"}]},
+        {"action": "UPDATE", "buyer_number": "1", "canonical_ref": "77497",
+         "incoming_record": {"first_name": "Ger", "last_name": "R"},
+         "canonical_record": {"first_name": "Ger", "last_name": "R"},
+         "difference_report": [
+             {"field": "email", "incoming": "new@x.ie", "status": "changed", "significant": True},
+             {"field": "town", "incoming": "Foxrock", "status": "equivalent", "significant": False}],
+         "lots": [{"winning_bid": "500"}]},
+        {"action": "IGNORE", "buyer_number": "2", "canonical_ref": "5",
+         "incoming_record": {}, "canonical_record": {}, "difference_report": [], "lots": []},
+    ]
+    ops = plan(intermediate, source_file="test.csv")
+    assert [o.op for o in ops] == ["create", "write", "skip"]
+    assert ops[0].id_check is True and ops[0].values["street"] == "1 Oak Rd"
+    assert ops[1].values == {"email": "new@x.ie"}          # ONLY the significant change
+    assert ops[1].ref == "77497"
+
+def test_odoo_import_live_write_is_env_gated(monkeypatch):
+    from reconciliation.odoo_import import OdooImporter, ImportOp
+    monkeypatch.delenv("RECON_ALLOW_ODOO_WRITE", raising=False)
+    imp = OdooImporter(client=object())   # never reached
+    with pytest.raises(PermissionError):
+        imp.execute([ImportOp("create", "x", "r", "n", {"name": "n"})], dry_run=False)
+
+def test_routes_require_auth_and_work_with_creds():
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    import importlib, reconcile_routes
+    importlib.reload(reconcile_routes)
+    app = FastAPI(); app.include_router(reconcile_routes.router)
+    c = TestClient(app)
+    assert c.get("/reconcile/health").status_code == 401                      # no creds
+    auth = ("admin@deviours.ie", "Admin2026!")
+    assert c.get("/reconcile/health", auth=auth).status_code == 200          # good creds
+    assert c.get("/reconcile/health", auth=("x", "y")).status_code == 401    # bad creds
+    # master-quality works and finds the known intra-master duplicates
+    mq = c.get("/reconcile/master-quality", auth=auth).json()
+    assert mq["master_records"] == 13682 and mq["duplicate_groups"] > 0
+
+def test_scale_50k_masters_benchmark():
+    """Engine must reconcile against 50k+ masters without meaningful latency.
+    Blocking keeps per-contact cost O(candidates); this guards the complexity."""
+    import time
+    masters = [{"client_ref": str(i), "first_name": f"F{i}", "last_name": f"L{i%997}",
+                "email": f"user{i}@example.com", "phone": f"+3538{70000000+i}", "mobile": ""}
+               for i in range(50_000)]
+    t0 = time.perf_counter()
+    eng = _engine(masters)                       # index build
+    build_ms = (time.perf_counter() - t0) * 1000
+    incoming = [{"buyer_number": str(i), "first_name": f"F{i*10}", "last_name": f"L{(i*10)%997}",
+                 "email": f"user{i*10}@example.com", "phone": "", "lots": []}
+                for i in range(500)]
+    t1 = time.perf_counter()
+    results, summary = eng.run(incoming)
+    run_ms = (time.perf_counter() - t1) * 1000
+    assert summary.total == 500 and summary.retain == 500   # exact email matches
+    assert build_ms < 8000 and run_ms < 4000, f"too slow: build {build_ms:.0f}ms run {run_ms:.0f}ms"

@@ -124,6 +124,7 @@
     <div class="toolbar">
       <div class="chips" id="statusChips"></div>
       <div class="spacer"></div>
+      <select id="sessionSel" title="Switch reconciliation session"></select>
       <input type="search" id="search" placeholder="Search name / buyer no.…"/>
       <select id="sort">
         <option value="confidence">Sort: Confidence</option>
@@ -191,7 +192,7 @@ async function jget(u){const r=await fetch(u);if(!r.ok)throw new Error((await r.
 
 // ── restore last session on load (survives refresh / server restart) ──
 (async()=>{try{const sess=await jget('/reconcile/session');
-  state.summary=sess.summary;renderDash(sess.summary);await loadResults();show('results');
+  state.summary=sess.summary;renderDash(sess.summary);await loadResults();loadSessions();show('results');
 }catch(e){/* no session yet — stay on upload */}})();
 
 // ── upload ──
@@ -211,7 +212,7 @@ async function doUpload(f){
     const d=await r.json();
     if(!r.ok)throw new Error(d.detail||'Upload failed');
     state.summary=d.summary;state.page=1;state.status='all';state.q='';
-    renderDash(d.summary);await loadResults();show('results');
+    renderDash(d.summary);await loadResults();loadSessions();show('results');
   }catch(e){alert('Error: '+e.message);show('upload');}
 }
 
@@ -275,6 +276,23 @@ async function decide(action,scope){
   const d=await r.json();if(r.ok){loadResults();}else alert(d.detail||'Failed');
 }
 
+// ── sessions (one per uploaded auction file) ──
+async function loadSessions(){
+  try{
+    const d=await jget('/reconcile/sessions');
+    const sel=$('#sessionSel');
+    if(!d.sessions.length){sel.classList.add('hidden');return;}
+    sel.classList.remove('hidden');
+    sel.innerHTML=d.sessions.map(s=>`<option value="${s.sid}" ${s.active?'selected':''}>${s.filename} (${s.kind}, ${s.total})</option>`).join('');
+    sel.onchange=async()=>{
+      await fetch('/reconcile/sessions/'+encodeURIComponent(sel.value)+'/activate',{method:'POST'});
+      const sess=await jget('/reconcile/session');
+      state.summary=sess.summary;state.page=1;state.status='all';
+      renderDash(sess.summary);await loadResults();
+    };
+  }catch(e){}
+}
+
 // ── detail drawer ──
 async function openDetail(index,ev){
   const d=await jget('/reconcile/results/'+index);
@@ -294,8 +312,18 @@ async function openDetail(index,ev){
       ${rows}
     </div>
     <div style="margin-top:14px"><b>Lots won:</b> ${lots}</div>
+    <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" onclick="decideOne(${d.index},'UPDATE')">✓ Approve update</button>
+      <button class="btn" onclick="decideOne(${d.index},'IGNORE')">Keep existing</button>
+      <button class="btn" onclick="decideOne(${d.index},'ADD')">Add as new</button>
+      <button class="btn" onclick="decideOne(${d.index},'MANUAL_REVIEW')">Flag for review</button>
+    </div>
     <div class="note" style="margin-top:16px">Green = new information · Red = changed value · Grey = unchanged or formatting-only (equivalent). The master is never overwritten by equivalent-only differences.</div>`;
   $('#scrim').classList.add('on');$('#drawer').classList.add('on');
+}
+async function decideOne(index,action){
+  await fetch('/reconcile/decide',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action,indices:[index]})});
+  closeDrawer();loadResults();
 }
 function closeDrawer(){$('#scrim').classList.remove('on');$('#drawer').classList.remove('on');}
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});

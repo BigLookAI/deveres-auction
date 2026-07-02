@@ -150,14 +150,23 @@ print(ReconciliationEngine(m).run(load_incoming('Design-April 2026.csv'))[1].to_
   required over €10,000) is recorded for the future Odoo import step, not the
   reconciliation logic.
 
-## Remaining work before Odoo integration
+## Pre-Odoo checklist — status
 
-- Write the actual Odoo importer (consume `odoo-preview` → `res.partner` +
-  lots with hammer 0); idempotent upsert keyed on canonical ref.
-- Persist reconciliation sessions (currently in-memory, single session).
-- Front-end table **virtualisation** + chunked/streamed upload for 50k+ *result*
-  rows; background worker for very large files.
-- PDF/XLSX report export (CSV/JSON shipped).
-- Intra-master de-duplication pass (the master itself has near-duplicates).
-- Auth/roles on the reconciliation routes; audit log of approved changes.
+- ✅ Odoo importer (`reconciliation/odoo_import.py` + `POST /reconcile/odoo-import`):
+  maps the intermediate model to `res.partner`; UPDATE writes only significant
+  fields; idempotent (resolves by `ref`, falls back to email); dry-run default;
+  live writes require `RECON_ALLOW_ODOO_WRITE=1`; flags buyers over €10,000 for
+  ID verification (payments: debit card / bank transfer / cheque / bank draft).
+- ✅ Auth (HTTP Basic on every /reconcile route; env `RECON_USER`/`RECON_PASS`)
+  + append-only audit log (`output/reconcile_audit.log`).
+- ✅ Durable + named sessions (one per upload; list/activate endpoints + UI picker).
+- ✅ Excel + PDF exports.
+- ✅ Master data-quality report (`GET /reconcile/master-quality`): intra-master
+  duplicate groups + misfiled-Eircode count.
+- ✅ 50k-scale guarded by a benchmark test (index build <8s, 500-contact run <4s;
+  the UI only ever renders one server-side page, so no client-side lag).
+- ✅ Manual-review tooling: per-row decision buttons in the diff drawer.
+
+Still open (post-Odoo niceties): field-level merge editor; learned confidence
+thresholds; background worker for multi-hundred-MB uploads.
 ```
