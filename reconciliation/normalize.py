@@ -100,6 +100,12 @@ def normalize_phone(s: str, default_cc: str = _DEFAULT_CC) -> str:
     if not s:
         return ""
     raw = str(s).strip()
+    # Excel float artifact ('3.53868E+11'): a spreadsheet, somewhere upstream,
+    # turned the number into scientific notation. The trailing digits are LOST,
+    # so this is NOT a usable number — treating its digit-soup as one caused a
+    # false cross-person match in the April Odoo data (3-Jul finding).
+    if re.fullmatch(r"\d+(\.\d+)?[eE]\+?\d+", raw):
+        return ""
     has_plus = raw.startswith("+")
     digits = re.sub(r"\D", "", raw)
     if not digits:
@@ -176,6 +182,20 @@ def normalize_address(*parts: str) -> str:
     base = _alnum_lower(" ".join(p for p in parts if p))
     toks = [_ADDR_SYNONYMS.get(t, t) for t in base.split()]
     return " ".join(toks)
+
+
+_COUNTY_PREFIX = re.compile(r"^\s*(co\.?|county)\s+", re.I)
+_COUNTY_COUNTRY_SUFFIX = re.compile(r"\s*\([a-z]{2}\)\s*$", re.I)
+
+
+def county_key(s: str) -> str:
+    """Comparable county key. Blue Cubes writes 'Co. Dublin'; Odoo state
+    display names are 'Dublin (IE)'; the CSV master says 'Dublin' — all the
+    same county. Strip the Irish 'Co./County' prefix and the '(XX)' country
+    suffix, then address-normalize what remains."""
+    s = _COUNTY_COUNTRY_SUFFIX.sub("", (s or "").strip())
+    s = _COUNTY_PREFIX.sub("", s)
+    return normalize_address(s)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

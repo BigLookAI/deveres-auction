@@ -34,7 +34,8 @@ def _norm(field: str, value: str) -> str:
     if field == "postcode": return N.normalize_postcode(value)
     if field == "country":  return N.normalize_country(value)
     if field == "name":     return N.name_key(value)
-    if field in ("address1", "address2", "town", "county"): return N.normalize_address(value)
+    if field == "county":   return N.county_key(value)
+    if field in ("address1", "address2", "town"): return N.normalize_address(value)
     if field == "company":  return N.normalize_name(value)
     return N.collapse_ws(value).lower()
 
@@ -72,8 +73,23 @@ def _phone_diff(inc: dict, mas: dict) -> FieldDiff | None:
     return FieldDiff("phone", "Phone", mas_raw, inc_raw, status, sig)
 
 
+# Fields that together form the master's "address block". Odoo masters store
+# concatenations (the SOR import filed "address2, address3, county" into
+# street2), and the De Veres CSV master misfiles values across these columns —
+# so per-field comparison must know the whole block.
+_ADDRESS_FAMILY = ("address1", "address2", "address3", "town", "county")
+
+
+def _address_block_tokens(mas: dict) -> set[str]:
+    toks = set(N.normalize_address(
+        *[mas.get(f, "") for f in _ADDRESS_FAMILY if f != "county"]).split())
+    toks |= set(N.county_key(mas.get("county", "")).split())
+    return toks
+
+
 def diff_fields(inc: dict, mas: dict) -> list[FieldDiff]:
     diffs: list[FieldDiff] = []
+    mas_addr_tokens = _address_block_tokens(mas)
     for field, label in DIFF_FIELDS:
         if field == "phone":
             pd = _phone_diff(inc, mas)
@@ -96,6 +112,19 @@ def diff_fields(inc: dict, mas: dict) -> list[FieldDiff]:
             # the incoming town is genuinely new information (a correction).
             diffs.append(FieldDiff(field, label, cur, ino, DiffStatus.NEW_INFO, True))
             continue
+        if field in _ADDRESS_FAMILY and ino and cur != ino:
+            # The incoming value may already live in the master, filed in a
+            # DIFFERENT address column (Odoo masters concatenate address2/3 +
+            # county into street2; the CSV master misfiles counties into town).
+            # If every incoming token is already present in the master's
+            # combined address block, nothing new is being said — EQUIVALENT,
+            # never an update. (A genuinely new town/county/street still diffs
+            # normally: its tokens are absent from the block.)
+            ino_tokens = set((_norm(field, ino) or "").split())
+            if ino_tokens and ino_tokens <= mas_addr_tokens:
+                diffs.append(FieldDiff(field, label, cur, ino,
+                                       DiffStatus.EQUIVALENT, False))
+                continue
         if cur == ino:
             status, sig = DiffStatus.UNCHANGED, False
         elif not ino:
@@ -127,8 +156,16 @@ def diff_fields(inc: dict, mas: dict) -> list[FieldDiff]:
 #                        significant new info. Attaching contact details to a
 #                        namesake is how wrong-person merges happen — review it.
 #
-# With an exact email or phone match none of these fire: strong-ID matches go
-# straight to UPDATE (significant diffs) or RETAIN (formatting only).
+#   R4 ID_NAME_CONFLICT  exact email/phone match but the NAMES clearly disagree
+#                        (similarity < 0.5 with both present). Shared household
+#                        phone, spouse's email, or corrupted seed data — writing
+#                        one person's details onto the other must be a human
+#                        call. (Found live 3-Jul: incoming 'Mark Sloan' updating
+#                        master 'Sam Greene' via a shared phone + address.)
+#
+# With an exact email or phone match R1–R3 never fire: strong-ID matches go
+# straight to UPDATE (significant diffs) or RETAIN (formatting only) — unless
+# R4's name conflict flags them.
 
 def classify(inc: dict, cand: Candidate | None):
     """Return (Classification, Recommendation, confidence, matched_by, diffs,
@@ -151,6 +188,16 @@ def classify(inc: dict, cand: Candidate | None):
     def review(reason: str):
         return (Classification.POSSIBLE_DUPLICATE, Recommendation.MANUAL_REVIEW,
                 cand.score, cand.matched_by, diffs, cand.master, reason)
+
+    if strong and significant:
+        # R4 — the identifier says "same person", the name says otherwise.
+        name_sim = cand.field_sims.get("name")
+        if name_sim is not None and name_sim < 0.5:
+            return review("R4 ID_NAME_CONFLICT: exact "
+                          f"{'/'.join(f for f in ('email', 'phone') if f in cand.matched_by)} "
+                          f"match, but the names disagree (similarity {name_sim:.0%}) — "
+                          "possibly a shared household contact or a different person; "
+                          "confirm before updating.")
 
     if not strong:
         # R1 — uncertain score band without a strong identifier
