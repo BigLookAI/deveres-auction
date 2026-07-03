@@ -135,6 +135,61 @@ Odoo 19 notes baked into the field map:
 - Unresolvable counties/countries (e.g. "N. Ireland" — base Odoo ships no GB
   states) are appended to the partner comment, never silently dropped.
 
+## Odoo as the MASTER source (3-Jul-2026 — spreadsheet retired)
+
+Per the 3-Jul meeting, the reconciliation **source** moved from the static
+`All Clients.csv` to the live Odoo contact list: the engine now *fetches* from
+`res.partner` (`reconciliation/odoo_master.py` → `MasterRepository.from_odoo`)
+and *pushes* back to `res.partner` — Odoo is both ends of the loop.
+
+```
+                     ┌────────────────────  Odoo res.partner  ◄───────────────────┐
+                     │  (fetch: search_read, id-ordered batches of 1000)          │ (push: create/write,
+                     ▼                                                            │  dry-run default,
+   Blue Cubes CSV ─► load_upload ─► MasterIndex.best_match ─► classify ─► review │  RECON_ALLOW_ODOO_WRITE=1)
+   (per-auction        (buyers/        (email/phone/name        (NEW/RETAIN/      │
+    export)             sellers)        blocking + scoring)      UPDATE/REVIEW)   │
+                                                                    │ approve     │
+                                                                    ▼             │
+                                                              SQLite STAGING ─────┘
+                                                              (the only push payload)
+```
+
+- **Source selection** — `RECON_MASTER_SOURCE` = `csv` | `odoo` | `auto`
+  (default). `auto` uses Odoo whenever `ODOO_URL` is configured and falls back
+  to the CSV (loudly: `/health.master_fallback`, audit event, UI toast) if the
+  fetch fails. Explicit `odoo` fails fast instead of silently reconciling
+  against a stale snapshot.
+- **Mapping** — `partner_to_canonical`: ref→client_ref (fallback `ODOO-<id>`),
+  name→first/last (person) or company (`is_company`), street/street2→
+  address1/2, city→town, zip→postcode, state_id/country_id display names →
+  county/country, and `id`→`odoo_id`.
+- **Exact-id writes** — `odoo_id` rides through staging into the import plan,
+  so updates write by database id (verified, with ref/email fallback if the
+  partner vanished). Partners without a ref resolve via the synthetic
+  `ODOO-<id>` ref.
+- **`POST /reconcile/master/reload`** (admin) re-fetches the master without a
+  restart — run it after a push so the next reconciliation sees what was just
+  written (proven: April file → 13 updates → push → reload → re-upload →
+  those 13 reconcile as RETAIN).
+- **April-DB data-shape guards** (all found by live E2E on 3-Jul):
+  the SOR import concatenated "address2, address3, county" into `street2`, so
+  an incoming address-family value whose tokens already appear anywhere in the
+  master's address block is EQUIVALENT, not a change; `county_key` equates
+  "Co. Dublin" = "Dublin (IE)" = "Dublin"; scientific-notation phones
+  (`3.53868E+11`, an Excel float artifact) are unusable, never a match key;
+  and rule **R4 ID_NAME_CONFLICT** sends strong-ID matches with clearly
+  disagreeing names (shared household phone / spouse email) to manual review
+  instead of silently updating.
+- **Observability** — uploads and pushes carry a `correlation_id` (returned in
+  the response, logged, and written to the audit trail with actor, master
+  source and record counts).
+
+Live numbers (April sandbox, 13,653 partners): master fetch ≈ 850 ms,
+reconciliation of the 83-buyer April export ≈ 15 ms, full loop
+(fetch → match → approve → push → reload → re-verify) exercised end-to-end
+with 0 push errors.
+
 ### Local Odoo sandbox (April-test restore)
 
 ```bash
