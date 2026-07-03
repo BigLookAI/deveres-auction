@@ -22,6 +22,9 @@ VIEWER = {"Authorization": "Basic " + base64.b64encode(b"viewer@deveres.ie:View2
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("RECON_MASTER_CSV", str(FIX / "master_test_clients.csv"))
     monkeypatch.setenv("RECON_STAGING_DB", str(tmp_path / "staging.db"))
+    # hermetic: never let a configured Odoo (auto master-source) leak into tests
+    monkeypatch.delenv("ODOO_URL", raising=False)
+    monkeypatch.delenv("RECON_MASTER_SOURCE", raising=False)
     monkeypatch.setenv("RECON_VIEWER_USER", "viewer@deveres.ie")
     monkeypatch.setenv("RECON_VIEWER_PASS", "View2026!")
     import reconcile_routes
