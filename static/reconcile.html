@@ -269,7 +269,12 @@ function toast(msg){const t=document.createElement('div');t.className='toast';t.
 function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
 // ── master info ──
-(async()=>{try{const h=await jget('/reconcile/health');$('#masterInfo').textContent=h.master_records.toLocaleString()+' master clients';$('#masterCount').textContent=h.master_records.toLocaleString();}catch(e){}})();
+(async()=>{try{const h=await jget('/reconcile/health');
+  const src=h.master_source==='odoo'?' \u00b7 live Odoo':' \u00b7 CSV snapshot';
+  $('#masterInfo').textContent=h.master_records.toLocaleString()+' master clients'+src;
+  $('#masterCount').textContent=h.master_records.toLocaleString();
+  if(h.master_fallback){toast('\u26a0 Odoo master unavailable \u2014 reconciling against the CSV snapshot');}
+}catch(e){}})();
 
 // ── restore last session on load (survives refresh / server restart) ──
 (async()=>{try{const sess=await jget('/reconcile/session');

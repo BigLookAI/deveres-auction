@@ -45,6 +45,7 @@ from pathlib import Path
 
 import secrets
 import time
+import uuid
 from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
@@ -122,15 +123,49 @@ _master: MasterRepository | None = None
 _engine: ReconciliationEngine | None = None
 _staging: StagingRepository | None = None
 _state: dict = {"results": [], "summary": None, "filename": None, "kind": None,
-                "session_id": None, "loaded_from_disk": False}
+                "session_id": None, "loaded_from_disk": False,
+                "master_fallback": None}
+
+
+def _master_source_setting() -> str:
+    """RECON_MASTER_SOURCE = csv | odoo | auto (default).
+    auto → Odoo when ODOO_URL is configured, else the static CSV. This makes
+    the 3-Jul cut-over automatic wherever Odoo credentials exist, while servers
+    without them (e.g. the DGX until De Veres share their instance) keep
+    working unchanged."""
+    return (os.environ.get("RECON_MASTER_SOURCE") or "auto").strip().lower()
+
+
+def _load_master() -> MasterRepository:
+    """Build the master from the configured source. In auto mode an Odoo
+    failure falls back to the CSV (loudly — flagged in /health and the audit
+    log); explicit odoo mode fails fast so a misconfiguration can't silently
+    reconcile against a stale spreadsheet."""
+    setting = _master_source_setting()
+    want_odoo = setting == "odoo" or (setting == "auto" and os.environ.get("ODOO_URL"))
+    if want_odoo:
+        try:
+            repo = MasterRepository.from_odoo()
+            _state["master_fallback"] = None
+            return repo
+        except Exception as exc:
+            if setting == "odoo":
+                raise
+            _state["master_fallback"] = f"{type(exc).__name__}: {exc}"
+            log.error("reconcile: Odoo master fetch failed (%s) — falling back "
+                      "to the static CSV. Reconciliation is running against a "
+                      "SNAPSHOT, not the system of record.", exc)
+            _audit("master_fallback", error=str(exc), source_setting=setting)
+    return MasterRepository.from_csv(MASTER_PATH)
 
 
 def _get_engine() -> ReconciliationEngine:
     global _master, _engine
     if _engine is None:
-        _master = MasterRepository.from_csv(MASTER_PATH)
+        _master = _load_master()
         _engine = ReconciliationEngine(_master)
-        log.info("reconcile: master loaded (%d records)", len(_master))
+        log.info("reconcile: master loaded from %s (%d records)",
+                 _master.source, len(_master))
     return _engine
 
 
@@ -281,11 +316,37 @@ def health():
     eng = _get_engine()
     _restore_session()
     return {"status": "ok", "master_records": len(eng.master),
+            "master_source": eng.master.source,
+            "master_loaded_at": eng.master.loaded_at,
+            "master_source_setting": _master_source_setting(),
+            "master_fallback": _state.get("master_fallback"),
             "loaded_upload": _state["filename"], "upload_kind": _state["kind"],
             "session_id": _state.get("session_id"),
             "results_cached": len(_state["results"]),
             "session_persisted": SESSION_PATH.exists(),
             "staging_counts": _get_staging().counts(_session_id())}
+
+
+@router.post("/master/reload")
+def master_reload(user: str = Depends(require_editor)):
+    """Re-fetch the master from the configured source without a restart —
+    e.g. straight after an Odoo push, so the next reconciliation sees the
+    partners it just created/updated (keeps re-uploads idempotent)."""
+    global _master, _engine
+    t0 = time.perf_counter()
+    try:
+        repo = _load_master()
+    except Exception as exc:
+        raise HTTPException(502, f"Master reload failed: {exc}")
+    _master, _engine = repo, ReconciliationEngine(repo)
+    ms = round((time.perf_counter() - t0) * 1000)
+    _audit("master_reload", source=repo.source, records=len(repo),
+           duration_ms=ms, actor=user)
+    log.info("reconcile: master reloaded from %s (%d records, %dms) by %s",
+             repo.source, len(repo), ms, user)
+    return {"master_source": repo.source, "master_records": len(repo),
+            "master_loaded_at": repo.loaded_at, "duration_ms": ms,
+            "master_fallback": _state.get("master_fallback")}
 
 
 @router.get("/session")
@@ -329,18 +390,24 @@ async def upload(file: UploadFile = File(...), user: str = Depends(require_edito
         raise HTTPException(400, f"Could not parse CSV: {e}")
     if not incoming:
         raise HTTPException(400, "No contact rows found in the uploaded file.")
-    results, summary = _get_engine().run(incoming)
+    cid = uuid.uuid4().hex[:12]
+    eng = _get_engine()
+    results, summary = eng.run(incoming)
     sid = time.strftime("%Y%m%d-%H%M%S") + "-" + "".join(
         c if c.isalnum() else "-" for c in file.filename)[:60]
     uploaded_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
     _state.update(results=results, summary=summary, filename=file.filename,
                   kind=kind, session_id=sid, uploaded_at=uploaded_at)
     _save_session()
-    _audit("upload", filename=file.filename, kind=kind, contacts=len(results),
-           session=sid, actor=user)
-    log.info("reconcile: processed '%s' (%s, %d contacts)", file.filename, kind, len(results))
+    _audit("upload", cid=cid, filename=file.filename, kind=kind,
+           contacts=len(results), session=sid, actor=user,
+           master_source=eng.master.source, master_records=len(eng.master))
+    log.info("reconcile[%s]: processed '%s' (%s, %d contacts) against %s master "
+             "(%d records) in %.0fms", cid, file.filename, kind, len(results),
+             eng.master.source, len(eng.master), summary.processing_ms)
     return {"summary": summary.to_dict(), "filename": file.filename, "kind": kind,
-            "session": sid, "uploaded_at": uploaded_at,
+            "session": sid, "uploaded_at": uploaded_at, "correlation_id": cid,
+            "master_source": eng.master.source,
             "shared_buyer_number_contacts": sum(1 for i in incoming
                                                 if i.get("shared_buyer_number"))}
 
@@ -774,6 +841,9 @@ def odoo_import(payload: dict | None = None, user: str = Depends(require_editor)
                                  "Only approved (staged) changes can be pushed.")
     payload = payload or {}
     dry_run = bool(payload.get("dry_run", True))
+    cid = uuid.uuid4().hex[:12]
+    log.info("odoo-import[%s]: %d staged entries, dry_run=%s, actor=%s",
+             cid, len(entries), dry_run, user)
     ops = plan_from_staging(entries, source_file=_state.get("filename") or "")
     connected = bool(os.environ.get("ODOO_URL"))
     if not connected:
@@ -784,8 +854,9 @@ def odoo_import(payload: dict | None = None, user: str = Depends(require_editor)
                               "total": len(ops),
                               "id_checks_required": sum(1 for o in ops if o.id_check)},
                   "operations": [o.to_dict() for o in ops],
-                  "note": "ODOO_URL not configured — returning the import plan only."}
-        _audit("odoo_import_plan", actor=user, **result["summary"])
+                  "note": "ODOO_URL not configured — returning the import plan only.",
+                  "correlation_id": cid}
+        _audit("odoo_import_plan", cid=cid, actor=user, **result["summary"])
         return result
     try:
         importer = OdooImporter()
@@ -817,7 +888,9 @@ def odoo_import(payload: dict | None = None, user: str = Depends(require_editor)
                             f"pushed (partner_id={partner})")
         _save_session()
     # summary already carries dry_run — passing it twice was a TypeError (500).
-    _audit("odoo_import", actor=user, **result["summary"])
+    result["correlation_id"] = cid
+    _audit("odoo_import", cid=cid, actor=user, **result["summary"])
+    log.info("odoo-import[%s]: done — %s", cid, result["summary"])
     return result
 
 

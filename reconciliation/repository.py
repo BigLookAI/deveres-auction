@@ -38,11 +38,19 @@ def _map_row(row: dict, colmap: dict) -> dict:
 
 
 class MasterRepository:
-    """The canonical client database (source of truth). Read-only."""
+    """The canonical client database (source of truth). Read-only.
 
-    def __init__(self, records: list[dict]):
+    Two sources build the same repository (the engine never knows which):
+      • from_csv  — the static All Clients.csv export (legacy / offline).
+      • from_odoo — live res.partner via the Odoo API (3-Jul meeting: the
+        system of record IS the master; the spreadsheet is retired)."""
+
+    def __init__(self, records: list[dict], source: str = "csv"):
         self.records = records
         self.index = MasterIndex(records)
+        self.source = source
+        from datetime import datetime, timezone
+        self.loaded_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
 
     @classmethod
     def from_csv(cls, path: str | Path) -> "MasterRepository":
@@ -50,7 +58,12 @@ class MasterRepository:
         # keep only fields we reason about, plus a stable ref
         for i, r in enumerate(recs):
             r.setdefault("client_ref", str(i + 1))
-        return cls(recs)
+        return cls(recs, source="csv")
+
+    @classmethod
+    def from_odoo(cls, client=None) -> "MasterRepository":
+        from .odoo_master import fetch_partners
+        return cls(fetch_partners(client), source="odoo")
 
     def __len__(self) -> int:
         return len(self.records)
