@@ -167,6 +167,9 @@ def plan_from_staging(entries: list[dict], source_file: str = "") -> list[Import
                         if cf not in PARTNER_FIELD_MAP and cf not in LOOKUP_FIELD_MAP
                         and cf != "mobile" and approved.get(cf)}
             ref = str(e.get("master_ref") or "")
+            # Odoo-sourced master → we know the exact partner id already; the
+            # importer writes by id instead of re-searching ref/email.
+            pid = (e.get("original") or {}).get("odoo_id")
             if values:
                 if high_value:
                     values["comment"] = note
@@ -175,7 +178,8 @@ def plan_from_staging(entries: list[dict], source_file: str = "") -> list[Import
                     reason += (" — NOTE unmapped field changes not written: "
                                + ", ".join(f"{k}={v}" for k, v in unmapped.items()))
                 ops.append(ImportOp("write", reason, ref,
-                                    e.get("name") or _full_name(approved), values, high_value))
+                                    e.get("name") or _full_name(approved), values, high_value,
+                                    partner_id=int(pid) if pid else None))
             else:
                 reason = "staged update has no Odoo-mappable field changes"
                 if unmapped:
@@ -251,6 +255,18 @@ class OdooImporter:
         return self.client._execute("res.partner", "search", domain, limit=2)
 
     def _resolve(self, op: ImportOp) -> int | None:
+        # 1. Exact database id (master fetched from Odoo) — verified, not
+        #    trusted blindly: the partner may have been deleted since the fetch.
+        if op.partner_id:
+            if self._search_partner([["id", "=", op.partner_id]]):
+                return op.partner_id
+            log.warning("odoo import: staged partner_id=%s no longer exists — "
+                        "falling back to ref/email resolution", op.partner_id)
+        # 2. "ODOO-<id>" is our synthetic ref for partners without one.
+        if op.ref.startswith("ODOO-") and op.ref[5:].isdigit():
+            ids = self._search_partner([["id", "=", int(op.ref[5:])]])
+            if ids:
+                return ids[0]
         ids = self._search_partner([["ref", "=", op.ref]]) if op.ref else []
         if not ids and op.values.get("email"):
             ids = self._search_partner([["email", "=ilike", op.values["email"]]])
@@ -262,6 +278,7 @@ class OdooImporter:
         the raw value, then with the Irish 'Co./County' prefix stripped, then
         known aliases. Odoo stores 'Wicklow', the exports say 'Co. Wicklow'."""
         import re
+        name = name.strip().rstrip(".,;")   # 'Cork.' must match Odoo's 'Cork'
         cands = [name]
         stripped = re.sub(r"^\s*(co\.?|county)\s+", "", name, flags=re.I).strip()
         if stripped and stripped.lower() != name.lower():
