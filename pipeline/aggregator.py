@@ -154,7 +154,10 @@ def evaluate_bidder(
 
     When past_lots is provided, per-lot artist-based scoring is computed:
       - Each upcoming lot is scored using the bidder's bids on that artist's past lots
-      - The overall score is the average of per-lot scores (or overall score if no matches)
+      - The overall score is the average of per-lot scores (general indicator)
+      - The RECOMMENDATION follows the bidder's BEST matched lot ("max, not
+        average" — 13-May meeting), falling back to the overall score when
+        there are no artist matches
 
     Args:
         profile:    BidderProfile with .bids populated
@@ -216,16 +219,22 @@ def evaluate_bidder(
         matched_lots = _match_lots_price_band(bids, upcoming)
 
     # ── Recommendation ────────────────────────────────────────────────────────
-    if overall_score >= APPROVE_THRESHOLD:
+    # 13-May meeting decision: "max, not average" — a bidder scoring 85% on one
+    # artist and 30% on another is APPROVED for the 85% lot, never dragged into
+    # review by the average. The overall (average) score stays as the general
+    # indicator (12-May: the aggregate is an indicator, NOT the recommendation
+    # driver); the invite decision follows the bidder's BEST matched lot.
+    decision_score = per_lot_scores[0].score if per_lot_scores else overall_score
+    if decision_score >= APPROVE_THRESHOLD:
         recommendation = Recommendation.APPROVE
-    elif overall_score >= REVIEW_THRESHOLD:
+    elif decision_score >= REVIEW_THRESHOLD:
         recommendation = Recommendation.REVIEW
     else:
         recommendation = Recommendation.REJECT
 
     # ── Rejection reasons ─────────────────────────────────────────────────────
     rejection_reasons: list[str] = []
-    if overall_score < APPROVE_THRESHOLD:
+    if decision_score < APPROVE_THRESHOLD:
         b = overall_breakdown
         if overall_breakdown.win_loss_rate < 0.3:
             rejection_reasons.append(f"Low win rate ({b.total_wins}/{b.total_bids} lots won)")

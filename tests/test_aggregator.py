@@ -263,3 +263,43 @@ def test_evaluate_all_with_past_lots():
     results = evaluate_all([profile], upcoming, past_lots=past_lots)
     assert len(results) == 1
     assert len(results[0].per_lot_scores) == 1
+
+
+def test_recommendation_follows_best_lot_not_average():
+    """13-May meeting: 'max, not average' — a bidder strong on one artist and
+    weak on another is APPROVED for their strong lot; the average (kept as the
+    overall indicator) must not drag the invite decision into review."""
+    past_lots = [
+        make_lot("P101", upcoming=False, artist="Strong Artist", reserve=800, est_low=1000, est_high=2000),
+        make_lot("P102", upcoming=False, artist="Strong Artist", reserve=900, est_low=1200, est_high=2200),
+        make_lot("P103", upcoming=False, artist="Strong Artist", reserve=900, est_low=1200, est_high=2200),
+        make_lot("P201", upcoming=False, artist="Weak Artist", reserve=5000, est_low=8000, est_high=12000),
+    ]
+    upcoming = [
+        make_lot("U101", upcoming=True, artist="Strong Artist", reserve=1000, est_low=1500, est_high=3000),
+        make_lot("U201", upcoming=True, artist="Weak Artist", reserve=6000, est_low=9000, est_high=14000),
+    ]
+    bids = [
+        # consistent winner on Strong Artist (wins, reserves met, repeats, recent)
+        Bid(bid_id="B1", bidder_id="BDR-M", lot_id="P101", bid_amount=1600,
+            timestamp="2026-05-01T10:00:00Z", outcome=BidOutcome.WON, hammer_price=1600),
+        Bid(bid_id="B2", bidder_id="BDR-M", lot_id="P102", bid_amount=1900,
+            timestamp="2026-05-20T10:00:00Z", outcome=BidOutcome.WON, hammer_price=1900),
+        Bid(bid_id="B3", bidder_id="BDR-M", lot_id="P103", bid_amount=2000,
+            timestamp="2026-06-10T10:00:00Z", outcome=BidOutcome.WON, hammer_price=2000),
+        # one weak, old, losing lowball on Weak Artist
+        Bid(bid_id="B4", bidder_id="BDR-M", lot_id="P201", bid_amount=3000,
+            timestamp="2024-01-01T10:00:00Z", outcome=BidOutcome.LOST, hammer_price=9000),
+    ]
+    profile = BidderProfile(bidder_id="BDR-M", name="Max Rule",
+                            email="m@test.ie", bids=bids)
+    result = evaluate_bidder(profile, upcoming, past_lots=past_lots)
+    assert len(result.per_lot_scores) == 2
+    best, worst = result.per_lot_scores[0], result.per_lot_scores[-1]
+    assert best.score > worst.score
+    # the headline recommendation matches the BEST lot's recommendation…
+    assert result.recommendation == best.recommendation
+    # …and is strictly better than what the average alone would say when the
+    # average falls below the best lot's threshold band
+    if best.score >= 0.70:
+        assert result.recommendation == Recommendation.APPROVE
