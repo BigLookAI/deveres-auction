@@ -64,8 +64,8 @@
     Every link below is public and safe to test: the demo environments run on <b>synthetic data only</b>.</div>
   <div class="pillrow">
     <span class="pill"><b>2</b> live apps</span>
-    <span class="pill"><b>179</b> automated tests</span>
-    <span class="pill"><b>216</b> demo contacts in a real Odoo 19</span>
+    <span class="pill"><b>192</b> automated tests</span>
+    <span class="pill"><b>216</b> demo contacts in a real Odoo 19 + full SOR auction modules</span>
     <span class="pill"><b>0</b> real client records exposed</span>
   </div>
 
@@ -116,7 +116,8 @@
           <li>In Reconciliation: approve the sample file's new client → Push to Odoo (live)</li>
           <li>Back in Odoo: search the new name — the contact is there, reference <code>BC-…</code>,
               with the reconciliation audit note on the record</li>
-          <li>Reconciliation header count ticks up after “reload master” — same database, both ends</li>
+          <li>Edit any matched contact in Odoo, then press <i>⟳ Refresh contacts</i> in Reconciliation —
+              the edit shows up in the comparison immediately (same database, both ends)</li>
         </ol></div>
       <a class="btn" href="https://deveres.tail915505.ts.net:8443" target="_blank" rel="noopener">Open the full Odoo UI →</a>
       <div class="cred">Odoo login <code>demo@deveres.ie</code> / <code>DemoView2026!</code> · Odoo 19 + PostgreSQL 15 in Docker · synthetic contacts only</div>
@@ -146,6 +147,13 @@
     <div class="item"><div class="d">6 July</div><div class="t">Public demo &amp; this hub</div>
       <div class="s">Synthetic-data demo Odoo on the server so anyone can test the full loop safely; the platform
       explainer document; Bidder Evaluation re-published; this page.</div></div>
+    <div class="item"><div class="d">6 July (pm)</div><div class="t">Odoo set up from the Assembly file · pull &amp; push completed</div>
+      <div class="s">The SOR auction-house Assembly installed into the demo Odoo (9 modules + 12 auto-bridges, zero
+      dependency errors); every contact verified as <i>Contact</i> type with all address fields editable via UI, ORM
+      and API. The reconciliation UI gained <b>⟳ Refresh contacts</b> (re-pull the Odoo master and re-reconcile the
+      open session, decisions preserved) and <b>🚀 Push to Odoo</b> with per-record <b>read-back verification</b>,
+      a live sync-status bar (last sync · last push · pending · failures) and a full old→new audit trail per push.
+      192 tests.</div></div>
   </div>
 
   

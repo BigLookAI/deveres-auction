@@ -93,11 +93,16 @@ class ImportOp:
     values:    dict = field(default_factory=dict)
     id_check:  bool = False   # winning bids total > €10,000 → verify ID
     partner_id: int | None = None
+    # post-push verification (6-Jul meeting: "every push must be visible inside
+    # Odoo") — after a live write the partner is read back and compared.
+    verified:  bool | None = None      # None = not applicable (dry-run/skip)
+    verify_mismatch: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {"op": self.op, "reason": self.reason, "ref": self.ref, "name": self.name,
                 "values": self.values, "id_check_required": self.id_check,
-                "partner_id": self.partner_id}
+                "partner_id": self.partner_id, "verified": self.verified,
+                "verify_mismatch": self.verify_mismatch}
 
 
 def plan_from_staging(entries: list[dict], source_file: str = "") -> list[ImportOp]:
@@ -326,6 +331,31 @@ class OdooImporter:
             extra = "Unresolved location values (set manually): " + ", ".join(unresolved)
             op.values["comment"] = (op.values.get("comment", "") + " " + extra).strip()
 
+    def _verify(self, op: ImportOp) -> None:
+        """Read the partner back from Odoo and confirm every written scalar
+        field actually landed (the 6-Jul 'Verify Update' step). comment is
+        excluded (Odoo wraps it in HTML); relational writes compare by id."""
+        fields = [f for f in op.values if f != "comment" and not f.startswith("__")]
+        if not fields or not op.partner_id:
+            op.verified = bool(op.partner_id)
+            return
+        try:
+            got = self.client._execute("res.partner", "read", [op.partner_id],
+                                       fields=fields)[0]
+        except Exception as exc:                          # noqa: BLE001
+            op.verified = False
+            op.verify_mismatch = {"_readback": f"{type(exc).__name__}: {exc}"}
+            return
+        mismatch = {}
+        for f in fields:
+            want, have = op.values[f], got.get(f)
+            if isinstance(have, (list, tuple)) and len(have) == 2:
+                have = have[0]                            # many2one → id
+            if (have or "") != (want or ""):
+                mismatch[f] = {"wrote": want, "read_back": have}
+        op.verified = not mismatch
+        op.verify_mismatch = mismatch
+
     def execute(self, ops: list[ImportOp], dry_run: bool = True) -> dict:
         """Apply the plan. One failing operation never aborts the batch: it is
         reported as op='error' with the exception message and the rest proceed
@@ -359,9 +389,11 @@ class OdooImporter:
                 elif op.op == "create":
                     op.partner_id = self.client._execute("res.partner", "create", op.values)
                     created += 1
+                    self._verify(op)
                 elif op.op == "write" and partner_id:
                     self.client._execute("res.partner", "write", [partner_id], op.values)
                     written += 1
+                    self._verify(op)
                 else:
                     op.op, op.reason = "skip", (op.reason +
                         " — no matching partner found by ref or email; nothing written")
@@ -377,6 +409,8 @@ class OdooImporter:
             results.append(op.to_dict())
         summary = {"dry_run": dry_run, "create": created, "write": written,
                    "skip": skipped, "error": errors, "total": len(ops),
+                   "verified": sum(1 for o in ops if o.verified),
+                   "verify_failed": sum(1 for o in ops if o.verified is False),
                    "id_checks_required": sum(1 for o in ops if o.id_check)}
         log.info("odoo import (%s): %s", "dry-run" if dry_run else "LIVE", summary)
         return {"summary": summary, "operations": results}

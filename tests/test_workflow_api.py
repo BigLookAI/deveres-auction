@@ -32,6 +32,7 @@ def client(tmp_path, monkeypatch):
     reconcile_routes.SESSION_PATH = tmp_path / "session.json"
     reconcile_routes.SESSIONS_DIR = tmp_path / "sessions"
     reconcile_routes.AUDIT_PATH = tmp_path / "audit.log"
+    reconcile_routes.SYNC_PATH = tmp_path / "sync.json"
     from fastapi import FastAPI
     from fastapi.testclient import TestClient
     app = FastAPI()
@@ -412,3 +413,62 @@ class TestLegacyDecide:
         _upload(client)
         text = client.get("/reconcile/export?fmt=csv", headers=ADMIN).text
         assert "classification" in text.splitlines()[0]
+
+
+# ── 6-Jul meeting: Refresh Contacts + sync status ─────────────────────────────
+class TestRefreshAndSyncStatus:
+    def test_refresh_preserves_decisions_and_reconciles(self, client):
+        _upload(client)
+        idx = _first_index(client, "update_suggested")
+        client.post(f"/reconcile/records/{idx}/approve", json={}, headers=ADMIN)
+        before = client.get("/reconcile/progress", headers=ADMIN).json()
+        r = client.post("/reconcile/refresh", headers=ADMIN)
+        assert r.status_code == 200, r.text
+        d = r.json()
+        assert d["session_results"] == before["total"]
+        assert d["decisions_preserved"] >= 1
+        # the approved record survived the refresh still staged
+        rec = client.get(f"/reconcile/results/{idx}", headers=ADMIN).json()
+        assert rec["state"] == "update_ready"
+        assert client.get("/reconcile/staging", headers=ADMIN).json()[
+            "counts"]["ready"]["update"] >= 1
+        # untouched records keep valid initial states
+        after = client.get("/reconcile/progress", headers=ADMIN).json()
+        assert after["total"] == before["total"]
+
+    def test_refresh_preserves_manual_edits(self, client):
+        _upload(client)
+        idx = _first_index(client, "update_suggested")
+        client.post(f"/reconcile/records/{idx}/edit",
+                    json={"fields": {"town": "Edited Town"}}, headers=ADMIN)
+        client.post("/reconcile/refresh", headers=ADMIN)
+        rec = client.get(f"/reconcile/results/{idx}", headers=ADMIN).json()
+        assert rec["state"] == "manual_edit"
+        assert rec["edits"]["town"] == "Edited Town"
+
+    def test_refresh_requires_editor(self, client):
+        _upload(client)
+        assert client.post("/reconcile/refresh", headers=VIEWER).status_code == 403
+
+    def test_refresh_is_audited(self, client):
+        _upload(client)
+        client.post("/reconcile/refresh", headers=ADMIN)
+        events = [json.loads(l)["event"]
+                  for l in client._routes.AUDIT_PATH.read_text().splitlines()]
+        assert "refresh" in events
+
+    def test_sync_status_shape(self, client):
+        _upload(client)
+        idx = _first_index(client, "update_suggested")
+        client.post(f"/reconcile/records/{idx}/approve", json={}, headers=ADMIN)
+        s = client.get("/reconcile/sync-status", headers=ADMIN).json()
+        assert set(s) >= {"api", "master", "last_refresh", "last_push",
+                          "pending_push", "failed_push"}
+        assert s["master"]["records"] > 0
+        assert s["pending_push"]["update"] >= 1
+        assert s["api"]["odoo_configured"] is False      # hermetic test env
+        # after a refresh the telemetry is populated
+        client.post("/reconcile/refresh", headers=ADMIN)
+        s2 = client.get("/reconcile/sync-status", headers=ADMIN).json()
+        assert s2["last_refresh"]["at"]
+        assert s2["last_refresh"]["by"] == "admin@deveres.ie"

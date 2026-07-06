@@ -139,6 +139,18 @@
   .reason{background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.3);border-radius:9px;padding:10px 14px;font-size:12.5px;color:var(--review);margin-top:12px}
   .hidden{display:none!important}
   .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:10px 18px;font-size:13px;z-index:80;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+  /* sync status bar (6-Jul: refresh / push / API visibility) */
+  .syncbar{display:flex;align-items:center;gap:10px;background:var(--bg2);border-bottom:1px solid var(--line);padding:7px 22px;font-size:12px;color:var(--muted2);flex-wrap:wrap}
+  .apidot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;flex:none}
+  .apidot.ok{background:var(--good);box-shadow:0 0 6px rgba(52,211,153,.6)}
+  .apidot.warn{background:var(--update)} .apidot.off{background:var(--muted)}
+  .syncbar b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .syncbar .sep{color:var(--line2)}
+  /* push results modal */
+  .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:90;display:none;align-items:center;justify-content:center;padding:24px}
+  .modal.on{display:flex}
+  .modal .box{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:22px 24px;max-width:900px;width:100%;max-height:86vh;overflow:auto}
+  .modal h3{margin:0 0 8px}
   @media(max-width:1000px){.stats{grid-template-columns:repeat(4,1fr)}.cmp{grid-template-columns:90px 1fr 1fr 1fr}.editform{grid-template-columns:1fr}}
 </style>
 </head>
@@ -151,10 +163,19 @@
     <span class="dot"></span>
     <span>Pending changes: <b id="pendUpd">0</b> updates · <b id="pendNew">0</b> new</span>
     <a class="btn sm" href="/reconcile/staging/export?fmt=csv">⬇ CSV</a>
-    <button class="btn sm" onclick="odooDryRun()">Odoo dry-run</button>
+    <button class="btn sm" onclick="odooDryRun()">👁 Dry-run</button>
+    <button class="btn sm good" id="pushBtn" onclick="pushToOdoo()">🚀 Push to Odoo</button>
   </div>
   <div class="muted mono" id="masterInfo" style="font-size:11px"></div>
 </header>
+<div class="syncbar" id="syncbar">
+  <span class="apidot off" id="apiDot" title="checking…"></span>
+  <span id="syncMaster">checking Odoo connection…</span>
+  <span class="sep">·</span>
+  <span id="syncTimes"></span>
+  <div class="spacer"></div>
+  <button class="btn sm" id="refreshBtn" onclick="refreshContacts()" title="Pull the latest contacts from Odoo and re-reconcile this session (your approvals, edits and staged changes are preserved)">⟳ Refresh contacts</button>
+</div>
 
 <div class="wrap">
   <!-- UPLOAD -->
@@ -234,6 +255,9 @@
   </section>
 </div>
 
+<!-- PUSH RESULTS MODAL -->
+<div class="modal" id="pushModal"><div class="box" id="pushModalBody"></div></div>
+
 <!-- DETAIL DRAWER -->
 <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
 <div class="drawer" id="drawer">
@@ -275,6 +299,41 @@ function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replac
   $('#masterCount').textContent=h.master_records.toLocaleString();
   if(h.master_fallback){toast('\u26a0 Odoo master unavailable \u2014 reconciling against the CSV snapshot');}
 }catch(e){}})();
+
+// \u2500\u2500 sync status bar (refresh/push/API visibility) \u2500\u2500
+const fmtT=t=>t?new Date(t).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'\u2014';
+async function loadSync(){
+  try{
+    const s=await jget('/reconcile/sync-status');
+    const dot=$('#apiDot');
+    const live=s.master.source==='odoo'&&!s.api.master_fallback;
+    dot.className='apidot '+(live?'ok':(s.api.odoo_configured?'warn':'off'));
+    dot.title=live?'Connected to Odoo \u2014 master is the live system of record'
+      :(s.api.master_fallback?'Odoo unreachable \u2014 running on the CSV snapshot':'Odoo not configured \u2014 CSV master');
+    $('#syncMaster').innerHTML=`<b>${s.master.records.toLocaleString()}</b> master contacts \u00b7 ${live?'live Odoo':'CSV snapshot'}${s.api.write_enabled?'':' \u00b7 <span style="color:var(--update)">writes disabled</span>'}`;
+    const pend=(s.pending_push.update||0)+(s.pending_push.create||0);
+    $('#syncTimes').innerHTML=
+      `last sync <b>${fmtT(s.last_refresh.at||s.master.loaded_at)}</b>`
+      +` \u00b7 last push <b>${fmtT(s.last_push.at)}</b>`
+      +` \u00b7 pending push <b>${pend}</b>`
+      +(s.failed_push?` \u00b7 <span style="color:var(--bad)">failed ${s.failed_push} \u2014 re-push retries them</span>`:'');
+  }catch(e){}
+}
+loadSync();setInterval(loadSync,60000);
+
+// \u2500\u2500 Refresh Contacts: re-pull the Odoo master + re-reconcile, keeping decisions \u2500\u2500
+async function refreshContacts(){
+  const b=$('#refreshBtn');if(b.disabled)return;
+  b.disabled=true;const orig=b.textContent;b.textContent='\u27f3 Refreshing\u2026';
+  try{
+    const d=await jpost('/reconcile/refresh');
+    toast(`\u27f3 ${d.master_records.toLocaleString()} contacts pulled from ${d.master_source==='odoo'?'Odoo':'the CSV'}`
+      +(d.session_results?` \u00b7 ${d.session_results} record(s) re-reconciled \u00b7 ${d.decisions_preserved} decision(s) preserved${d.reclassified?` \u00b7 ${d.reclassified} changed classification`:''}`:''));
+    if(state.summary){try{const sess=await jget('/reconcile/session');state.summary=sess.summary;renderDash(sess.summary,sess);}catch(_){}}
+    await refreshAll();loadSync();
+  }catch(e){toast('\u26a0 Refresh failed: '+e.message);}
+  b.disabled=false;b.textContent=orig;
+}
 
 // ── restore last session on load (survives refresh / server restart) ──
 (async()=>{try{const sess=await jget('/reconcile/session');
@@ -414,7 +473,11 @@ async function rowReopen(idx){try{const d=await jpost(`/reconcile/records/${idx}
 async function bulkApprove(scope){
   if(scope.indices && !scope.indices.length){alert('No rows selected.');return;}
   try{const d=await jpost('/reconcile/approve-bulk',scope);
-    toast(`Approved ${d.approved.length}${d.skipped.length?` · skipped ${d.skipped.length}`:''}`);refreshAll();
+    const allStaged=!d.approved.length&&d.skipped.length
+      &&d.skipped.every(s=>/update_ready|import_ready|pushed_to_odoo/.test(s.reason||''));
+    if(allStaged){toast('These records are already approved and staged — use 🚀 Push to Odoo (top right) to send them.');}
+    else toast(`Approved ${d.approved.length}${d.skipped.length?` · skipped ${d.skipped.length}`:''}`);
+    refreshAll();
   }catch(e){toast('⚠ '+e.message);}
 }
 async function bulkReject(indices){
@@ -433,6 +496,57 @@ async function odooDryRun(){
       +(d.note?`\n${d.note}`:'\nConnected to Odoo: '+(s.connected?'yes':'no')));
   }catch(e){alert('Dry-run failed: '+e.message);}
 }
+
+// ── Push to Odoo: plan → confirm → live push → verified results ──
+async function pushToOdoo(){
+  const b=$('#pushBtn');if(b.disabled)return;
+  b.disabled=true;const orig=b.textContent;
+  try{
+    b.textContent='🚀 Planning…';
+    const plan=await jpost('/reconcile/odoo-import',{dry_run:true});
+    const p=plan.summary;
+    if(!(p.create+p.write)){alert('Nothing to push — the staged changes have no Odoo-writable field updates.');b.disabled=false;b.textContent=orig;return;}
+    const go=confirm(`Push ${p.create+p.write} approved change(s) to Odoo now?\n\n`
+      +`• ${p.create} new contact(s) will be created\n`
+      +`• ${p.write} existing contact(s) will be updated\n`
+      +(p.skip?`• ${p.skip} staged row(s) skipped (no writable change)\n`:'')
+      +(p.id_checks_required?`• ${p.id_checks_required} buyer(s) need an ID check (>€10k)\n`:'')
+      +`\nEach pushed record is read back from Odoo afterwards to verify the update landed.`);
+    if(!go){b.disabled=false;b.textContent=orig;return;}
+    b.textContent='🚀 Pushing…';
+    const d=await jpost('/reconcile/odoo-import',{dry_run:false});
+    showPushResults(d);
+    await refreshAll();loadSync();
+  }catch(e){alert('Push failed: '+e.message);}
+  b.disabled=false;b.textContent=orig;
+}
+function showPushResults(d){
+  const s=d.summary;
+  const rows=(d.operations||[]).map(o=>`<tr>
+    <td class="mono">${esc(o.ref)}</td><td>${esc(o.name)}</td>
+    <td>${o.op==='error'?'<span style="color:var(--bad)">error</span>':esc(o.op)}</td>
+    <td class="mono">${o.partner_id??'—'}</td>
+    <td>${o.verified===true?'<span style="color:var(--good)">✓ verified in Odoo</span>'
+        :o.verified===false?'<span style="color:var(--bad)">✗ read-back mismatch</span>':'—'}</td>
+    <td class="muted" style="max-width:280px;font-size:11.5px">${esc(o.reason||'')}</td></tr>`).join('');
+  $('#pushModalBody').innerHTML=`
+    <h3>${s.error?'⚠ Push finished with errors':'✅ Push to Odoo complete'}</h3>
+    <p><b>${s.create}</b> created · <b>${s.write}</b> updated · ${s.skip} skipped ·
+       <b style="color:${s.error?'var(--bad)':'var(--good)'}">${s.error} error(s)</b> ·
+       <b style="color:var(--good)">${s.verified||0} verified</b> by read-back from Odoo</p>
+    <div class="tablewrap" style="max-height:52vh;overflow:auto"><table>
+      <thead><tr><th>Ref</th><th>Contact</th><th>Action</th><th>Odoo ID</th><th>Verification</th><th>Detail</th></tr></thead>
+      <tbody>${rows}</tbody></table></div>
+    <p class="muted" style="font-size:12px;margin-top:10px">Open any contact in Odoo to see the change live —
+      every create/update above was re-read from Odoo after writing. Errored rows stay in staging and are retried on the next push.
+      The full old→new value trail is in the audit log.</p>
+    <div style="display:flex;gap:8px;margin-top:6px"><button class="btn primary" onclick="closePushModal()">Close</button></div>`;
+  $('#pushModal').classList.add('on');
+  toast(s.error?`⚠ Push finished with ${s.error} error(s) — they remain staged for retry`
+               :`✅ Pushed ${s.create+s.write} change(s) · ${s.verified||0} verified in Odoo`);
+}
+function closePushModal(){$('#pushModal').classList.remove('on');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePushModal();});
 
 // ── sessions (one per uploaded auction file) ──
 async function loadSessions(){

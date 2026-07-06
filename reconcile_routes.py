@@ -107,6 +107,7 @@ UI_PATH      = BASE_DIR / "static" / "reconcile.html"
 SESSION_PATH = BASE_DIR / "output" / "reconcile_session.json"
 SESSIONS_DIR = BASE_DIR / "output" / "sessions"
 AUDIT_PATH   = BASE_DIR / "output" / "reconcile_audit.log"
+SYNC_PATH    = BASE_DIR / "output" / "sync_status.json"
 
 router = APIRouter(prefix="/reconcile", tags=["reconciliation"],
                    dependencies=[Depends(require_auth)])
@@ -230,6 +231,27 @@ def _restore_session() -> None:
         log.warning("reconcile: session restore failed: %s", exc)
 
 
+def _sync_status() -> dict:
+    """Durable sync/push telemetry shown in the UI status bar (survives
+    restarts — the 6-Jul meeting asked for last-sync/last-push visibility)."""
+    try:
+        if SYNC_PATH.exists():
+            return json.loads(SYNC_PATH.read_text(encoding="utf-8"))
+    except Exception:                                     # noqa: BLE001
+        pass
+    return {}
+
+
+def _update_sync(**kw) -> None:
+    status = _sync_status()
+    status.update(kw)
+    try:
+        SYNC_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SYNC_PATH.write_text(json.dumps(status, ensure_ascii=False), encoding="utf-8")
+    except Exception as exc:                              # noqa: BLE001
+        log.warning("reconcile: sync-status write failed: %s", exc)
+
+
 def _audit(event: str, **kw) -> None:
     """Append-only audit trail of consequential reconciliation actions."""
     try:
@@ -324,7 +346,9 @@ def health():
             "session_id": _state.get("session_id"),
             "results_cached": len(_state["results"]),
             "session_persisted": SESSION_PATH.exists(),
-            "staging_counts": _get_staging().counts(_session_id())}
+            "staging_counts": _get_staging().counts(_session_id()),
+            "last_refresh_at": _sync_status().get("last_refresh_at"),
+            "last_push_at": _sync_status().get("last_push_at")}
 
 
 @router.post("/master/reload")
@@ -347,6 +371,93 @@ def master_reload(user: str = Depends(require_editor)):
     return {"master_source": repo.source, "master_records": len(repo),
             "master_loaded_at": repo.loaded_at, "duration_ms": ms,
             "master_fallback": _state.get("master_fallback")}
+
+
+@router.post("/refresh")
+def refresh_contacts(user: str = Depends(require_editor)):
+    """The 'Refresh Contacts' action (6-Jul meeting): pull the latest partners
+    from Odoo AND re-reconcile the open session against them, so an address
+    edited directly inside Odoo (the Karen Namesake case) shows up immediately.
+
+    Reviewer work is PRESERVED: any record that was edited, approved (staged),
+    rejected, kept-existing or already pushed keeps its state, edits, approval
+    history and staged values. Only untouched records are freely reclassified
+    against the fresh master."""
+    global _master, _engine
+    _restore_session()
+    t0 = time.perf_counter()
+    try:
+        repo = _load_master()
+    except Exception as exc:
+        raise HTTPException(502, f"Refresh failed — could not reach the master "
+                                 f"source: {exc}")
+    _master, _engine = repo, ReconciliationEngine(repo)
+    preserved = reclassified = 0
+    old_results = _state["results"]
+    if old_results:
+        # the stored incoming snapshot carries every field matching/diffing use
+        incoming = [{**r.incoming, "buyer_number": r.buyer_number,
+                     "lots": r.lots} for r in old_results]
+        new_results, summary = _engine.run(incoming)
+        by_index = {r.index: r for r in old_results}
+        for nr in new_results:
+            old = by_index.get(nr.index)
+            if old is None:
+                continue
+            if nr.classification != old.classification:
+                reclassified += 1
+            acted = bool(old.history or old.edits
+                         or old.state != initial_state(old.classification))
+            if acted:   # reviewer touched it → decision survives the refresh
+                nr.state = old.state
+                nr.history = old.history
+                nr.edits = old.edits
+                nr.approved_values = old.approved_values
+                nr.action = old.action
+                preserved += 1
+        _state["results"] = new_results
+        _state["summary"] = summary
+        _save_session()
+    ms = round((time.perf_counter() - t0) * 1000)
+    now = datetime.now(timezone.utc).isoformat(timespec="seconds")
+    _update_sync(last_refresh_at=now, last_refresh_by=user,
+                 last_refresh_records=len(repo), master_source=repo.source)
+    _audit("refresh", source=repo.source, records=len(repo),
+           session_results=len(_state["results"]), preserved=preserved,
+           reclassified=reclassified, duration_ms=ms, actor=user)
+    log.info("reconcile: refresh by %s — master %s (%d records), %d session "
+             "records re-reconciled (%d decisions preserved, %d reclassified) "
+             "in %dms", user, repo.source, len(repo), len(_state["results"]),
+             preserved, reclassified, ms)
+    return {"master_source": repo.source, "master_records": len(repo),
+            "master_loaded_at": repo.loaded_at,
+            "master_fallback": _state.get("master_fallback"),
+            "session_results": len(_state["results"]),
+            "decisions_preserved": preserved, "reclassified": reclassified,
+            "refreshed_at": now, "duration_ms": ms}
+
+
+@router.get("/sync-status")
+def sync_status():
+    """Everything the UI status bar needs: master source + load time, refresh
+    and push telemetry, staging (pending-push) counts, API configuration."""
+    eng = _get_engine()
+    _restore_session()
+    s = _sync_status()
+    counts = _get_staging().counts(_session_id())
+    return {"api": {"odoo_configured": bool(os.environ.get("ODOO_URL")),
+                    "master_source_setting": _master_source_setting(),
+                    "master_fallback": _state.get("master_fallback"),
+                    "write_enabled": os.environ.get("RECON_ALLOW_ODOO_WRITE") == "1"},
+            "master": {"source": eng.master.source, "records": len(eng.master),
+                       "loaded_at": eng.master.loaded_at},
+            "last_refresh": {"at": s.get("last_refresh_at"),
+                             "by": s.get("last_refresh_by"),
+                             "records": s.get("last_refresh_records")},
+            "last_push": {"at": s.get("last_push_at"), "by": s.get("last_push_by"),
+                          "summary": s.get("last_push_summary")},
+            "pending_push": counts.get("ready", {}),
+            "failed_push": s.get("last_push_failed", 0)}
 
 
 @router.get("/session")
@@ -876,6 +987,21 @@ def odoo_import(payload: dict | None = None, user: str = Depends(require_editor)
         for idx, entry in by_index.items():
             ref = entry["master_ref"] or f"BC-{entry['buyer_number']}"
             op = op_by_ref.get(ref) or {}
+            # full per-record push audit (6-Jul brief): who pushed what, the
+            # old and new values, Odoo's response and the verification result.
+            _audit("odoo_push_record", cid=cid, actor=user,
+                   record_index=idx, ref=ref, buyer=entry.get("buyer_number"),
+                   name=entry.get("name"), odoo_id=op.get("partner_id"),
+                   operation=op.get("op"), reason=op.get("reason"),
+                   fields_updated=sorted(k for k in (op.get("values") or {})
+                                         if not k.startswith("__")),
+                   old_values={k: (entry.get("original") or {}).get(k, "")
+                               for k in (entry.get("changed_fields") or [])},
+                   new_values={k: (entry.get("approved") or {}).get(k, "")
+                               for k in (entry.get("changed_fields") or [])},
+                   success=op.get("op") in ("create", "write", "skip"),
+                   verified=op.get("verified"),
+                   verify_mismatch=op.get("verify_mismatch") or {})
             if op.get("op") == "error" or str(op.get("reason", "")).startswith("VALIDATION"):
                 log.warning("odoo import: ref=%s not pushed, staging row stays ready (%s)",
                             ref, op.get("reason"))
@@ -887,6 +1013,9 @@ def odoo_import(payload: dict | None = None, user: str = Depends(require_editor)
                 _transition(r, RecordState.PUSHED_TO_ODOO, user,
                             f"pushed (partner_id={partner})")
         _save_session()
+        _update_sync(last_push_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                     last_push_by=user, last_push_summary=result["summary"],
+                     last_push_failed=result["summary"].get("error", 0))
     # summary already carries dry_run — passing it twice was a TypeError (500).
     result["correlation_id"] = cid
     _audit("odoo_import", cid=cid, actor=user, **result["summary"])
