@@ -105,19 +105,21 @@
     </div>
 
     <div class="card">
-      <span class="tag t-live">● Live · inside Reconciliation</span>
-      <h3>3 · Odoo Integration</h3>
+      <span class="tag t-live">● Live · public</span>
+      <h3>3 · Odoo Integration — full Odoo UI</h3>
       <p>Odoo is both ends of the reconciliation loop: the contact list is <b>fetched live</b> from a real
          Odoo&nbsp;19 (look for the “· live Odoo” badge), and approved changes are <b>pushed back</b> —
          exact-id writes, idempotent, dry-run first, fully audited.</p>
-      <div class="try"><b>See the loop close</b>
+      <div class="try"><b>Watch a push land in Odoo</b>
         <ol>
-          <li>Header shows “216 master clients · live Odoo” — that count comes from Odoo via API</li>
-          <li>Push an approved change (creates/updates real <code>res.partner</code> rows in the demo Odoo)</li>
-          <li>Re-upload the same file → the change is recognised — the spreadsheet era is over</li>
+          <li>Open the Odoo UI (button below) → log in → <i>Contacts</i> app</li>
+          <li>In Reconciliation: approve the sample file's new client → Push to Odoo (live)</li>
+          <li>Back in Odoo: search the new name — the contact is there, reference <code>BC-…</code>,
+              with the reconciliation audit note on the record</li>
+          <li>Reconciliation header count ticks up after “reload master” — same database, both ends</li>
         </ol></div>
-      <a class="btn ghost" href="/reconcile">Test via Reconciliation →</a>
-      <div class="cred">Demo Odoo: Dockerised Odoo 19 + PostgreSQL 15, synthetic contacts only</div>
+      <a class="btn" href="https://deveres.tail915505.ts.net:8443" target="_blank" rel="noopener">Open the full Odoo UI →</a>
+      <div class="cred">Odoo login <code>demo@deveres.ie</code> / <code>DemoView2026!</code> · Odoo 19 + PostgreSQL 15 in Docker · synthetic contacts only</div>
     </div>
   </div>
 
