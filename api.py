@@ -957,6 +957,10 @@ body {
 
     # ── JavaScript (plain string — no f-string escaping needed) ──────────
     JS = r"""
+// ── API base: works at the root ('/') AND path-mounted at '/bidder'
+//    (the public funnel mounts this app under /bidder and strips the
+//    prefix server-side; the browser must keep it on every request).
+const API = location.pathname.startsWith('/bidder') ? '/bidder' : '';
 // ── Credentials ──────────────────────────────────────────────────────────
 const CREDS = {
   'admin@deveres.ie':  { pass: 'Admin2026!', role: 'admin',  name: 'Admin' },
@@ -1160,7 +1164,7 @@ async function runEval() {
   showToast('Running pipeline…', 'info');
   try {
     const weights = normalisedWeights();
-    const resp = await fetch('/evaluate', {
+    const resp = await fetch(API + '/evaluate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(weights ? { dry_run: true, weights } : { dry_run: true }),
@@ -1184,7 +1188,7 @@ async function runEval() {
 async function updateDecision(ev, id, decision) {
   ev.stopPropagation();
   try {
-    const resp = await fetch('/decision/' + id, {
+    const resp = await fetch(API + '/decision/' + id, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ decision }),
@@ -1212,7 +1216,7 @@ async function openDetail(id) {
 
   document.querySelector('.drawer-overlay').classList.add('open');
 
-  const resp = await fetch('/results/' + id);
+  const resp = await fetch(API + '/results/' + id);
   if (!resp.ok) return;
   const d = await resp.json();
 
@@ -1383,7 +1387,7 @@ async function openEmail(ev, id) {
 
   // Pre-fill from /emails/{id} if available
   try {
-    const resp = await fetch('/emails/' + id);
+    const resp = await fetch(API + '/emails/' + id);
     if (resp.ok) {
       const e = await resp.json();
       document.getElementById('e-to').value      = e.bidder_email || '';
@@ -1391,7 +1395,7 @@ async function openEmail(ev, id) {
       document.getElementById('e-body').value    = e.body    || '';
     } else {
       // Fallback: try to get bidder email from results
-      const r2 = await fetch('/results/' + id);
+      const r2 = await fetch(API + '/results/' + id);
       if (r2.ok) {
         const d2 = await r2.json();
         document.getElementById('e-to').value = d2.bidder_email || '';
@@ -1438,7 +1442,7 @@ async function sendEmail() {
   sendBtn.innerHTML = '<div class="spinner"></div> Sending…';
 
   try {
-    const resp = await fetch('/compose-email', {
+    const resp = await fetch(API + '/compose-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ to, cc, subject, body, schedule_at: schedule_at || null }),
@@ -1463,7 +1467,7 @@ async function loadSummary() {
   const el = document.getElementById('summary-content');
   el.innerHTML = '<p style="color:var(--muted)">Loading…</p>';
   try {
-    const resp = await fetch('/summary');
+    const resp = await fetch(API + '/summary');
     if (!resp.ok) {
       el.innerHTML = '<div class="empty-state"><div class="empty-icon">📋</div><h3>No summary yet</h3><p>Run an evaluation first.</p></div>';
       return;
@@ -1519,7 +1523,7 @@ async function loadHealth() {
   const el = document.getElementById('health-content');
   el.innerHTML = '<p style="color:var(--muted)">Checking service health…</p>';
   try {
-    const resp = await fetch('/health');
+    const resp = await fetch(API + '/health');
     const d    = await resp.json();
     const dotCls = d.status === 'ok' ? 'dot-ok' : 'dot-err';
     el.innerHTML = `

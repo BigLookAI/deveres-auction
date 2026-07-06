@@ -76,13 +76,27 @@ def landing():
      only payload ever pushed to Odoo.</p>
   <div class="flow">Blue&nbsp;Cube&nbsp;Export → Reconciliation&nbsp;Engine → Review → Approval → Staging → Push&nbsp;to&nbsp;Odoo</div>
   <a class="btn" href="/reconcile">Open the reconciliation workspace →</a>
+  <div style="margin-top:10px;font-size:12.5px"><a href="/hub" style="color:#8b93a7">See all deVeres works by Cimelium →</a></div>
   <div class="cred">Sign-in required — this workspace handles personal client data.
   """ + cred_note + """</div>
 </div>
 </body></html>""")
 
 
+@app.get("/hub", response_class=HTMLResponse)
+def hub():
+    """Public works hub (6-Jul request): one page connecting every deVeres
+    deliverable — both live apps, the Odoo integration, the work timeline and
+    the meeting-commitment tracker. No auth: it contains links + demo creds
+    only; the apps behind it hold synthetic data."""
+    from pathlib import Path as _P
+    hub_path = _P(__file__).resolve().parent / "static" / "hub.html"
+    if hub_path.exists():
+        return HTMLResponse(hub_path.read_text(encoding="utf-8"))
+    return HTMLResponse("<h1>Hub page missing</h1>", status_code=500)
+
+
 @app.get("/overview")
 def overview_redirect():
-    """The old shared landing no longer exists — reconciliation is standalone."""
-    return RedirectResponse("/", status_code=308)
+    """The old shared landing was replaced by the works hub."""
+    return RedirectResponse("/hub", status_code=308)
