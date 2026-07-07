@@ -10,6 +10,10 @@ person contact ("Contact Type = Contact", NOT Company) with address type
   2. sets is_company=False + type='contact' on every synthetic partner that
      is not one (companies that exist by design — e.g. the Odoo company
      record itself, or partners that are a parent company — are untouched),
+  2b. assigns the SOR Contact Type "Contact" (sor.contact.type code=contact,
+     from sor_contact_roles) to every synthetic partner missing it — this is
+     the field the SOR menus filter on (Contacts / Bidders / Consignors are
+     empty without it). Skipped gracefully when the SOR modules are absent,
   3. verifies the partner-model structure the client asked about:
      individual contact / parent company / child contact / address hierarchy,
      by creating a disposable TEST company + child and checking that the
@@ -59,7 +63,33 @@ def counts(models, uid) -> dict:
         ("with_parent", [["parent_id", "!=", False]]),
     ):
         out[label] = x(models, uid, "res.partner", "search_count", domain)
+    try:   # SOR contact-roles installed? count partners tagged Contact
+        out["sor_contact_type_contact"] = x(
+            models, uid, "res.partner", "search_count",
+            [["contact_types.code", "=", "contact"]])
+    except Exception:                                     # noqa: BLE001
+        out["sor_contact_type_contact"] = "n/a (SOR modules not installed)"
     return out
+
+
+def assign_sor_contact_type(models, uid, exclude_ids: set, dry_run: bool) -> tuple[int, str]:
+    """Tag every synthetic partner with the SOR Contact Type 'Contact'
+    (the field the SOR Contacts/Bidders/… menus filter on). Idempotent."""
+    try:
+        ct = x(models, uid, "sor.contact.type", "search",
+               [["code", "=", "contact"]], limit=1)
+    except Exception as exc:                              # noqa: BLE001
+        return 0, f"skipped — sor.contact.type not available ({exc})"
+    if not ct:
+        return 0, "skipped — no sor.contact.type with code 'contact'"
+    missing = x(models, uid, "res.partner", "search",
+                ["!", ["contact_types.code", "=", "contact"],
+                 ["id", "not in", sorted(exclude_ids)],
+                 ["is_company", "=", False]])
+    if missing and not dry_run:
+        x(models, uid, "res.partner", "write", missing,
+          {"contact_types": [[4, ct[0]]]})
+    return len(missing), f"assigned SOR type 'Contact' (id {ct[0]}) to {len(missing)} partner(s)"
 
 
 def verify_hierarchy(models, uid) -> list[str]:
@@ -145,6 +175,9 @@ def main() -> None:
         if wrong_type:
             x(models, uid, "res.partner", "write", wrong_type, {"type": "contact"})
 
+    sor_n, sor_note = assign_sor_contact_type(models, uid, keep_company, args.dry_run)
+    migrated["sor_contact_type"] = sor_n
+
     after = counts(models, uid)
     hierarchy = verify_hierarchy(models, uid)
     ts = datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -171,6 +204,9 @@ def main() -> None:
         "",
         f"**Migrated:** {migrated['is_company']} partner(s) Company→Contact, "
         f"{migrated['type']} partner(s) address-type→contact.",
+        "",
+        f"**SOR Contact Type:** {sor_note} — this is the `contact_types` field "
+        "the SOR menus (Contacts / Bidders / Consignors / …) filter on.",
         "",
         "## Partner-model structure checks (disposable test records)",
         "",
