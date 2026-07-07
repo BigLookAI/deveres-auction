@@ -1087,6 +1087,75 @@ def odoo_import(payload: dict | None = None, user: str = Depends(require_editor)
     return result
 
 
+# ── Stage 2: Lot reconciliation / auction-result import (Phase 11+) ──────────
+@router.get("/auction/results")
+def auction_results():
+    """Reconcile the current session's per-lot rows against the Odoo lots:
+    match by LOT NUMBER (primary key), carry the buyer match from the contact
+    engine, classify exceptions (missing/duplicate/conflict). Read-only."""
+    from reconciliation.lots_engine import fetch_lots, reconcile_lots, summarize
+    _restore_session()
+    if not _state["results"]:
+        raise HTTPException(404, "No reconciliation session — upload a Blue Cubes export first.")
+    if not os.environ.get("ODOO_URL"):
+        raise HTTPException(503, "Odoo is not configured on this server — lot "
+                                 "reconciliation needs the live lot list.")
+    try:
+        lots = fetch_lots()
+    except Exception as exc:
+        raise HTTPException(502, f"Could not fetch lots from Odoo: {exc}")
+    results = reconcile_lots(_state["results"], lots)
+    return {"summary": summarize(results),
+            "odoo_lots": len(lots),
+            "results": [r.to_dict() for r in results]}
+
+
+@router.post("/auction/push")
+def auction_push(payload: dict | None = None, user: str = Depends(require_editor)):
+    """Import the auction results into Odoo: Hammer Price now; Buyer / Sold
+    only when their feature flags are enabled (deferred per the 7-Jul meeting
+    until the Odoo auction setup + admin access are complete). Dry-run by
+    default; live writes double-gated by RECON_ALLOW_ODOO_WRITE."""
+    from reconciliation.lots_engine import (fetch_lots, reconcile_lots,
+                                            plan_updates, execute_updates)
+    _restore_session()
+    if not _state["results"]:
+        raise HTTPException(404, "No reconciliation session.")
+    if not os.environ.get("ODOO_URL"):
+        raise HTTPException(503, "Odoo is not configured on this server.")
+    dry_run = bool((payload or {}).get("dry_run", True))
+    cid = uuid.uuid4().hex[:12]
+    try:
+        results = reconcile_lots(_state["results"], fetch_lots())
+        ops = plan_updates(results)
+        if not ops:
+            raise HTTPException(404, "No lots are ready to import — resolve the "
+                                     "exceptions first (missing/duplicate/conflict).")
+        out = execute_updates(ops, dry_run=dry_run)
+    except HTTPException:
+        raise
+    except PermissionError as e:
+        raise HTTPException(403, str(e))
+    except Exception as e:
+        raise HTTPException(502, f"Lot import failed: {e}")
+    out["correlation_id"] = cid
+    if not dry_run:
+        for op in out["operations"]:
+            _audit("odoo_lot_record", cid=cid, actor=user,
+                   lot_number=op["lot_number"], odoo_lot_id=op["lot_id"],
+                   values={k: v for k, v in op["values"].items()},
+                   applied=op["applied"], deferred=op["deferred"],
+                   buyer=op.get("buyer_name"),
+                   success=op.get("result") == "written",
+                   verified=op.get("verified"), error=op.get("error"))
+        _update_sync(last_lot_push_at=datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                     last_lot_push_by=user, last_lot_push_summary=out["summary"])
+    _audit("auction_import", cid=cid, actor=user, **{k: v for k, v in
+           out["summary"].items() if k != "flags"})
+    log.info("auction-import[%s]: %s", cid, out["summary"])
+    return out
+
+
 # ── Lots import preview (Hammer forced 0) ─────────────────────────────────────
 @router.get("/lots")
 def lots_preview(limit: int = 25):

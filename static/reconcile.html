@@ -194,6 +194,7 @@
   <div class="logo" aria-hidden="true">D</div>
   <div><h1>Contact Reconciliation</h1><div class="sub">deVeres Auction · Blue Cubes → Staging → Odoo · by Cimelium</div></div>
   <div class="spacer"></div>
+  <button class="btn sm ghost" id="lotsBtn" aria-label="Open lot reconciliation" onclick="openLots()">🔨 Lots</button>
   <button class="btn sm ghost" id="activityBtn" aria-label="Open the activity timeline">🕘 Activity</button>
   <div class="dd" id="exportDD">
     <button class="btn sm ghost" id="exportBtn" aria-haspopup="true" aria-expanded="false">⬇ Export ▾</button>
@@ -283,6 +284,31 @@
       <button class="btn sm" id="prev" aria-label="Previous page">‹ Prev</button>
       <button class="btn sm" id="next" aria-label="Next page">Next ›</button>
     </div>
+  </section>
+
+  <!-- LOT RECONCILIATION (stage 2 of the same Blue Cubes import) -->
+  <section id="view-lots" class="hidden">
+    <div class="controls" style="margin-bottom:4px">
+      <button class="btn sm" onclick="closeLots()">‹ Back to contacts</button>
+      <h2 style="margin:0;font-size:17px">🔨 Lot reconciliation — auction results</h2>
+      <div class="spacer"></div>
+      <button class="btn" onclick="lotsDryRun()">👁 Preview import (dry-run)</button>
+      <button class="btn primary" id="lotsPushBtn" onclick="lotsPush()">🔨 Import hammer prices</button>
+    </div>
+    <div class="notice" id="lotsFlags" style="border-left-color:var(--update)"></div>
+    <div class="kpis" id="lotsKpis" style="grid-template-columns:repeat(6,1fr)"></div>
+    <div class="tablewrap">
+      <table>
+        <thead><tr>
+          <th>Lot №</th><th>Blue Cubes title</th><th>Winning bid</th>
+          <th>Odoo lot</th><th>Buyer (from contact engine)</th><th>Status</th><th>Detail</th>
+        </tr></thead>
+        <tbody id="lotRows"></tbody>
+      </table>
+    </div>
+    <p class="muted" style="font-size:12px;margin-top:10px">Lots are matched by <b>lot number only</b> (never title).
+      Missing lots are never created automatically. Estimates and reserves are never modified — only the
+      hammer price changes (plus buyer/sold once enabled).</p>
   </section>
 </div>
 
@@ -400,7 +426,7 @@ async function doUpload(f){
     if(d.shared_buyer_number_contacts)toast(`⚠ ${d.shared_buyer_number_contacts} contact(s) shared a buyer number with a different person — split into separate records`);
   }catch(e){alert('Upload failed: '+e.message);show('upload');}
 }
-function show(v){for(const k of['upload','proc','results'])$('#view-'+k).classList.toggle('hidden',k!==v);}
+function show(v){for(const k of['upload','proc','results','lots'])$('#view-'+k).classList.toggle('hidden',k!==v);}
 
 /* ── dismissible one-line summary (was a permanent paragraph) ── */
 function renderNotice(){
@@ -679,6 +705,87 @@ async function toggleActivity(open){
   }catch(e){$('#actbody').innerHTML=`<div class="muted">${esc(e.message)}</div>`;}
 }
 $('#activityBtn').onclick=()=>toggleActivity();
+
+/* ── lot reconciliation (stage 2) ── */
+const LOT_BADGE={ready:['st-update_ready','Ready'],missing_lot:['st-rejected','Missing lot'],
+  duplicate_lot:['st-needs_review','Duplicate'],conflict:['st-needs_review','Conflict'],
+  already_imported:['st-pushed_to_odoo','Imported'],no_result:['st-existing_ok','No result']};
+function openLots(){show('lots');loadLots();}
+function closeLots(){show(state.summary?'results':'upload');}
+async function loadLots(){
+  $('#lotRows').innerHTML='<tr><td colspan="7" class="muted" style="padding:18px">Matching lots against Odoo…</td></tr>';
+  try{
+    const d=await jget('/reconcile/auction/results');
+    const s=d.summary,f=s.flags;
+    $('#lotsFlags').innerHTML=`<b>Import scope:</b>&nbsp; Hammer price <b style="color:var(--good)">enabled</b>
+      · Buyer assignment <b style="color:${f.buyer?'var(--good)':'var(--update)'}">${f.buyer?'enabled':'deferred'}</b>
+      · Sold status <b style="color:${f.sold?'var(--good)':'var(--update)'}">${f.sold?'enabled':'deferred'}</b>
+      ${(!f.buyer||!f.sold)?'<span class="muted">— awaiting the Odoo auction setup + admin access (designed &amp; feature-flagged, one switch to enable)</span>':''}`;
+    const K=[['ready','Ready to import'],['missing_lot','Missing lots'],['duplicate_lot','Duplicates'],
+      ['conflict','Conflicts'],['already_imported','Already imported'],['no_result','No result']];
+    $('#lotsKpis').innerHTML=K.map(([k,l])=>`<div class="kpi" style="cursor:default"><div class="n">${s[k]||0}</div><div class="l">${l}</div></div>`).join('');
+    $('#lotRows').innerHTML=d.results.map(r=>{
+      const [cls,label]=LOT_BADGE[r.status]||['',r.status];
+      const odoo=r.odoo_lot_id?`#${r.odoo_lot_id} · ${esc(r.odoo_state)}${r.odoo_hammer?` · hammer €${r.odoo_hammer.toLocaleString()}`:''}`
+        :'<span class="muted">— not found —</span>';
+      const buyer=r.buyer_name?`${esc(r.buyer_name)} <span class="muted mono">${Math.round(r.buyer_match*100)}%</span>
+        ${r.buyer_confident?'<span class="fchip" style="border-color:var(--good);color:var(--good)">would assign</span>':'<span class="fchip">review</span>'}`
+        :'<span class="muted">—</span>';
+      return `<tr style="cursor:default">
+        <td class="mono"><b>${esc(r.lot_number)||'—'}</b></td>
+        <td>${esc(r.lot_title)||'<span class="muted">—</span>'}</td>
+        <td class="mono">${r.winning_bid?('€'+r.winning_bid.toLocaleString()):'—'}</td>
+        <td style="font-size:11.5px">${odoo}</td>
+        <td>${buyer}</td>
+        <td><span class="badge ${cls}">${label}</span></td>
+        <td class="muted" style="max-width:320px;font-size:11.5px">${esc(r.reason)}</td></tr>`;
+    }).join('')||'<tr><td colspan="7" class="muted" style="padding:18px">No lot rows in this upload.</td></tr>';
+  }catch(e){
+    $('#lotRows').innerHTML=`<tr><td colspan="7" class="muted" style="padding:18px">${esc(e.message)}</td></tr>`;
+    $('#lotsFlags').innerHTML='';$('#lotsKpis').innerHTML='';
+  }
+}
+async function lotsDryRun(){
+  try{const d=await jpost('/reconcile/auction/push',{dry_run:true});
+    const s=d.summary;
+    alert(`Lot import plan (dry-run — NO writes)\n\n${s.planned} lot(s) ready:\n`
+      +d.operations.map(o=>`  Lot ${o.lot_number}: hammer €${o.winning_bid.toLocaleString()}`
+        +(o.deferred.length?`  (deferred: ${o.deferred.join('; ')})`:'')).join('\n'));
+  }catch(e){alert('Dry-run failed: '+e.message);}
+}
+async function lotsPush(){
+  const b=$('#lotsPushBtn');if(b.disabled)return;
+  b.disabled=true;const orig=b.textContent;
+  try{
+    b.textContent='🔨 Planning…';
+    const plan=await jpost('/reconcile/auction/push',{dry_run:true});
+    const n=plan.summary.planned;
+    if(!confirm(`Import ${n} auction result(s) into Odoo now?\n\nHammer prices will be set from the winning bids.`
+      +`\nEstimates and reserves stay untouched. Each lot is read back to verify.`)){b.disabled=false;b.textContent=orig;return;}
+    b.textContent='🔨 Importing…';
+    const d=await jpost('/reconcile/auction/push',{dry_run:false});
+    const s=d.summary;
+    const rows=d.operations.map(o=>`<tr><td class="mono">${esc(o.lot_number)}</td>
+      <td class="mono">€${o.winning_bid.toLocaleString()}</td><td>${esc(o.buyer_name||'—')}</td>
+      <td>${o.result==='written'?'<span style="color:var(--good)">written</span>':`<span style="color:var(--bad)">${esc(o.result)}</span>`}</td>
+      <td>${o.verified===true?'<span style="color:var(--good)">✓ verified</span>':o.verified===false?'<span style="color:var(--bad)">✗ mismatch</span>':'—'}</td>
+      <td class="muted" style="font-size:11px">${esc((o.deferred||[]).join('; ')||'')}</td></tr>`).join('');
+    $('#pushModalBody').innerHTML=`
+      <h3>${s.error?'⚠ Lot import finished with errors':'✅ Auction results imported'}</h3>
+      <p><b>${s.written}</b> hammer price(s) written · <b style="color:var(--good)">${s.verified}</b> verified ·
+        <b style="color:${s.error?'var(--bad)':'var(--good)'}">${s.error} error(s)</b></p>
+      <div class="tablewrap" style="max-height:50vh;overflow:auto"><table>
+        <thead><tr><th>Lot</th><th>Hammer set</th><th>Buyer (matched)</th><th>Result</th><th>Verification</th><th>Deferred (flagged off)</th></tr></thead>
+        <tbody>${rows}</tbody></table></div>
+      <p class="muted" style="font-size:12px;margin-top:10px">Open a lot in Odoo to see the hammer price live.
+        Buyer assignment and Sold status are staged in the plan (“deferred”) and activate via feature flags once the Odoo setup is complete.</p>
+      <div style="margin-top:6px"><button class="btn primary" onclick="closePushModal()">Close</button></div>`;
+    $('#pushModal').classList.add('on');
+    toast(s.error?`⚠ Lot import: ${s.error} error(s)`:`✅ ${s.written} hammer price(s) imported · ${s.verified} verified`);
+    loadLots();loadSync();
+  }catch(e){alert('Lot import failed: '+e.message);}
+  b.disabled=false;b.textContent=orig;
+}
 
 /* ── detail drawer ── */
 let currentDetail=null, editMode=false;
