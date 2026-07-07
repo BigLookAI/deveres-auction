@@ -17,13 +17,33 @@ from .repository import MasterRepository
 
 
 class ReconciliationEngine:
-    def __init__(self, master: MasterRepository):
+    def __init__(self, master: MasterRepository, schema=None):
         self.master = master
         self.index: MasterIndex = master.index
+        # Phase 4: Odoo field schema for metadata-aware validation. None keeps
+        # the engine usable standalone (schema-less tests, library use).
+        self.schema = schema
 
     def reconcile_one(self, index: int, inc: dict) -> ReconResult:
         cand = self.index.best_match(inc)
         classification, recommendation, conf, matched_by, diffs, mas, review_reason = classify(inc, cand)
+        # ── Phase 4 P3: typed validation. A blocking issue (invalid dropdown
+        # value, e.g. county "Wickie") forces Manual Review — it must never be
+        # approvable, let alone pushable, until corrected. Never silent.
+        issues = []
+        if self.schema is not None:
+            from .validation import validate_incoming
+            issues = [i.to_dict() for i in validate_incoming(inc, self.schema)]
+            blocking = [i for i in issues if i.get("blocking")]
+            if blocking and classification in (Classification.UPDATE,
+                                               Classification.NEW,
+                                               Classification.RETAIN):
+                classification = Classification.POSSIBLE_DUPLICATE
+                from .models import Recommendation as _R
+                recommendation = _R.MANUAL_REVIEW
+                first = blocking[0]
+                reason = f"R5 INVALID_SELECTION: {first['message']}"
+                review_reason = f"{review_reason} | {reason}" if review_reason else reason
         # changed_fields means "fields that would change the master" — a NEW
         # client has no master, so its diffs (all vs empty) never count here.
         changed = [d.label for d in diffs if d.significant and d.status in
@@ -51,6 +71,7 @@ class ReconciliationEngine:
             action=default_action(classification),
             match_evidence=evidence,
             review_reason=review_reason,
+            validation_issues=issues,
         )
 
     @staticmethod

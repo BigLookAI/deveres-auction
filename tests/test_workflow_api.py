@@ -27,6 +27,8 @@ def client(tmp_path, monkeypatch):
     monkeypatch.delenv("RECON_MASTER_SOURCE", raising=False)
     monkeypatch.setenv("RECON_VIEWER_USER", "viewer@deveres.ie")
     monkeypatch.setenv("RECON_VIEWER_PASS", "View2026!")
+    from reconciliation import odoo_fields
+    odoo_fields.invalidate_cache()          # schema cache must not leak between tests
     import reconcile_routes
     importlib.reload(reconcile_routes)
     reconcile_routes.SESSION_PATH = tmp_path / "session.json"
@@ -109,7 +111,7 @@ class TestApprovalWorkflow:
     def test_edit_then_approve_writes_edits_to_staging_only(self, client):
         """The Wickie→Wicklow scenario: original upload stays untouched."""
         _upload(client)
-        rows = client.get("/reconcile/results?state=update_suggested&page_size=100",
+        rows = client.get("/reconcile/results?state=all&page_size=100",
                           headers=ADMIN).json()["rows"]
         target = next(r for r in rows if r["buyer_number"] == "9005")
         idx = target["index"]
@@ -161,7 +163,9 @@ class TestApprovalWorkflow:
         rows = client.get("/reconcile/results?state=needs_review&page_size=100",
                           headers=ADMIN).json()["rows"]
         assert len(rows) >= 3
-        same, diff = rows[0]["index"], rows[1]["index"]
+        clean = [r for r in rows if not r.get("invalid")]
+        assert len(clean) >= 2, "expected review rows without validation issues"
+        same, diff = clean[0]["index"], clean[1]["index"]
         r = client.post(f"/reconcile/records/{same}/approve", json={"as": "update"},
                         headers=ADMIN).json()
         assert r["state"] == "update_ready"
@@ -257,7 +261,7 @@ class TestOdooPayload:
         """A county correction (Wickie→Wicklow) becomes a state_id lookup
         (__state_name pseudo-field) resolved at execute time — never dropped."""
         _upload(client)
-        rows = client.get("/reconcile/results?state=update_suggested&page_size=100",
+        rows = client.get("/reconcile/results?state=all&page_size=100",
                           headers=ADMIN).json()["rows"]
         ciara = next(r for r in rows if r["buyer_number"] == "9005")
         client.post(f"/reconcile/records/{ciara['index']}/edit",

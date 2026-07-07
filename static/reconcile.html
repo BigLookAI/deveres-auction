@@ -7,79 +7,95 @@
 <style>
   :root{
     --bg:#0e1116; --bg2:#0f131a; --card:#161a22; --card2:#1b2130; --line:#232833; --line2:#2c3444;
-    --ink:#eef2f8; --muted:#8b93a7; --muted2:#aab2c5;
+    --ink:#eef2f8; --muted:#98a1b3; --muted2:#b6bdcc;
     --acc:#6366f1; --acch:#818cf8; --acc-soft:rgba(99,102,241,.15);
     --new:#34d399; --retain:#38bdf8; --update:#fbbf24; --review:#c084fc;
     --ready:#4ade80; --pushed:#22d3ee; --rejected:#f87171; --edited:#fb923c;
-    --good:#34d399; --bad:#f87171;
+    --good:#34d399; --bad:#f87171; --warn:#fbbf24;
     --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
     --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --shadow:0 10px 34px rgba(0,0,0,.45);
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5}
   a{color:var(--acch)}
-  header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 22px;display:flex;align-items:center;gap:14px}
-  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff}
+  :focus-visible{outline:2px solid var(--acch);outline-offset:2px;border-radius:6px}
+  @media (prefers-reduced-motion: reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+
+  /* ── header ── */
+  header{position:sticky;top:0;z-index:30;background:rgba(14,17,22,.94);backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:11px 22px;display:flex;align-items:center;gap:14px}
+  .logo{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--acc),#a855f7);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;flex:none}
   header h1{font-size:15px;margin:0;font-weight:700}
   header .sub{font-size:11px;color:var(--muted);font-family:var(--mono)}
-  .wrap{max-width:1320px;margin:0 auto;padding:22px}
-  .muted{color:var(--muted)} .mono{font-family:var(--mono)}
-  /* pending-changes indicator */
-  .pending{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:6px 12px;font-size:12px}
-  .pending b{color:var(--ready)} .pending .dot{width:8px;height:8px;border-radius:50%;background:var(--ready);animation:pulse 2s infinite}
-  @keyframes pulse{50%{opacity:.4}}
-  /* upload */
-  .drop{border:2px dashed var(--line2);border-radius:16px;padding:48px 24px;text-align:center;transition:.15s;cursor:pointer;background:var(--card)}
-  .drop.drag{border-color:var(--acc);background:var(--acc-soft)}
-  .drop h2{margin:6px 0 4px;font-size:19px} .drop p{color:var(--muted);margin:2px 0}
-  .drop .big{font-size:34px}
-  .btn{border:1px solid var(--line2);background:var(--card2);color:var(--ink);border-radius:9px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:.12s}
+  .spacer{flex:1}
+  .btn{border:1px solid var(--line2);background:var(--card2);color:var(--ink);border-radius:9px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;transition:border-color .12s,color .12s,background .12s}
   .btn:hover{border-color:var(--acc);color:var(--acch)}
   .btn.primary{background:var(--acc);border-color:var(--acc);color:#fff}
   .btn.primary:hover{filter:brightness(1.08);color:#fff}
   .btn.good{border-color:var(--ready);color:var(--ready)} .btn.good:hover{background:rgba(74,222,128,.12)}
   .btn.danger{border-color:var(--rejected);color:var(--rejected)} .btn.danger:hover{background:rgba(248,113,113,.10)}
-  .btn.sm{padding:4px 9px;font-size:11.5px;border-radius:7px}
+  .btn.ghost{background:transparent}
+  .btn.sm{padding:4px 10px;font-size:11.5px;border-radius:7px}
   .btn:disabled{opacity:.5;cursor:not-allowed}
-  /* processing */
-  .proc{text-align:center;padding:60px 20px}
-  .spinner{width:42px;height:42px;border:3px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
-  @keyframes spin{to{transform:rotate(360deg)}}
-  /* dashboard */
-  .stats{display:grid;grid-template-columns:repeat(7,1fr);gap:12px;margin:4px 0 18px}
-  .stat{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 16px}
-  .stat .n{font-size:24px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
-  .stat .l{font-size:10.5px;color:var(--muted);margin-top:6px;text-transform:uppercase;letter-spacing:.04em}
-  .stat.s-new .n{color:var(--new)} .stat.s-update .n{color:var(--update)} .stat.s-retain .n{color:var(--retain)}
-  .stat.s-review .n{color:var(--review)} .stat.s-ready .n{color:var(--ready)} .stat.s-pushed .n{color:var(--pushed)}
-  .distbar{display:flex;height:12px;border-radius:6px;overflow:hidden;margin:0 0 18px;border:1px solid var(--line)}
-  .distbar span{display:block} .dl{display:flex;gap:16px;font-size:12px;color:var(--muted);margin:-10px 0 18px;flex-wrap:wrap}
-  .dl i{width:9px;height:9px;border-radius:2px;display:inline-block;margin-right:5px;vertical-align:middle}
-  /* toolbar */
-  .toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
-  .chips{display:flex;gap:6px;flex-wrap:wrap}
-  .chip{border:1px solid var(--line2);background:var(--card);color:var(--muted2);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer}
-  .chip.on{background:var(--acc-soft);border-color:var(--acc);color:var(--acch)}
-  input[type=search],select,.field input{background:var(--card);border:1px solid var(--line2);color:var(--ink);border-radius:8px;padding:7px 10px;font-size:13px}
-  .spacer{flex:1}
-  /* table */
+  /* header dropdown */
+  .dd{position:relative}
+  .dd-menu{position:absolute;right:0;top:calc(100% + 6px);background:var(--card2);border:1px solid var(--line2);border-radius:11px;box-shadow:var(--shadow);min-width:210px;padding:6px;display:none;z-index:60}
+  .dd.open .dd-menu{display:block}
+  .dd-menu a,.dd-menu button{display:block;width:100%;text-align:left;background:none;border:0;color:var(--ink);padding:8px 12px;border-radius:8px;font-size:13px;cursor:pointer;text-decoration:none}
+  .dd-menu a:hover,.dd-menu button:hover{background:var(--acc-soft);color:var(--acch)}
+  .dd-menu .sep{border-top:1px solid var(--line);margin:5px 4px}
+  .dd-menu .lbl{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;padding:6px 12px 2px}
+
+  /* ── sync status bar ── */
+  .syncbar{display:flex;align-items:center;gap:10px;background:var(--bg2);border-bottom:1px solid var(--line);padding:7px 22px;font-size:12px;color:var(--muted2);flex-wrap:wrap}
+  .apidot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;flex:none}
+  .apidot.ok{background:var(--good);box-shadow:0 0 6px rgba(52,211,153,.6)}
+  .apidot.warn{background:var(--update)} .apidot.off{background:var(--muted)}
+  .syncbar b{color:var(--ink);font-variant-numeric:tabular-nums}
+  .syncbar .sep{color:var(--line2)}
+
+  .wrap{max-width:1360px;margin:0 auto;padding:20px 22px}
+  .muted{color:var(--muted)} .mono{font-family:var(--mono)}
+
+  /* ── KPI cards = the filters ── */
+  .kpis{display:grid;grid-template-columns:repeat(9,1fr);gap:10px;margin:2px 0 14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 14px;cursor:pointer;text-align:left;transition:transform .12s,border-color .12s,box-shadow .12s;position:relative;color:var(--ink);font-family:inherit}
+  .kpi:hover{transform:translateY(-2px);border-color:var(--line2)}
+  .kpi .n{font-size:22px;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums;transition:color .15s}
+  .kpi .l{font-size:10px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+  .kpi.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc), 0 8px 22px rgba(99,102,241,.15);background:linear-gradient(180deg,rgba(99,102,241,.08),var(--card))}
+  .kpi.on::after{content:"";position:absolute;left:14px;right:14px;bottom:-1px;height:2px;border-radius:2px;background:var(--acc)}
+  .kpi[data-k="new_record"] .n{color:var(--new)} .kpi[data-k="update_suggested"] .n{color:var(--update)}
+  .kpi[data-k="existing_ok"] .n{color:var(--retain)} .kpi[data-k="needs_review"] .n{color:var(--review)}
+  .kpi[data-k="manual_edit"] .n{color:var(--edited)} .kpi[data-k="staged"] .n{color:var(--ready)}
+  .kpi[data-k="pushed_to_odoo"] .n{color:var(--pushed)} .kpi[data-k="rejected"] .n{color:var(--rejected)}
+
+  /* ── controls row (search under the cards — meeting decision) ── */
+  .controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+  input[type=search],select,.field input{background:var(--card);border:1px solid var(--line2);color:var(--ink);border-radius:9px;padding:8px 11px;font-size:13px}
+  input[type=search]{flex:1;min-width:260px}
+
+  /* dismissible one-line notice */
+  .notice{display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:10px;padding:8px 12px;font-size:12.5px;color:var(--muted2);margin-bottom:10px}
+  .notice .x{margin-left:auto;background:none;border:0;color:var(--muted);cursor:pointer;font-size:15px;padding:2px 6px;border-radius:6px}
+  .notice .x:hover{color:var(--ink);background:var(--card2)}
+
+  /* contextual bulk bar */
+  .bulkbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px;min-height:36px}
+  .bulkbar .hint{font-size:12px;color:var(--muted);font-style:italic}
+
+  /* ── table ── */
   .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:13px;background:var(--card)}
   table{width:100%;border-collapse:collapse;font-size:12.5px}
   th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
-  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);position:sticky;top:0;background:var(--card2);cursor:pointer;white-space:nowrap}
-  tbody tr{cursor:pointer} tbody tr:hover{background:var(--card2)}
+  th{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);position:sticky;top:0;background:var(--card2);cursor:pointer;white-space:nowrap;z-index:1}
+  tbody tr{cursor:pointer;transition:background .1s} tbody tr:hover{background:var(--card2)}
   tbody tr:last-child td{border-bottom:0}
-  /* colour-coded workflow stripes: any row a reviewer has acted on gets a
-     left stripe + tint so fresh updates are identifiable at a glance */
   tbody tr td:first-child{border-left:3px solid transparent}
-  tr.rw-staged td:first-child{border-left-color:var(--ready)}
-  tr.rw-staged{background:rgba(74,222,128,.045)}
-  tr.rw-edited td:first-child{border-left-color:var(--edited)}
-  tr.rw-edited{background:rgba(251,146,60,.05)}
-  tr.rw-pushed td:first-child{border-left-color:var(--pushed)}
-  tr.rw-pushed{background:rgba(34,211,238,.045)}
-  tr.rw-rejected td:first-child{border-left-color:var(--rejected)}
-  tr.rw-rejected{background:rgba(248,113,113,.045)}
+  tr.rw-staged td:first-child{border-left-color:var(--ready)}   tr.rw-staged{background:rgba(74,222,128,.045)}
+  tr.rw-edited td:first-child{border-left-color:var(--edited)}  tr.rw-edited{background:rgba(251,146,60,.05)}
+  tr.rw-pushed td:first-child{border-left-color:var(--pushed)}  tr.rw-pushed{background:rgba(34,211,238,.045)}
+  tr.rw-rejected td:first-child{border-left-color:var(--rejected)} tr.rw-rejected{background:rgba(248,113,113,.045)}
   tr.rw-flash{animation:rowflash 1.6s ease-out}
   @keyframes rowflash{0%{background:rgba(74,222,128,.22)}100%{background:transparent}}
   .badge{display:inline-block;padding:2px 9px;border-radius:999px;font-size:10.5px;font-weight:700;white-space:nowrap}
@@ -91,20 +107,38 @@
   .st-update_ready,.st-import_ready{background:rgba(74,222,128,.16);color:var(--ready)}
   .st-rejected{background:rgba(248,113,113,.16);color:var(--rejected)}
   .st-pushed_to_odoo{background:rgba(34,211,238,.16);color:var(--pushed)}
+  .badge.invalid{background:rgba(248,113,113,.18);color:var(--bad)}
   .conf{display:flex;align-items:center;gap:7px;min-width:74px}
   .conf .bar{flex:1;height:5px;background:var(--line2);border-radius:3px;overflow:hidden}
   .conf .bar i{display:block;height:100%;background:var(--acc)}
   .fchip{display:inline-block;background:var(--card2);border:1px solid var(--line2);border-radius:5px;padding:1px 6px;font-size:10.5px;margin:1px 2px 1px 0;color:var(--muted2)}
   .fchip.edit{border-color:var(--edited);color:var(--edited)}
-  .pager{display:flex;gap:8px;align-items:center;justify-content:flex-end;margin-top:12px;color:var(--muted);font-size:12px}
-  /* drawer */
+  .statusline{display:flex;gap:14px;align-items:center;justify-content:flex-end;margin-top:12px;color:var(--muted);font-size:12px}
+
+  /* ── upload view ── */
+  .drop{border:2px dashed var(--line2);border-radius:16px;padding:48px 24px;text-align:center;transition:.15s;cursor:pointer;background:var(--card)}
+  .drop.drag{border-color:var(--acc);background:var(--acc-soft)}
+  .drop h2{margin:6px 0 4px;font-size:19px} .drop p{color:var(--muted);margin:2px 0}
+  .drop .big{font-size:34px}
+  .proc{text-align:center;padding:60px 20px}
+  .spinner{width:42px;height:42px;border:3px solid var(--line2);border-top-color:var(--acc);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--update);border-radius:9px;padding:11px 14px;font-size:12.5px;color:var(--muted2);margin:16px 0}
+
+  /* ── drawer (right panel) ── */
   .scrim{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:40;display:none}
   .scrim.on{display:block}
-  .drawer{position:fixed;top:0;right:0;height:100%;width:min(760px,96vw);background:var(--bg2);border-left:1px solid var(--line);z-index:50;transform:translateX(100%);transition:.22s;overflow-y:auto;padding:20px 22px}
+  .drawer{position:fixed;top:0;right:0;height:100%;width:min(780px,96vw);background:var(--bg2);border-left:1px solid var(--line);z-index:50;transform:translateX(100%);transition:.22s;overflow-y:auto;padding:20px 22px}
   .drawer.on{transform:translateX(0)}
   .drawer h3{margin:0 0 2px;font-size:17px}
   .close{position:absolute;top:16px;right:18px;background:none;border:0;color:var(--muted);font-size:18px;cursor:pointer}
-  /* evidence */
+  .reason{display:flex;gap:10px;background:rgba(192,132,252,.09);border:1px solid rgba(192,132,252,.35);border-radius:11px;padding:12px 14px;font-size:12.5px;color:#d8c4f7;margin-top:12px;line-height:1.55}
+  .reason .ic{font-size:16px;flex:none}
+  .vissue{display:flex;flex-direction:column;gap:8px;background:rgba(248,113,113,.07);border:1px solid rgba(248,113,113,.35);border-radius:11px;padding:12px 14px;font-size:12.5px;margin-top:12px}
+  .vissue b{color:var(--bad)}
+  .vissue .sug{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+  .sugchip{border:1px solid var(--good);color:var(--good);background:rgba(52,211,153,.08);border-radius:999px;padding:3px 12px;font-size:12px;font-weight:700;cursor:pointer}
+  .sugchip:hover{background:rgba(52,211,153,.18)}
   .evid{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:12px 16px;margin-top:14px;font-size:12.5px}
   .evid h4{margin:0 0 8px;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
   .evrow{display:flex;align-items:center;gap:10px;padding:3px 0}
@@ -112,7 +146,6 @@
   .evrow .ebar{flex:1;height:5px;background:var(--line2);border-radius:3px;overflow:hidden;max-width:180px}
   .evrow .ebar i{display:block;height:100%;background:var(--good)}
   .evtotal{border-top:1px solid var(--line);margin-top:8px;padding-top:8px;font-weight:700}
-  /* comparison grid: field | master | incoming | approved */
   .cmp{display:grid;grid-template-columns:104px 1fr 1fr 1fr;gap:0;border:1px solid var(--line);border-radius:11px;overflow:hidden;margin-top:14px;font-size:12.5px}
   .cmp .h{background:var(--card2);color:var(--muted);font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;padding:8px 12px;font-weight:700}
   .cmp .fl{background:var(--card);color:var(--muted2);padding:8px 12px;font-weight:600;border-top:1px solid var(--line)}
@@ -120,10 +153,11 @@
   .cell.changed{background:rgba(248,113,113,.10)} .cell.new_info{background:rgba(52,211,153,.12)}
   .cell.equivalent{color:var(--muted)} .cell.unchanged{color:var(--muted)}
   .cell.editedv{background:rgba(251,146,60,.14);color:var(--edited);font-weight:600}
+  .cell.invalidv{outline:1px solid var(--bad);outline-offset:-3px;border-radius:6px}
   .tag{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;border-radius:5px;padding:1px 6px;margin-left:6px}
   .tag.changed{background:rgba(248,113,113,.2);color:var(--bad)} .tag.new_info{background:rgba(52,211,153,.2);color:var(--good)}
   .tag.equivalent{background:var(--line2);color:var(--muted)} .tag.edited{background:rgba(251,146,60,.2);color:var(--edited)}
-  /* edit form */
+  .tag.invalid{background:rgba(248,113,113,.28);color:#ffb4b4}
   .editform{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
   .field{display:flex;flex-direction:column;gap:4px}
   .field label{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
@@ -131,42 +165,50 @@
   .field input.dirty{border-color:var(--edited)}
   .field .orig{font-size:10.5px;color:var(--muted)}
   .field.notes{grid-column:1/-1}
-  /* history */
   .hist{margin-top:16px;border-left:2px solid var(--line2);padding-left:14px}
   .hist .ev{margin-bottom:8px;font-size:12px}
   .hist .ev .when{color:var(--muted);font-family:var(--mono);font-size:10.5px}
-  .note{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--update);border-radius:9px;padding:11px 14px;font-size:12.5px;color:var(--muted2);margin:16px 0}
-  .reason{background:rgba(192,132,252,.08);border:1px solid rgba(192,132,252,.3);border-radius:9px;padding:10px 14px;font-size:12.5px;color:var(--review);margin-top:12px}
   .hidden{display:none!important}
-  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:10px 18px;font-size:13px;z-index:80;box-shadow:0 8px 30px rgba(0,0,0,.4)}
-  /* sync status bar (6-Jul: refresh / push / API visibility) */
-  .syncbar{display:flex;align-items:center;gap:10px;background:var(--bg2);border-bottom:1px solid var(--line);padding:7px 22px;font-size:12px;color:var(--muted2);flex-wrap:wrap}
-  .apidot{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;flex:none}
-  .apidot.ok{background:var(--good);box-shadow:0 0 6px rgba(52,211,153,.6)}
-  .apidot.warn{background:var(--update)} .apidot.off{background:var(--muted)}
-  .syncbar b{color:var(--ink);font-variant-numeric:tabular-nums}
-  .syncbar .sep{color:var(--line2)}
-  /* push results modal */
+  .toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%);background:var(--card2);border:1px solid var(--line2);border-radius:10px;padding:10px 18px;font-size:13px;z-index:80;box-shadow:var(--shadow);max-width:82vw}
+
+  /* ── activity panel ── */
+  .actpanel{position:fixed;top:0;right:0;height:100%;width:min(430px,94vw);background:var(--bg2);border-left:1px solid var(--line);z-index:55;transform:translateX(100%);transition:.22s;overflow-y:auto;padding:18px 20px}
+  .actpanel.on{transform:translateX(0)}
+  .actpanel h3{margin:0 0 12px;font-size:15px}
+  .actrow{display:flex;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:12.5px;align-items:flex-start}
+  .actrow .ic{flex:none;width:24px;text-align:center;font-size:14px}
+  .actrow .what{flex:1} .actrow .who{color:var(--muted);font-size:11px;font-family:var(--mono)}
+
+  /* push modal */
   .modal{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:90;display:none;align-items:center;justify-content:center;padding:24px}
   .modal.on{display:flex}
   .modal .box{background:var(--bg2);border:1px solid var(--line2);border-radius:14px;padding:22px 24px;max-width:900px;width:100%;max-height:86vh;overflow:auto}
   .modal h3{margin:0 0 8px}
-  @media(max-width:1000px){.stats{grid-template-columns:repeat(4,1fr)}.cmp{grid-template-columns:90px 1fr 1fr 1fr}.editform{grid-template-columns:1fr}}
+
+  @media(max-width:1180px){.kpis{grid-template-columns:repeat(5,1fr)}}
+  @media(max-width:760px){.kpis{grid-template-columns:repeat(3,1fr)}.cmp{grid-template-columns:90px 1fr 1fr 1fr}.editform{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <header>
-  <div class="logo">D</div>
+  <div class="logo" aria-hidden="true">D</div>
   <div><h1>Contact Reconciliation</h1><div class="sub">deVeres Auction · Blue Cubes → Staging → Odoo · by Cimelium</div></div>
   <div class="spacer"></div>
-  <div class="pending hidden" id="pendingBox">
-    <span class="dot"></span>
-    <span>Pending changes: <b id="pendUpd">0</b> updates · <b id="pendNew">0</b> new</span>
-    <a class="btn sm" href="/reconcile/staging/export?fmt=csv">⬇ CSV</a>
-    <button class="btn sm" onclick="odooDryRun()">👁 Dry-run</button>
-    <button class="btn sm good" id="pushBtn" onclick="pushToOdoo()">🚀 Push to Odoo</button>
+  <button class="btn sm ghost" id="activityBtn" aria-label="Open the activity timeline">🕘 Activity</button>
+  <div class="dd" id="exportDD">
+    <button class="btn sm ghost" id="exportBtn" aria-haspopup="true" aria-expanded="false">⬇ Export ▾</button>
+    <div class="dd-menu" role="menu">
+      <div class="lbl">Reconciliation results</div>
+      <a href="/reconcile/export?fmt=csv" role="menuitem">CSV</a>
+      <a href="/reconcile/export?fmt=json" role="menuitem">JSON</a>
+      <a href="/reconcile/export?fmt=xlsx" role="menuitem">Excel</a>
+      <a href="/reconcile/export?fmt=pdf" role="menuitem">PDF summary</a>
+      <div class="sep"></div>
+      <div class="lbl">Pending changes (staging)</div>
+      <a href="/reconcile/staging/export?fmt=csv" role="menuitem">Staging CSV</a>
+    </div>
   </div>
-  <div class="muted mono" id="masterInfo" style="font-size:11px"></div>
+  <button class="btn sm" id="reupload">↑ New upload</button>
 </header>
 <div class="syncbar" id="syncbar">
   <span class="apidot off" id="apiDot" title="checking…"></span>
@@ -174,17 +216,18 @@
   <span class="sep">·</span>
   <span id="syncTimes"></span>
   <div class="spacer"></div>
-  <button class="btn sm" id="refreshBtn" onclick="refreshContacts()" title="Pull the latest contacts from Odoo and re-reconcile this session (your approvals, edits and staged changes are preserved)">⟳ Refresh contacts</button>
+  <button class="btn sm" id="refreshBtn" title="Pull the latest contacts from Odoo and re-reconcile this session (your approvals, edits and staged changes are preserved)">⟳ Refresh contacts</button>
 </div>
 
 <div class="wrap">
   <!-- UPLOAD -->
   <section id="view-upload">
     <div class="note" style="border-left-color:var(--acc)">
-      <b>Canonical master</b> (<span id="masterCount">…</span> clients from <code>All Clients.csv</code>) is baked in and never overwritten by trivial changes.
-      Upload a <b>Blue Cubes export</b> to reconcile it against the master. Approvals go to a <b>staging dataset</b> — nothing reaches Odoo without an explicit, gated push.
+      <b>Master source of truth:</b> <span id="masterCount">…</span> contacts, pulled live from Odoo.
+      Upload a <b>Blue Cubes export</b> to reconcile against it. Approvals go to a <b>staging dataset</b> —
+      nothing reaches Odoo without an explicit, gated push from the <i>Ready for Odoo</i> view.
     </div>
-    <div class="drop" id="drop">
+    <div class="drop" id="drop" role="button" tabindex="0" aria-label="Upload a Blue Cubes CSV export">
       <div class="big">⬆️</div>
       <h2>Drop the Blue Cubes export here</h2>
       <p>or click to choose a <code>.csv</code> file</p>
@@ -198,61 +241,57 @@
 
   <!-- PROCESSING -->
   <section id="view-proc" class="hidden">
-    <div class="proc"><div class="spinner"></div><h2>Reconciling against the master database…</h2>
-      <p class="muted">Normalising · blocking · weighted fuzzy matching · classifying</p></div>
+    <div class="proc"><div class="spinner" aria-hidden="true"></div><h2>Reconciling against the master database…</h2>
+      <p class="muted">Normalising · blocking · weighted similarity matching · field validation · classifying</p></div>
   </section>
 
   <!-- RESULTS -->
   <section id="view-results" class="hidden">
-    <div class="toolbar">
-      <div class="chips" id="stateChips"></div>
-      <div class="spacer"></div>
-      <select id="sessionSel" title="Switch reconciliation session"></select>
-      <input type="search" id="search" placeholder="🔍 Search name, email, phone, town, buyer no.…" style="min-width:280px"/>
-      <select id="sort">
-        <option value="confidence">Sort: Confidence</option>
-        <option value="state">Sort: Workflow state</option>
-        <option value="status">Sort: Classification</option>
+    <div class="kpis" id="kpis" role="toolbar" aria-label="Filter by workflow state"></div>
+
+    <div class="controls">
+      <input type="search" id="search" placeholder="🔍 Search within this view — name, email, phone, town, buyer no.  ( / )" aria-label="Search records"/>
+      <select id="sort" aria-label="Sort records">
+        <option value="confidence">Sort: Match score</option>
+        <option value="state">Sort: Status</option>
         <option value="name">Sort: Name</option>
         <option value="changes">Sort: Changes</option>
       </select>
-      <button class="btn" id="reupload">↑ New upload</button>
+      <select id="sessionSel" title="Switch reconciliation session" aria-label="Session"></select>
     </div>
 
-    <div class="stats" id="stats"></div>
-    <div class="distbar" id="distbar"></div>
-    <div class="dl" id="distlegend"></div>
-
-    <div class="note" id="dqNote"></div>
-
-    <div class="toolbar">
-      <button class="btn good" onclick="bulkApprove({state:'update_suggested'})">✓ Approve all suggested updates</button>
-      <button class="btn good" onclick="bulkApprove({indices:selected()})">✓ Approve selected</button>
-      <button class="btn danger" onclick="bulkReject(selected())">✗ Reject selected</button>
-      <div class="spacer"></div>
-      <a class="btn" href="/reconcile/export?fmt=csv">⬇ CSV</a>
-      <a class="btn" href="/reconcile/export?fmt=json">⬇ JSON</a>
-      <a class="btn" href="/reconcile/export?fmt=xlsx">⬇ Excel</a>
-      <a class="btn" href="/reconcile/export?fmt=pdf">⬇ PDF summary</a>
+    <div class="notice hidden" id="notice">
+      <span id="noticeText"></span>
+      <button class="x" onclick="dismissNotice()" aria-label="Dismiss">✕</button>
     </div>
+
+    <div class="bulkbar" id="bulkbar" role="toolbar" aria-label="Bulk actions for the selected view"></div>
 
     <div class="tablewrap">
       <table>
         <thead><tr>
-          <th style="width:26px"><input type="checkbox" id="selAll"/></th>
-          <th data-s="state">Workflow state</th><th data-s="confidence">Confidence</th>
-          <th>Existing client</th><th>Incoming client</th>
+          <th style="width:26px"><input type="checkbox" id="selAll" aria-label="Select all rows on this page"/></th>
+          <th data-s="state">Status</th><th data-s="confidence" title="Weighted field-similarity between the incoming contact and its best master match">Match</th>
+          <th>Odoo (master)</th><th>Incoming (Blue Cubes)</th>
           <th>Matched by</th><th>Changed fields</th><th style="width:170px">Quick actions</th>
         </tr></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
-    <div class="pager">
-      <button class="btn" id="prev">‹ Prev</button>
+    <div class="statusline">
       <span id="pageInfo"></span>
-      <button class="btn" id="next">Next ›</button>
+      <button class="btn sm" id="prev" aria-label="Previous page">‹ Prev</button>
+      <button class="btn sm" id="next" aria-label="Next page">Next ›</button>
     </div>
   </section>
+</div>
+
+<!-- ACTIVITY TIMELINE -->
+<div class="actpanel" id="actpanel" aria-label="Activity timeline">
+  <button class="close" onclick="toggleActivity(false)" aria-label="Close activity">✕</button>
+  <h3>🕘 Activity</h3>
+  <div class="muted" style="font-size:11.5px;margin-bottom:8px">Append-only audit trail — every import, match, edit, approval, rejection, push, sync and error, with user and timestamp.</div>
+  <div id="actbody"></div>
 </div>
 
 <!-- PUSH RESULTS MODAL -->
@@ -260,89 +299,87 @@
 
 <!-- DETAIL DRAWER -->
 <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
-<div class="drawer" id="drawer">
-  <button class="close" onclick="closeDrawer()">✕</button>
+<div class="drawer" id="drawer" role="dialog" aria-label="Record detail">
+  <button class="close" onclick="closeDrawer()" aria-label="Close">✕</button>
   <div id="drawerBody"></div>
 </div>
 
 <script>
 const $=s=>document.querySelector(s);
-const CHIPS=[
-  ["all","all","All"],
-  ["status","update","🟠 Updates suggested"],
-  ["status","retain","🔵 Existing"],
-  ["status","new","🟢 New"],
-  ["status","possible_duplicate","🟣 Manual review"],
-  ["state","manual_edit","✏️ Edited"],
-  ["state","staged","🟩 Ready for Odoo"],
-  ["state","pushed_to_odoo","🔷 Pushed"],
-  ["state","rejected","🔴 Rejected"],
+
+/* ── KPI cards: the ONLY filter mechanism (7-Jul meeting: tiles = filters,
+   the old pill row is gone). Each card: count + click-to-filter + selected state. */
+const KPIS=[
+  ["all",              "All"],
+  ["new_record",       "New"],
+  ["update_suggested", "Updates"],
+  ["existing_ok",      "Existing"],
+  ["needs_review",     "Manual review"],
+  ["manual_edit",      "Edited"],
+  ["staged",           "Ready for Odoo"],
+  ["pushed_to_odoo",   "Pushed"],
+  ["rejected",         "Rejected"],
 ];
 let STATE_LABELS={};
-let state={chip:"all",chipKind:"all",q:"",sort:"confidence",order:"desc",page:1,page_size:25,total:0,summary:null};
+let state={view:"all",q:"",sort:"confidence",order:"desc",page:1,page_size:25,total:0,summary:null,meta:null,counts:{}};
 let pageRows=[];
 
-async function jget(u){const r=await fetch(u);if(!r.ok)throw new Error((await r.json()).detail||r.statusText);return r.json();}
+async function jget(u){const r=await fetch(u);if(!r.ok)throw new Error((await r.json().catch(()=>({}))).detail||r.statusText);return r.json();}
 async function jpost(u,body,method="POST"){
   const r=await fetch(u,{method,headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined});
   const d=await r.json().catch(()=>({}));
   if(!r.ok)throw new Error(d.detail||r.statusText);
   return d;
 }
-function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2600);}
-function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function toast(msg){const t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),3400);}
+function esc(s){return (s||'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-// ── master info ──
-(async()=>{try{const h=await jget('/reconcile/health');
-  const src=h.master_source==='odoo'?' \u00b7 live Odoo':' \u00b7 CSV snapshot';
-  $('#masterInfo').textContent=h.master_records.toLocaleString()+' master clients'+src;
-  $('#masterCount').textContent=h.master_records.toLocaleString();
-  if(h.master_fallback){toast('\u26a0 Odoo master unavailable \u2014 reconciling against the CSV snapshot');}
-}catch(e){}})();
-
-// \u2500\u2500 sync status bar (refresh/push/API visibility) \u2500\u2500
-const fmtT=t=>t?new Date(t).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'\u2014';
+/* ── sync status bar ── */
+const fmtT=t=>t?new Date(t).toLocaleString([],{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
 async function loadSync(){
   try{
     const s=await jget('/reconcile/sync-status');
     const dot=$('#apiDot');
     const live=s.master.source==='odoo'&&!s.api.master_fallback;
     dot.className='apidot '+(live?'ok':(s.api.odoo_configured?'warn':'off'));
-    dot.title=live?'Connected to Odoo \u2014 master is the live system of record'
-      :(s.api.master_fallback?'Odoo unreachable \u2014 running on the CSV snapshot':'Odoo not configured \u2014 CSV master');
-    $('#syncMaster').innerHTML=`<b>${s.master.records.toLocaleString()}</b> master contacts \u00b7 ${live?'live Odoo':'CSV snapshot'}${s.api.write_enabled?'':' \u00b7 <span style="color:var(--update)">writes disabled</span>'}`;
+    dot.title=live?'Connected to Odoo — master is the live system of record'
+      :(s.api.master_fallback?'Odoo unreachable — running on the CSV snapshot':'Odoo not configured — CSV master');
+    $('#syncMaster').innerHTML=`<b>${s.master.records.toLocaleString()}</b> master contacts · ${live?'live Odoo':'CSV snapshot'}${s.api.write_enabled?'':' · <span style="color:var(--update)">writes disabled</span>'}`;
     const pend=(s.pending_push.update||0)+(s.pending_push.create||0);
     $('#syncTimes').innerHTML=
       `last sync <b>${fmtT(s.last_refresh.at||s.master.loaded_at)}</b>`
-      +` \u00b7 last push <b>${fmtT(s.last_push.at)}</b>`
-      +` \u00b7 pending push <b>${pend}</b>`
-      +(s.failed_push?` \u00b7 <span style="color:var(--bad)">failed ${s.failed_push} \u2014 re-push retries them</span>`:'');
+      +` · last push <b>${fmtT(s.last_push.at)}</b>`
+      +` · pending push <b>${pend}</b>`
+      +(s.failed_push?` · <span style="color:var(--bad)">failed ${s.failed_push} — re-push retries them</span>`:'');
+    $('#masterCount').textContent=s.master.records.toLocaleString();
+    if(s.api.master_fallback&&!window._warnedFallback){window._warnedFallback=1;toast('⚠ Odoo master unavailable — reconciling against the CSV snapshot');}
   }catch(e){}
 }
 loadSync();setInterval(loadSync,60000);
 
-// \u2500\u2500 Refresh Contacts: re-pull the Odoo master + re-reconcile, keeping decisions \u2500\u2500
-async function refreshContacts(){
-  const b=$('#refreshBtn');if(b.disabled)return;
-  b.disabled=true;const orig=b.textContent;b.textContent='\u27f3 Refreshing\u2026';
+/* ── Refresh Contacts ── */
+$('#refreshBtn').onclick=async function(){
+  const b=this;if(b.disabled)return;
+  b.disabled=true;const orig=b.textContent;b.textContent='⟳ Refreshing…';
   try{
     const d=await jpost('/reconcile/refresh');
-    toast(`\u27f3 ${d.master_records.toLocaleString()} contacts pulled from ${d.master_source==='odoo'?'Odoo':'the CSV'}`
-      +(d.session_results?` \u00b7 ${d.session_results} record(s) re-reconciled \u00b7 ${d.decisions_preserved} decision(s) preserved${d.reclassified?` \u00b7 ${d.reclassified} changed classification`:''}`:''));
-    if(state.summary){try{const sess=await jget('/reconcile/session');state.summary=sess.summary;renderDash(sess.summary,sess);}catch(_){}}
+    toast(`⟳ ${d.master_records.toLocaleString()} contacts pulled from ${d.master_source==='odoo'?'Odoo':'the CSV'}`
+      +(d.session_results?` · ${d.session_results} re-reconciled · ${d.decisions_preserved} decision(s) preserved${d.reclassified?` · ${d.reclassified} reclassified`:''}`:''));
+    if(state.summary){try{const sess=await jget('/reconcile/session');state.summary=sess.summary;state.meta=sess;}catch(_){}}
     await refreshAll();loadSync();
-  }catch(e){toast('\u26a0 Refresh failed: '+e.message);}
+  }catch(e){toast('⚠ Refresh failed: '+e.message);}
   b.disabled=false;b.textContent=orig;
-}
+};
 
-// ── restore last session on load (survives refresh / server restart) ──
+/* ── session restore ── */
 (async()=>{try{const sess=await jget('/reconcile/session');
-  state.summary=sess.summary;renderDash(sess.summary,sess);await refreshAll();loadSessions();show('results');
-}catch(e){/* no session yet — stay on upload */}})();
+  state.summary=sess.summary;state.meta=sess;renderNotice();await refreshAll();loadSessions();show('results');
+}catch(e){/* stay on upload */}})();
 
-// ── upload ──
+/* ── upload ── */
 const drop=$('#drop'),file=$('#file');
 drop.onclick=()=>file.click();
+drop.onkeydown=e=>{if(e.key==='Enter'||e.key===' ')file.click();};
 file.onchange=()=>file.files[0]&&doUpload(file.files[0]);
 ['dragover','dragenter'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add('drag')}));
 ['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove('drag')}));
@@ -356,79 +393,107 @@ async function doUpload(f){
     const r=await fetch('/reconcile/upload',{method:'POST',body:fd});
     const d=await r.json();
     if(!r.ok)throw new Error(d.detail||'Upload failed');
-    state.summary=d.summary;state.page=1;state.chip='all';state.chipKind='all';state.q='';
-    renderDash(d.summary,d);await refreshAll();loadSessions();show('results');
+    state.summary=d.summary;state.meta=d;state.page=1;state.view='all';state.q='';
+    localStorage.removeItem('notice-dismissed-'+(d.session||''));
+    renderNotice();await refreshAll();loadSessions();show('results');
     if(d.summary.new>0)toast(`✅ ${d.summary.new} NEW client(s) detected in this upload`);
     if(d.shared_buyer_number_contacts)toast(`⚠ ${d.shared_buyer_number_contacts} contact(s) shared a buyer number with a different person — split into separate records`);
   }catch(e){alert('Upload failed: '+e.message);show('upload');}
 }
-
 function show(v){for(const k of['upload','proc','results'])$('#view-'+k).classList.toggle('hidden',k!==v);}
 
-// ── progress + staging (the live workflow counters) ──
+/* ── dismissible one-line summary (was a permanent paragraph) ── */
+function renderNotice(){
+  const s=state.summary,m=state.meta||{};
+  if(!s)return;
+  const key='notice-dismissed-'+(m.session||m.session_id||m.filename||'');
+  if(localStorage.getItem(key)){$('#notice').classList.add('hidden');return;}
+  $('#noticeText').innerHTML=`<b>${esc(m.filename||'upload')}</b> — ${s.incoming_rows} contacts reconciled against `
+    +`${(s.master_records||0).toLocaleString()} master records in ${s.processing_ms} ms · cosmetic differences ignored · `
+    +`full trail in <a href="javascript:toggleActivity(true)">Activity</a>`;
+  $('#notice').classList.remove('hidden');
+}
+function dismissNotice(){
+  const m=state.meta||{};
+  localStorage.setItem('notice-dismissed-'+(m.session||m.session_id||m.filename||''),'1');
+  $('#notice').classList.add('hidden');
+}
+
+/* ── KPI cards + live counts ── */
 async function refreshProgress(){
   try{
     const p=await jget('/reconcile/progress');
     STATE_LABELS=p.labels;
-    const st=p.by_state, stg=p.staging;
+    const st=p.by_state;
     const staged=(st.update_ready||0)+(st.import_ready||0);
-    const tiles=[["Total",p.total,""],["New",st.new_record||0,"s-new"],
-      ["Updates suggested",st.update_suggested||0,"s-update"],["Existing",st.existing_ok||0,"s-retain"],
-      ["Manual review",st.needs_review||0,"s-review"],
-      ["Ready for Odoo",staged,"s-ready"],["Pushed",st.pushed_to_odoo||0,"s-pushed"]];
-    $('#stats').innerHTML=tiles.map(([l,n,c])=>`<div class="stat ${c}"><div class="n">${n}</div><div class="l">${l}</div></div>`).join('');
-    const seg=[["new_record",st.new_record,"var(--new)"],["update_suggested",st.update_suggested,"var(--update)"],
-      ["existing_ok",st.existing_ok,"var(--retain)"],["needs_review",st.needs_review,"var(--review)"],
-      ["manual_edit",st.manual_edit,"var(--edited)"],["staged",staged,"var(--ready)"],
-      ["pushed_to_odoo",st.pushed_to_odoo,"var(--pushed)"],["rejected",st.rejected,"var(--rejected)"]];
-    const tot=p.total||1;
-    $('#distbar').innerHTML=seg.map(([k,v,c])=>v?`<span style="width:${v/tot*100}%;background:${c}" title="${k}: ${v}"></span>`:'').join('');
-    $('#distlegend').innerHTML=seg.filter(([k,v])=>v).map(([k,v,c])=>`<span><i style="background:${c}"></i>${k==='staged'?'Ready for Odoo':(STATE_LABELS[k]||k)}: <b>${v}</b></span>`).join('');
-    // pending-changes indicator
-    const pu=stg.ready.update||0, pn=stg.ready.create||0;
-    $('#pendingBox').classList.toggle('hidden',!(pu+pn));
-    $('#pendUpd').textContent=pu; $('#pendNew').textContent=pn;
+    state.counts={all:p.total,new_record:st.new_record||0,update_suggested:st.update_suggested||0,
+      existing_ok:st.existing_ok||0,needs_review:st.needs_review||0,manual_edit:st.manual_edit||0,
+      staged,pushed_to_odoo:st.pushed_to_odoo||0,rejected:st.rejected||0};
+    $('#kpis').innerHTML=KPIS.map(([k,label])=>
+      `<button class="kpi ${state.view===k?'on':''}" data-k="${k}" aria-pressed="${state.view===k}"
+        aria-label="${label}: ${state.counts[k]||0} records — click to filter">
+        <div class="n">${state.counts[k]||0}</div><div class="l">${label}</div></button>`).join('');
+    document.querySelectorAll('.kpi').forEach(c=>c.onclick=()=>{setView(c.dataset.k);});
   }catch(e){}
 }
+function setView(k){state.view=k;state.page=1;refreshAll();}
 
-// ── dashboard note + chips ──
-function renderDash(s,meta){
-  const fresh=meta&&meta.filename?`<b>${esc(meta.filename)}</b>${meta.uploaded_at?` · processed ${new Date(meta.uploaded_at).toLocaleString()}`:''} — `:'';
-  $('#dqNote').innerHTML=fresh+`<b>Reconciliation of ${s.incoming_rows} uploaded contacts</b> against ${s.master_records.toLocaleString()} canonical clients in ${s.processing_ms} ms. `
-    +`Cosmetic differences (case, spacing, dialing codes, address abbreviations, Eircode formatting) are ignored — only substantive changes are flagged. `
-    +`Approvals write to the <b>staging dataset</b> (pending changes); the staging file is the only payload pushed to Odoo. `
-    +`<b>Colour stripes:</b> <span style="color:var(--ready)">■ staged/ready</span> · <span style="color:var(--edited)">■ edited</span> · <span style="color:var(--pushed)">■ pushed</span> · <span style="color:var(--rejected)">■ rejected</span> — rows you have acted on are identifiable at a glance.`;
-  $('#stateChips').innerHTML=CHIPS.map(([kind,k,l])=>`<span class="chip ${k===state.chip?'on':''}" data-kind="${kind}" data-k="${k}">${l}</span>`).join('');
-  $('#stateChips').querySelectorAll('.chip').forEach(c=>c.onclick=()=>{state.chip=c.dataset.k;state.chipKind=c.dataset.kind;state.page=1;loadResults();});
+/* ── contextual bulk actions (7-Jul meeting: actions depend on the tab) ── */
+function renderBulkbar(){
+  const v=state.view,B=[];
+  const hint=t=>`<span class="hint">${t}</span>`;
+  if(v==='all'){
+    B.push(hint('Mixed view — pick a card above to act. Click any row to inspect.'));
+  }else if(v==='update_suggested'||v==='new_record'||v==='manual_edit'){
+    const what={update_suggested:'updates',new_record:'new clients',manual_edit:'edited records'}[v];
+    B.push(`<button class="btn good" onclick="bulkApprove({state:'${v}'})">✓ Approve all ${what}</button>`,
+           `<button class="btn good" onclick="bulkApprove({indices:selected()})">✓ Approve selected</button>`,
+           `<button class="btn danger" onclick="bulkReject(selected())">✗ Reject selected</button>`);
+  }else if(v==='existing_ok'){
+    B.push(hint('These records are already in sync — nothing to approve.'),
+           `<button class="btn danger" onclick="bulkReject(selected())">✗ Reject selected</button>`);
+  }else if(v==='needs_review'){
+    B.push(hint('⚖ Manual review is one-at-a-time by design — open each record to see why it needs review and decide inside it. No bulk actions.'));
+  }else if(v==='staged'){
+    B.push(`<button class="btn primary" id="pushBtn" onclick="pushToOdoo()">🚀 Push to Odoo</button>`,
+           `<button class="btn" onclick="odooDryRun()">👁 Preview (dry-run)</button>`,
+           `<button class="btn" onclick="bulkReopen(selected())">↩ Reopen selected</button>`,
+           hint('Push sends every record in this view to Odoo and verifies each one by reading it back.'));
+  }else if(v==='pushed_to_odoo'){
+    B.push(hint('Pushed and verified in Odoo — read-only. The full trail is in Activity.'));
+  }else if(v==='rejected'){
+    B.push(`<button class="btn" onclick="bulkReopen(selected())">↩ Restore selected</button>`,
+           hint('Restore returns a record to its pre-decision state. History is preserved.'));
+  }
+  $('#bulkbar').innerHTML=B.join('');
 }
 
-async function refreshAll(){await Promise.all([loadResults(),refreshProgress()]);}
+async function refreshAll(){renderBulkbar();await Promise.all([loadResults(),refreshProgress()]);renderBulkbar();}
 
-// ── results table ──
-function chipParams(){
-  if(state.chipKind==='status')return `status=${state.chip}&state=all`;
-  if(state.chipKind==='state')return `status=all&state=${state.chip}`;
-  return 'status=all&state=all';
+/* ── results table ── */
+function viewParams(){
+  if(state.view==='all')return 'status=all&state=all';
+  return `status=all&state=${state.view}`;
 }
 async function loadResults(){
-  const u=`/reconcile/results?${chipParams()}&q=${encodeURIComponent(state.q)}&sort=${state.sort}&order=${state.order}&page=${state.page}&page_size=${state.page_size}`;
+  const u=`/reconcile/results?${viewParams()}&q=${encodeURIComponent(state.q)}&sort=${state.sort}&order=${state.order}&page=${state.page}&page_size=${state.page_size}`;
   let d;
-  try{d=await jget(u);}catch(e){$('#rows').innerHTML=`<tr><td colspan="8" class="muted" style="padding:20px">${esc(e.message)}</td></tr>`;return;}
+  try{d=await jget(u);}catch(e){$('#rows').innerHTML=`<tr><td colspan="8" class="muted" style="padding:20px">${esc(e.message)}</td></tr>`;$('#pageInfo').textContent='';return;}
   state.total=d.total;pageRows=d.rows;
-  $('#stateChips').querySelectorAll('.chip').forEach(c=>c.classList.toggle('on',c.dataset.k===state.chip));
   $('#rows').innerHTML=d.rows.map(r=>{
     const conf=Math.round(r.confidence*100);
     const mb=r.matched_by.map(f=>`<span class="fchip">${f}</span>`).join('')||'<span class="muted">—</span>';
     const cf=r.changed_fields.map(f=>`<span class="fchip">${f}</span>`).join('')||'<span class="muted">none</span>';
     const edited=r.edited?`<span class="fchip edit">edited</span>`:'';
+    const invalid=r.invalid?`<span class="badge invalid" title="This record carries a value that is not a valid Odoo selection — open it to correct">⚠ invalid data</span>`:'';
     const acts=quickActions(r);
     const stripe={update_ready:'rw-staged',import_ready:'rw-staged',manual_edit:'rw-edited',
                   pushed_to_odoo:'rw-pushed',rejected:'rw-rejected'}[r.state]||'';
     const flash=(window._justActed===r.index)?' rw-flash':'';
     return `<tr class="${stripe}${flash}" onclick="openDetail(${r.index},event)">
-      <td onclick="event.stopPropagation()"><input type="checkbox" class="rsel" value="${r.index}"/></td>
-      <td><span class="badge st-${r.state}">${STATE_LABELS[r.state]||r.state}</span> ${edited}</td>
-      <td><div class="conf"><div class="bar"><i style="width:${conf}%"></i></div>${conf}%</div></td>
+      <td onclick="event.stopPropagation()"><input type="checkbox" class="rsel" value="${r.index}" aria-label="Select ${esc(r.incoming_name)}"/></td>
+      <td><span class="badge st-${r.state}">${STATE_LABELS[r.state]||r.state}</span> ${invalid} ${edited}</td>
+      <td><div class="conf" title="Match score: weighted field similarity — open the record for the field-by-field breakdown"><div class="bar"><i style="width:${conf}%"></i></div>${conf}%</div></td>
       <td>${esc(r.master_name)||'<span class="muted">— no match —</span>'}${r.master_ref?` <span class="muted mono">#${esc(r.master_ref)}</span>`:''}</td>
       <td>${esc(r.incoming_name)} <span class="muted mono">#${esc(r.buyer_number)}</span></td>
       <td>${mb}</td><td>${cf}</td>
@@ -436,25 +501,27 @@ async function loadResults(){
     </tr>`;}).join('');
   window._justActed=null;
   const pages=Math.max(1,Math.ceil(d.total/state.page_size));
-  $('#pageInfo').textContent=`Page ${state.page} of ${pages} · ${d.total} rows`;
+  $('#pageInfo').textContent=`${d.total} record${d.total===1?'':'s'} · page ${state.page} of ${pages}`;
   $('#prev').disabled=state.page<=1;$('#next').disabled=state.page>=pages;
   $('#selAll').checked=false;
 }
 function quickActions(r){
   const s=r.state;
+  if(r.invalid&&(s==='needs_review'||s==='update_suggested'||s==='new_record'))
+    return `<button class="btn sm" onclick="openDetail(${r.index})">Fix &amp; review…</button>`;
   if(s==='update_suggested'||s==='manual_edit')
     return `<button class="btn sm good" onclick="rowApprove(${r.index})">✓ Approve</button>
-            <button class="btn sm danger" onclick="rowReject(${r.index})">✗</button>`;
+            <button class="btn sm danger" aria-label="Reject" onclick="rowReject(${r.index})">✗</button>`;
   if(s==='new_record')
     return `<button class="btn sm good" onclick="rowApprove(${r.index},'new')">✓ Approve new</button>
-            <button class="btn sm danger" onclick="rowReject(${r.index})">✗</button>`;
+            <button class="btn sm danger" aria-label="Reject" onclick="rowReject(${r.index})">✗</button>`;
   if(s==='needs_review')
     return `<button class="btn sm" onclick="openDetail(${r.index})">Review…</button>`;
   if(s==='update_ready'||s==='import_ready')
     return `<span class="muted" style="font-size:11px">staged</span>
             <button class="btn sm" onclick="rowReopen(${r.index})">↩ Un-approve</button>`;
   if(s==='rejected')
-    return `<button class="btn sm" onclick="rowReopen(${r.index})">↩ Reopen</button>`;
+    return `<button class="btn sm" onclick="rowReopen(${r.index})">↩ Restore</button>`;
   return '<span class="muted">—</span>';
 }
 $('#search').oninput=e=>{state.q=e.target.value;state.page=1;clearTimeout(window._t);window._t=setTimeout(loadResults,220);};
@@ -463,29 +530,45 @@ $('#prev').onclick=()=>{if(state.page>1){state.page--;loadResults();}};
 $('#next').onclick=()=>{state.page++;loadResults();};
 $('#selAll').onchange=e=>document.querySelectorAll('.rsel').forEach(c=>c.checked=e.target.checked);
 document.querySelectorAll('th[data-s]').forEach(th=>th.onclick=()=>{const s=th.dataset.s;if(state.sort===s)state.order=state.order==='desc'?'asc':'desc';else{state.sort=s;state.order='desc';}loadResults();});
-
 function selected(){return [...document.querySelectorAll('.rsel:checked')].map(c=>+c.value);}
 
-// ── workflow actions ──
-async function rowApprove(idx,as){try{const d=await jpost(`/reconcile/records/${idx}/approve`,as?{as}:{}); window._justActed=idx;toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
+/* ── keyboard ── */
+document.addEventListener('keydown',e=>{
+  if(e.key==='/'&&document.activeElement.tagName!=='INPUT'){e.preventDefault();$('#search').focus();}
+  if(e.key==='Escape'){closeDrawer();closePushModal();toggleActivity(false);$('#exportDD').classList.remove('open');}
+});
+
+/* ── export dropdown ── */
+$('#exportBtn').onclick=e=>{e.stopPropagation();const dd=$('#exportDD');dd.classList.toggle('open');$('#exportBtn').setAttribute('aria-expanded',dd.classList.contains('open'));};
+document.addEventListener('click',()=>$('#exportDD').classList.remove('open'));
+
+/* ── workflow actions ── */
+async function rowApprove(idx,as){try{const d=await jpost(`/reconcile/records/${idx}/approve`,as?{as}:{});window._justActed=idx;toast(`#${idx} → ${d.state_label}`);refreshAll();loadSync();}catch(e){toast('⚠ '+e.message);}}
 async function rowReject(idx){const reason=prompt('Reason for rejection (optional):')||'';try{const d=await jpost(`/reconcile/records/${idx}/reject`,{reason});window._justActed=idx;toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
-async function rowReopen(idx){try{const d=await jpost(`/reconcile/records/${idx}/reopen`);window._justActed=idx;toast(`#${idx} → ${d.state_label}`);refreshAll();}catch(e){toast('⚠ '+e.message);}}
+async function rowReopen(idx){try{const d=await jpost(`/reconcile/records/${idx}/reopen`);window._justActed=idx;toast(`#${idx} → ${d.state_label}`);refreshAll();loadSync();}catch(e){toast('⚠ '+e.message);}}
 async function bulkApprove(scope){
-  if(scope.indices && !scope.indices.length){alert('No rows selected.');return;}
+  if(scope.indices && !scope.indices.length){toast('No rows selected.');return;}
+  const n=scope.indices?scope.indices.length:(state.counts[scope.state]||0);
+  if(!n){toast('Nothing to approve in this view.');return;}
+  if(!confirm(`Approve ${n} record(s) into staging (Ready for Odoo)?`))return;
   try{const d=await jpost('/reconcile/approve-bulk',scope);
-    const allStaged=!d.approved.length&&d.skipped.length
-      &&d.skipped.every(s=>/update_ready|import_ready|pushed_to_odoo/.test(s.reason||''));
-    if(allStaged){toast('These records are already approved and staged — use 🚀 Push to Odoo (top right) to send them.');}
-    else toast(`Approved ${d.approved.length}${d.skipped.length?` · skipped ${d.skipped.length}`:''}`);
-    refreshAll();
+    const inv=d.skipped.filter(s=>/invalid/i.test(s.reason||''));
+    toast(`Approved ${d.approved.length}${d.skipped.length?` · skipped ${d.skipped.length}${inv.length?` (${inv.length} carry invalid values — open to fix)`:''}`:''}`);
+    refreshAll();loadSync();
   }catch(e){toast('⚠ '+e.message);}
 }
 async function bulkReject(indices){
-  if(!indices.length){alert('No rows selected.');return;}
+  if(!indices.length){toast('No rows selected.');return;}
   const reason=prompt('Reason for rejection (optional):')||'';
   let ok=0,fail=0;
   for(const i of indices){try{await jpost(`/reconcile/records/${i}/reject`,{reason});ok++;}catch(e){fail++;}}
   toast(`Rejected ${ok}${fail?` · ${fail} not rejectable`:''}`);refreshAll();
+}
+async function bulkReopen(indices){
+  if(!indices.length){toast('No rows selected.');return;}
+  let ok=0,fail=0;
+  for(const i of indices){try{await jpost(`/reconcile/records/${i}/reopen`);ok++;}catch(e){fail++;}}
+  toast(`Reopened ${ok}${fail?` · ${fail} skipped`:''}`);refreshAll();loadSync();
 }
 async function odooDryRun(){
   try{const d=await jpost('/reconcile/odoo-import',{dry_run:true});
@@ -497,9 +580,9 @@ async function odooDryRun(){
   }catch(e){alert('Dry-run failed: '+e.message);}
 }
 
-// ── Push to Odoo: plan → confirm → live push → verified results ──
+/* ── Push to Odoo (only reachable from the Ready-for-Odoo view) ── */
 async function pushToOdoo(){
-  const b=$('#pushBtn');if(b.disabled)return;
+  const b=$('#pushBtn');if(!b||b.disabled)return;
   b.disabled=true;const orig=b.textContent;
   try{
     b.textContent='🚀 Planning…';
@@ -509,7 +592,7 @@ async function pushToOdoo(){
     const go=confirm(`Push ${p.create+p.write} approved change(s) to Odoo now?\n\n`
       +`• ${p.create} new contact(s) will be created\n`
       +`• ${p.write} existing contact(s) will be updated\n`
-      +(p.skip?`• ${p.skip} staged row(s) skipped (no writable change)\n`:'')
+      +(p.skip?`• ${p.skip} staged row(s) skipped (validation / no writable change)\n`:'')
       +(p.id_checks_required?`• ${p.id_checks_required} buyer(s) need an ID check (>€10k)\n`:'')
       +`\nEach pushed record is read back from Odoo afterwards to verify the update landed.`);
     if(!go){b.disabled=false;b.textContent=orig;return;}
@@ -518,7 +601,7 @@ async function pushToOdoo(){
     showPushResults(d);
     await refreshAll();loadSync();
   }catch(e){alert('Push failed: '+e.message);}
-  b.disabled=false;b.textContent=orig;
+  if(b){b.disabled=false;b.textContent=orig;}
 }
 function showPushResults(d){
   const s=d.summary;
@@ -537,18 +620,16 @@ function showPushResults(d){
     <div class="tablewrap" style="max-height:52vh;overflow:auto"><table>
       <thead><tr><th>Ref</th><th>Contact</th><th>Action</th><th>Odoo ID</th><th>Verification</th><th>Detail</th></tr></thead>
       <tbody>${rows}</tbody></table></div>
-    <p class="muted" style="font-size:12px;margin-top:10px">Open any contact in Odoo to see the change live —
-      every create/update above was re-read from Odoo after writing. Errored rows stay in staging and are retried on the next push.
-      The full old→new value trail is in the audit log.</p>
+    <p class="muted" style="font-size:12px;margin-top:10px">Open any contact in Odoo to see the change live.
+      Errored rows stay staged and are retried on the next push. The full old→new value trail is in Activity.</p>
     <div style="display:flex;gap:8px;margin-top:6px"><button class="btn primary" onclick="closePushModal()">Close</button></div>`;
   $('#pushModal').classList.add('on');
   toast(s.error?`⚠ Push finished with ${s.error} error(s) — they remain staged for retry`
                :`✅ Pushed ${s.create+s.write} change(s) · ${s.verified||0} verified in Odoo`);
 }
 function closePushModal(){$('#pushModal').classList.remove('on');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closePushModal();});
 
-// ── sessions (one per uploaded auction file) ──
+/* ── sessions ── */
 async function loadSessions(){
   try{
     const d=await jget('/reconcile/sessions');
@@ -559,13 +640,47 @@ async function loadSessions(){
     sel.onchange=async()=>{
       await jpost('/reconcile/sessions/'+encodeURIComponent(sel.value)+'/activate');
       const sess=await jget('/reconcile/session');
-      state.summary=sess.summary;state.page=1;state.chip='all';state.chipKind='all';
-      renderDash(sess.summary,sess);await refreshAll();
+      state.summary=sess.summary;state.meta=sess;state.page=1;state.view='all';
+      renderNotice();await refreshAll();
     };
   }catch(e){}
 }
 
-// ── detail drawer ──
+/* ── activity timeline ── */
+const ACT_ICONS={upload:'📥',state:'🔁',edit:'✏️',edit_discard:'✏️',approve_bulk:'✅',decide:'✅',
+  odoo_import:'🚀',odoo_import_plan:'👁',odoo_push_record:'📦',refresh:'⟳',master_reload:'⟳',
+  master_fallback:'⚠',session_activate:'🗂',staging_purge:'🧹'};
+function actLabel(e){
+  switch(e.event){
+    case 'upload': return `Imported <b>${esc(e.filename)}</b> — ${e.contacts} contacts (${esc(e.kind)})`;
+    case 'state': return `<b>#${e.index}</b> ${esc(e.buyer||'')} — ${esc(e.frm)} → <b>${esc(e.to)}</b>${e.note?` <span class="muted">(${esc(e.note)})</span>`:''}`;
+    case 'edit': return `Edited <b>#${e.index}</b> — fields: ${(e.fields||[]).join(', ')}`;
+    case 'approve_bulk': return `Bulk approve — ${e.approved} approved, ${e.skipped} skipped`;
+    case 'odoo_import': return e.dry_run?`Dry-run push plan (${e.total} ops)`:`<b>Pushed to Odoo</b> — ${e.create} created, ${e.write} updated, ${e.error||0} errors, ${e.verified||0} verified`;
+    case 'odoo_push_record': return `${e.operation==='create'?'Created':'Updated'} <b>${esc(e.name)}</b> in Odoo (id ${e.odoo_id}) — ${e.verified?'✓ verified':'✗ verify failed'}`;
+    case 'refresh': return `Refreshed master — ${e.records} contacts, ${e.preserved} decision(s) preserved, ${e.reclassified} reclassified`;
+    case 'master_fallback': return `<b style="color:var(--bad)">Odoo unreachable</b> — fell back to the CSV snapshot`;
+    case 'session_activate': return `Switched to session ${esc(e.session)}`;
+    default: return esc(e.event);
+  }
+}
+async function toggleActivity(open){
+  const p=$('#actpanel');
+  const want=open===undefined?!p.classList.contains('on'):open;
+  p.classList.toggle('on',want);
+  if(!want)return;
+  try{
+    const d=await jget('/reconcile/activity?session_only=false&limit=120');
+    $('#actbody').innerHTML=d.events.map(e=>`
+      <div class="actrow"><div class="ic">${ACT_ICONS[e.event]||'·'}</div>
+        <div class="what">${actLabel(e)}
+          <div class="who">${esc(e.actor||'system')} · ${new Date(e.ts).toLocaleString()}</div></div>
+      </div>`).join('')||'<div class="muted">No activity yet.</div>';
+  }catch(e){$('#actbody').innerHTML=`<div class="muted">${esc(e.message)}</div>`;}
+}
+$('#activityBtn').onclick=()=>toggleActivity();
+
+/* ── detail drawer ── */
 let currentDetail=null, editMode=false;
 async function openDetail(index,ev){
   const d=await jget('/reconcile/results/'+index);
@@ -573,90 +688,118 @@ async function openDetail(index,ev){
   renderDrawer();
   $('#scrim').classList.add('on');$('#drawer').classList.add('on');
 }
-function evidenceHTML(d){
+function matchHTML(d){
   const ev=d.match_evidence||{};
   if(!ev.fields||!Object.keys(ev.fields).length)
     return d.classification==='new'?`<div class="evid"><h4>Why is this NEW?</h4>
-      <div class="muted">No canonical client shares this contact's email, phone or name — there was nothing to match against.</div></div>`:'';
+      <div class="muted">No master client shares this contact's email, phone or name — there was nothing to match against.</div></div>`:'';
   const NAMES={email:'Email',phone:'Phone',name:'Name',address:'Address',postcode:'Postcode',country:'Country',company:'Company'};
   const rows=Object.entries(ev.fields).sort((a,b)=>b[1].weight-a[1].weight).map(([f,v])=>{
     const pct=Math.round(v.similarity*100);
     const mark=v.exact?'<span class="ok">✓</span>':`<span class="pc">${pct}%</span>`;
-    const lab=v.exact?(f==='email'||f==='phone'?`${NAMES[f]} exact match`:`${NAMES[f]} match`):`${NAMES[f]} similarity ${pct}%`;
-    return `<div class="evrow">${mark}<span style="min-width:170px">${lab}</span>
+    return `<div class="evrow">${mark}<span style="min-width:130px">${NAMES[f]||f}</span>
       <div class="ebar"><i style="width:${pct}%"></i></div>
-      <span class="pc mono" title="weight ${v.weight}">w ${v.weight}</span></div>`;
+      <span class="pc mono">${pct}%</span>
+      <span class="pc mono" title="This field contributes ${Math.round(v.weight*100)}% of the weighting">w ${Math.round(v.weight*100)}%</span></div>`;
   }).join('');
-  return `<div class="evid"><h4>Matched because</h4>${rows}
-    <div class="evrow evtotal"><span>Overall confidence</span><span style="margin-left:auto">${Math.round(d.confidence*100)}%</span></div>
-    ${ev.strong_id_floor_applied?`<div class="muted" style="margin-top:6px;font-size:11.5px">${esc(ev.note)}</div>`:''}</div>`;
+  return `<div class="evid"><h4>Why this match score?</h4>${rows}
+    <div class="evrow evtotal"><span>Overall match</span><span style="margin-left:auto">${Math.round(d.confidence*100)}%</span></div>
+    ${ev.strong_id_floor_applied?`<div class="muted" style="margin-top:6px;font-size:11.5px">${esc(ev.note).replace(/confidence/gi,'match score')}</div>`:''}</div>`;
+}
+function issuesHTML(d){
+  const issues=d.validation_issues||[];
+  if(!issues.length)return '';
+  return issues.map(i=>`
+    <div class="vissue">
+      <div><b>${i.blocking?'⛔ Invalid':'⚠ Suspect'} ${esc(i.label)}:</b> ${esc(i.message)}</div>
+      ${i.suggestions&&i.suggestions.length?`<div class="sug">Apply a correction:
+        ${i.suggestions.map(s=>`<button class="sugchip" onclick="applySuggestion('${esc(i.field)}','${esc(s)}')">${esc(s)}</button>`).join('')}
+        <span class="muted" style="font-size:11px">— or edit the field manually below</span></div>`:''}
+    </div>`).join('');
+}
+async function applySuggestion(field,value){
+  try{
+    await jpost(`/reconcile/records/${currentDetail.index}/edit`,{fields:{[field]:value}});
+    toast(`✓ ${field} corrected to “${value}” — approve to stage the update`);
+    currentDetail=await jget('/reconcile/results/'+currentDetail.index);
+    editMode=false;renderDrawer();refreshAll();
+  }catch(e){toast('⚠ '+e.message);}
 }
 function renderDrawer(){
   const d=currentDetail;
   const approved=Object.keys(d.approved_values||{}).length?d.approved_values:null;
   const edits=d.edits||{};
+  const invalidFields=new Set((d.validation_issues||[]).filter(i=>i.blocking).map(i=>i.field));
+  const TIPS={changed:'Both sides have a value and they differ meaningfully',
+    new_info:'Odoo is empty here — the upload adds this value',
+    equivalent:'Same value, different formatting — ignored by design',
+    unchanged:'Identical on both sides',missing:'The upload is empty here — Odoo keeps its value'};
   const rows=d.diffs.map(f=>{
-    const cls=f.status;const tag=(f.status==='changed'||f.status==='new_info'||f.status==='equivalent')
-      ?`<span class="tag ${f.status}">${f.status.replace('_',' ')}</span>`:'';
-    // final value: edited > approved > incoming
+    const cls=f.status;
+    const inval=invalidFields.has(f.field)&&!(edits[f.field]!==undefined);
+    const tag=(f.status==='changed'||f.status==='new_info'||f.status==='equivalent')
+      ?`<span class="tag ${f.status}" title="${TIPS[f.status]||''}">${f.status.replace('_',' ')}</span>`:'';
+    const invTag=inval?`<span class="tag invalid" title="Not a valid Odoo selection — correct before approving">invalid</span>`:'';
     const fieldKey=f.field==='name'?null:f.field;
     let finalV = fieldKey ? (edits[fieldKey]!==undefined?edits[fieldKey]:(approved?approved[fieldKey]:'')) : '';
     const isEdited = fieldKey && edits[fieldKey]!==undefined;
     const finalCell = (isEdited||approved)?`<div class="cell ${isEdited?'editedv':''}">${esc(finalV)||'<span class="muted">—</span>'}${isEdited?'<span class="tag edited">edited</span>':''}</div>`
                                           :`<div class="cell unchanged"><span class="muted">—</span></div>`;
     return `<div class="fl">${esc(f.label)}</div>
-      <div class="cell ${cls}">${esc(f.current)||'<span class="muted">—</span>'}</div>
-      <div class="cell ${cls}">${esc(f.incoming)||'<span class="muted">—</span>'}${tag}</div>
+      <div class="cell ${cls}" title="${TIPS[cls]||''}">${esc(f.current)||'<span class="muted">—</span>'}</div>
+      <div class="cell ${cls}${inval?' invalidv':''}" title="${inval?'Invalid selection value':''}">${esc(f.incoming)||'<span class="muted">—</span>'}${tag}${invTag}</div>
       ${finalCell}`;}).join('');
   const lots=(d.lots||[]).map(l=>`<span class="fchip">Lot ${esc(l.lot_number)}${l.winning_bid?` · €${esc(l.winning_bid)}`:''}</span>`).join('')||'<span class="muted">—</span>';
   const hist=(d.history||[]).slice().reverse().map(h=>`<div class="ev"><b>${STATE_LABELS[h.to]||h.to}</b> <span class="muted">← ${STATE_LABELS[h.from]||h.from||'start'}</span> · ${esc(h.actor)}${h.note?` — <span class="muted">${esc(h.note)}</span>`:''}<div class="when">${esc(h.at)}</div></div>`).join('')
     ||'<div class="muted" style="font-size:12px">No workflow actions yet.</div>';
   const btns=drawerButtons(d);
   $('#drawerBody').innerHTML=`
-    <div class="muted mono" style="font-size:11px">${d.recommendation} · confidence ${Math.round(d.confidence*100)}%</div>
+    <div class="muted mono" style="font-size:11px">${d.recommendation} · overall match ${Math.round(d.confidence*100)}%</div>
     <h3>${esc(d.incoming_name)} <span class="muted mono" style="font-size:12px">#${esc(d.buyer_number)}</span>
-      <span class="badge st-${d.state}" style="margin-left:8px">${esc(d.state_label)}</span></h3>
+      <span class="badge st-${d.state}" style="margin-left:8px">${esc(d.state_label)}</span>
+      ${(d.validation_issues||[]).some(i=>i.blocking)?'<span class="badge invalid" style="margin-left:4px">⚠ invalid data</span>':''}</h3>
     <div class="muted" style="font-size:12px">Matched by: ${d.matched_by.map(f=>`<span class="fchip">${f}</span>`).join('')||'—'} ${d.master_ref?`· master #${esc(d.master_ref)}`:''}</div>
-    ${d.review_reason?`<div class="reason"><b>Why manual review?</b> ${esc(d.review_reason)}</div>`:''}
-    ${evidenceHTML(d)}
+    ${d.review_reason?`<div class="reason"><span class="ic">⚖</span><span><b>Why does this need review?</b><br>${esc(d.review_reason)}</span></div>`:''}
+    ${issuesHTML(d)}
+    ${matchHTML(d)}
     <div class="cmp">
-      <div class="h">Field</div><div class="h">Master (source of truth)</div><div class="h">Incoming (Blue Cubes)</div><div class="h">Final approved</div>
+      <div class="h">Field</div><div class="h">Odoo (master)</div><div class="h">Incoming (Blue Cubes)</div><div class="h">Final approved</div>
       ${rows}
     </div>
     <div id="editArea">${editMode?editFormHTML(d):''}</div>
     <div style="margin-top:14px"><b>Lots won:</b> ${lots}</div>
     <div style="margin-top:16px;display:flex;gap:8px;flex-wrap:wrap">${btns}</div>
-    <div style="margin-top:18px"><b style="font-size:12.5px">Approval history</b><div class="hist">${hist}</div></div>
-    <div class="note" style="margin-top:16px">Approve writes the final values to the <b>staging dataset</b> (pending changes) — the master and the uploaded file are never modified. The staging file is the only payload pushed to Odoo, and the push itself is dry-run by default and env-gated.</div>`;
+    <div style="margin-top:18px"><b style="font-size:12.5px">History</b><div class="hist">${hist}</div></div>`;
   if(editMode)wireEditForm(d);
 }
 function drawerButtons(d){
   const s=d.state, B=[];
+  const hasBlocking=(d.validation_issues||[]).some(i=>i.blocking);
   const editBtn=`<button class="btn" onclick="toggleEdit()">${editMode?'Cancel editing':'✏️ Edit fields'}</button>`;
   if(s==='update_suggested'||s==='manual_edit'){
-    B.push(`<button class="btn good" onclick="drawerApprove()">✓ Approve ${d.master_ref?'update':'as new'}</button>`,editBtn,
+    B.push(`<button class="btn good" onclick="drawerApprove()" ${hasBlocking&&!Object.keys(d.edits||{}).length?'title="Correct the invalid value first"':''}>✓ Approve ${d.master_ref?'update':'as new'}</button>`,editBtn,
            `<button class="btn" onclick="drawerKeep()">Keep existing</button>`,
            `<button class="btn danger" onclick="drawerReject()">✗ Reject</button>`);
     if(s==='manual_edit'&&Object.keys(d.edits||{}).length)
-      B.push(`<button class="btn" onclick="drawerDiscardEdits()">Discard edits</button>`);
+      B.push(`<button class="btn ghost" onclick="drawerDiscardEdits()">Discard edits</button>`);
   }else if(s==='new_record'){
     B.push(`<button class="btn good" onclick="drawerApprove('new')">✓ Approve new client</button>`,editBtn,
            `<button class="btn danger" onclick="drawerReject()">✗ Reject</button>`);
   }else if(s==='needs_review'){
-    B.push(`<button class="btn good" onclick="drawerApprove('update')">✓ It's the same person — approve update</button>`,
+    B.push(`<button class="btn good" onclick="drawerApprove('update')">✓ Same person — approve update</button>`,
            `<button class="btn good" onclick="drawerApprove('new')">✓ Different person — add as new</button>`,
            editBtn,
            `<button class="btn" onclick="drawerKeep()">Keep existing</button>`,
            `<button class="btn danger" onclick="drawerReject()">✗ Reject</button>`);
   }else if(s==='update_ready'||s==='import_ready'){
-    B.push(`<span class="badge st-${s}" style="align-self:center">In staging — ready for the Odoo push</span>`,
+    B.push(`<span class="badge st-${s}" style="align-self:center">In staging — push from the Ready for Odoo view</span>`,
            `<button class="btn" onclick="drawerReopen()">↩ Un-approve</button>`,editBtn);
   }else if(s==='rejected'){
-    B.push(`<button class="btn" onclick="drawerReopen()">↩ Reopen</button>`);
+    B.push(`<button class="btn" onclick="drawerReopen()">↩ Restore</button>`);
   }else if(s==='existing_ok'){
     B.push(editBtn,`<button class="btn danger" onclick="drawerReject()">✗ Reject</button>`);
   }else if(s==='pushed_to_odoo'){
-    B.push(`<span class="badge st-pushed_to_odoo" style="align-self:center">Pushed to Odoo — read-only</span>`);
+    B.push(`<span class="badge st-pushed_to_odoo" style="align-self:center">Pushed &amp; verified in Odoo — read-only</span>`);
   }
   return B.join('');
 }
@@ -666,17 +809,19 @@ function editFormHTML(d){
     ["county","County"],["postcode","Postcode"],["country","Country"]];
   const cur=f=>d.edits&&d.edits[f]!==undefined?d.edits[f]:(d.incoming[f]||'');
   const inputs=F.map(([f,l])=>`<div class="field">
-      <label>${l}</label>
-      <input data-f="${f}" value="${esc(cur(f))}" data-orig="${esc(d.incoming[f]||'')}"/>
-      <span class="orig">incoming: ${esc(d.incoming[f]||'—')}${d.master&&d.master[f]?` · master: ${esc(d.master[f])}`:''}</span>
+      <label for="ef-${f}">${l}</label>
+      <input id="ef-${f}" data-f="${f}" value="${esc(cur(f))}" data-orig="${esc(d.incoming[f]||'')}"/>
+      <span class="orig">incoming: ${esc(d.incoming[f]||'—')}${d.master&&d.master[f]?` · Odoo: ${esc(d.master[f])}`:''}</span>
     </div>`).join('');
-  const notes=`<div class="field notes"><label>Notes (goes to the staging record)</label>
-      <input data-f="notes" value="${esc(d.edits&&d.edits.notes||'')}" data-orig=""/></div>`;
+  const notes=`<div class="field notes"><label for="ef-notes">Notes (goes to the staging record)</label>
+      <input id="ef-notes" data-f="notes" value="${esc(d.edits&&d.edits.notes||'')}" data-orig=""/></div>`;
   return `<div class="editform">${inputs}${notes}</div>
     <div style="margin-top:12px;display:flex;gap:8px">
-      <button class="btn primary" onclick="saveEdits()">💾 Save edits</button>
-      <button class="btn" onclick="toggleEdit()">Cancel</button>
-    </div>`;
+      <button class="btn primary" onclick="approveEdits()">✓ Approve edits</button>
+      <button class="btn" onclick="saveEdits()">Save for later</button>
+      <button class="btn ghost" onclick="toggleEdit()">Cancel</button>
+    </div>
+    <div class="muted" style="font-size:11.5px;margin-top:6px">Approve edits = save + approve in one step (straight to Ready for Odoo).</div>`;
 }
 function wireEditForm(d){
   document.querySelectorAll('#editArea input').forEach(inp=>{
@@ -685,30 +830,46 @@ function wireEditForm(d){
   });
 }
 function toggleEdit(){editMode=!editMode;renderDrawer();}
-async function saveEdits(){
+function collectEdits(){
   const fields={};
   document.querySelectorAll('#editArea input').forEach(inp=>{
     if(inp.value!==(inp.dataset.orig||''))fields[inp.dataset.f]=inp.value;
   });
+  return fields;
+}
+async function saveEdits(){
+  const fields=collectEdits();
   if(!Object.keys(fields).length){toast('No changes to save.');return;}
   try{
     await jpost(`/reconcile/records/${currentDetail.index}/edit`,{fields});
-    toast('Edits saved — approve to write them to staging.');
+    toast('Edits saved — approve when ready.');
     currentDetail=await jget('/reconcile/results/'+currentDetail.index);
     editMode=false;renderDrawer();refreshAll();
   }catch(e){toast('⚠ '+e.message);}
 }
+async function approveEdits(){
+  /* 7-Jul meeting: Edit → Approve is ONE step. Saves the edits, then approves
+     straight into staging (Ready for Odoo). */
+  const fields=collectEdits();
+  try{
+    if(Object.keys(fields).length)
+      await jpost(`/reconcile/records/${currentDetail.index}/edit`,{fields});
+    const d=await jpost(`/reconcile/records/${currentDetail.index}/approve`,{});
+    toast(`✓ Edits approved → ${d.state_label}`);
+    currentDetail=await jget('/reconcile/results/'+currentDetail.index);
+    editMode=false;renderDrawer();refreshAll();loadSync();
+  }catch(e){toast('⚠ '+e.message);}
+}
 async function drawerAction(fn){
-  try{await fn();currentDetail=await jget('/reconcile/results/'+currentDetail.index);renderDrawer();refreshAll();}
+  try{await fn();currentDetail=await jget('/reconcile/results/'+currentDetail.index);renderDrawer();refreshAll();loadSync();}
   catch(e){toast('⚠ '+e.message);}
 }
 function drawerApprove(as){drawerAction(async()=>{const d=await jpost(`/reconcile/records/${currentDetail.index}/approve`,as?{as}:{});toast('→ '+d.state_label);});}
 function drawerReject(){const reason=prompt('Reason for rejection (optional):')||'';drawerAction(async()=>{const d=await jpost(`/reconcile/records/${currentDetail.index}/reject`,{reason});toast('→ '+d.state_label);});}
 function drawerReopen(){drawerAction(async()=>{const d=await jpost(`/reconcile/records/${currentDetail.index}/reopen`);toast('→ '+d.state_label);});}
 function drawerKeep(){drawerAction(async()=>{const d=await jpost(`/reconcile/records/${currentDetail.index}/keep-existing`);toast('→ '+d.state_label);});}
-function drawerDiscardEdits(){drawerAction(async()=>{const d=await jpost(`/reconcile/records/${currentDetail.index}/edit`,null,'DELETE');toast('Edits discarded');});}
+function drawerDiscardEdits(){drawerAction(async()=>{await jpost(`/reconcile/records/${currentDetail.index}/edit`,null,'DELETE');toast('Edits discarded');});}
 function closeDrawer(){$('#scrim').classList.remove('on');$('#drawer').classList.remove('on');}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')closeDrawer();});
 </script>
 </body>
 </html>

@@ -105,7 +105,8 @@ class ImportOp:
                 "verify_mismatch": self.verify_mismatch}
 
 
-def plan_from_staging(entries: list[dict], source_file: str = "") -> list[ImportOp]:
+def plan_from_staging(entries: list[dict], source_file: str = "",
+                      schema=None) -> list[ImportOp]:
     """Build the Odoo operations from STAGING entries — the official payload
     (2-Jul meeting). Only status='ready' rows are given to this function.
 
@@ -129,6 +130,17 @@ def plan_from_staging(entries: list[dict], source_file: str = "") -> list[Import
             problems.append("create without a buyer number (ref would collide)")
         if e.get("change_type") == "update" and not e.get("master_ref"):
             problems.append("update without a master ref")
+        # Phase 4 P3 belt-and-braces: even if an invalid dropdown value slips
+        # into staging (legacy rows), it must not reach Odoo — explicit skip.
+        if schema is not None:
+            from .validation import validate_incoming, blocking_issues
+            bad = blocking_issues(validate_incoming(
+                {k: approved.get(k, "") for k in ("county", "country")}, schema))
+            for i in bad:
+                problems.append(f"invalid {i.label} \u201c{i.value}\u201d — correct or "
+                                f"clear it before pushing"
+                                + (f" (suggested: {', '.join(i.suggestions)})"
+                                   if i.suggestions else ""))
         if problems:
             ops.append(ImportOp("skip", "VALIDATION: " + "; ".join(problems),
                                 str(e.get("master_ref") or f"BC-{e.get('buyer_number','')}"),
