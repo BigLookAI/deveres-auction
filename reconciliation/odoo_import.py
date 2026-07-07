@@ -331,6 +331,21 @@ class OdooImporter:
             extra = "Unresolved location values (set manually): " + ", ".join(unresolved)
             op.values["comment"] = (op.values.get("comment", "") + " " + extra).strip()
 
+    def _tag_contact_type(self, partner_id: int | None) -> None:
+        """Newly created clients get the SOR Contact Type 'Contact' so they
+        appear in the SOR Contacts views (which filter on contact_types).
+        Best-effort: silently skipped on an Odoo without the SOR modules."""
+        if not partner_id:
+            return
+        try:
+            ct = self.client._execute("sor.contact.type", "search",
+                                      [["code", "=", "contact"]], limit=1)
+            if ct:
+                self.client._execute("res.partner", "write", [partner_id],
+                                     {"contact_types": [[4, ct[0]]]})
+        except Exception:                                 # noqa: BLE001
+            log.debug("sor contact-type tagging skipped for partner %s", partner_id)
+
     def _verify(self, op: ImportOp) -> None:
         """Read the partner back from Odoo and confirm every written scalar
         field actually landed (the 6-Jul 'Verify Update' step). comment is
@@ -389,6 +404,7 @@ class OdooImporter:
                 elif op.op == "create":
                     op.partner_id = self.client._execute("res.partner", "create", op.values)
                     created += 1
+                    self._tag_contact_type(op.partner_id)
                     self._verify(op)
                 elif op.op == "write" and partner_id:
                     self.client._execute("res.partner", "write", [partner_id], op.values)
