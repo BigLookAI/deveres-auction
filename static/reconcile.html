@@ -468,7 +468,7 @@ function renderBulkbar(){
   $('#bulkbar').innerHTML=B.join('');
 }
 
-async function refreshAll(){renderBulkbar();await Promise.all([loadResults(),refreshProgress()]);renderBulkbar();}
+async function refreshAll(){renderBulkbar();await refreshProgress();await loadResults();renderBulkbar();}  /* progress first: state labels must exist before rows render */
 
 /* ── results table ── */
 function viewParams(){
