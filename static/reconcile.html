@@ -399,7 +399,8 @@ $('#refreshBtn').onclick=async function(){
 
 /* ── session restore ── */
 (async()=>{try{const sess=await jget('/reconcile/session');
-  state.summary=sess.summary;state.meta=sess;renderNotice();await refreshAll();loadSessions();show('results');
+  state.summary=sess.summary;state.meta=sess;renderNotice();await refreshAll();loadSessions();
+  if(new URLSearchParams(location.search).get('view')==='lots'){openLots();}else{show('results');}
 }catch(e){/* stay on upload */}})();
 
 /* ── upload ── */
