@@ -292,6 +292,7 @@
       <button class="btn sm" onclick="closeLots()">‹ Back to contacts</button>
       <h2 style="margin:0;font-size:17px">🔨 Lot reconciliation — auction results</h2>
       <div class="spacer"></div>
+      <button class="btn" id="lotsRefreshBtn" onclick="refreshLots()" title="Re-fetch the lots from Odoo and re-match this session's auction results">⟳ Refresh lots</button>
       <button class="btn" onclick="lotsDryRun()">👁 Preview import (dry-run)</button>
       <button class="btn primary" id="lotsPushBtn" onclick="lotsPush()">🔨 Import hammer prices</button>
     </div>
@@ -712,6 +713,13 @@ const LOT_BADGE={ready:['st-update_ready','Ready'],missing_lot:['st-rejected','M
   duplicate_lot:['st-needs_review','Duplicate'],conflict:['st-needs_review','Conflict'],
   already_imported:['st-pushed_to_odoo','Imported'],no_result:['st-existing_ok','No result']};
 function openLots(){show('lots');loadLots();}
+async function refreshLots(){
+  const b=$('#lotsRefreshBtn');if(b.disabled)return;
+  b.disabled=true;const orig=b.textContent;b.textContent='⟳ Refreshing…';
+  await loadLots();
+  toast('⟳ Lots re-fetched from Odoo and re-matched');
+  b.disabled=false;b.textContent=orig;
+}
 function closeLots(){show(state.summary?'results':'upload');}
 async function loadLots(){
   $('#lotRows').innerHTML='<tr><td colspan="7" class="muted" style="padding:18px">Matching lots against Odoo…</td></tr>';
@@ -802,15 +810,22 @@ function matchHTML(d){
     return d.classification==='new'?`<div class="evid"><h4>Why is this NEW?</h4>
       <div class="muted">No master client shares this contact's email, phone or name — there was nothing to match against.</div></div>`:'';
   const NAMES={email:'Email',phone:'Phone',name:'Name',address:'Address',postcode:'Postcode',country:'Country',company:'Company'};
+  /* 8-Jul review: a checklist, not raw percentages — "any change of postcode
+     makes it completely different; there's no spectrum". A fuzzy % is shown
+     only for name/address close-matches, where similarity means something. */
+  const FUZZY=new Set(['name','address','company']);
+  const verdict=(f,v)=>{
+    if(v.exact||v.similarity>=0.99)return['<span class="ok">✓</span>','Match','var(--good)'];
+    if(FUZZY.has(f)&&v.similarity>=0.5)return['<span style="color:var(--warn);font-weight:700">≈</span>',`Close match · ${Math.round(v.similarity*100)}%`,'var(--warn)'];
+    return['<span style="color:var(--bad);font-weight:700">✗</span>','Different','var(--bad)'];
+  };
   const rows=Object.entries(ev.fields).sort((a,b)=>b[1].weight-a[1].weight).map(([f,v])=>{
-    const pct=Math.round(v.similarity*100);
-    const mark=v.exact?'<span class="ok">✓</span>':`<span class="pc">${pct}%</span>`;
+    const[mark,label,color]=verdict(f,v);
     return `<div class="evrow">${mark}<span style="min-width:130px">${NAMES[f]||f}</span>
-      <div class="ebar"><i style="width:${pct}%"></i></div>
-      <span class="pc mono">${pct}%</span>
-      <span class="pc mono" title="This field contributes ${Math.round(v.weight*100)}% of the weighting">w ${Math.round(v.weight*100)}%</span></div>`;
+      <span style="color:${color};font-weight:600">${label}</span>
+      <span class="pc mono" style="margin-left:auto" title="This field contributes ${Math.round(v.weight*100)}% of the overall weighting">weight ${Math.round(v.weight*100)}%</span></div>`;
   }).join('');
-  return `<div class="evid"><h4>Why this match score?</h4>${rows}
+  return `<div class="evid"><h4>Match checklist</h4>${rows}
     <div class="evrow evtotal"><span>Overall match</span><span style="margin-left:auto">${Math.round(d.confidence*100)}%</span></div>
     ${ev.strong_id_floor_applied?`<div class="muted" style="margin-top:6px;font-size:11.5px">${esc(ev.note).replace(/confidence/gi,'match score')}</div>`:''}</div>`;
 }
