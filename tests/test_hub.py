@@ -9,7 +9,7 @@ def test_hub_is_public_and_lists_all_works():
     r = tc.get("/hub")                      # no auth required by design
     assert r.status_code == 200
     body = r.text
-    for needle in ("Contact Reconciliation", "Bidder Evaluation", "Odoo Integration",
+    for needle in ("Contact Reconciliation", "Bidder Evaluation", "Lot Reconciliation",
                    "/reconcile", "/bidder", "synthetic"):
         assert needle in body, f"hub page missing: {needle}"
 

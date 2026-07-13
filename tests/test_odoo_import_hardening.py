@@ -217,3 +217,62 @@ class TestSessionHealing:
         assert by_field["town"]["incoming"] == "Enniskerry"
         assert by_field["name"]["incoming"] == "Fintan O Byrne"
         assert d["changed_fields"] == []
+
+
+# ── 6-Jul meeting: post-push verification (read-back from Odoo) ───────────────
+class TestPushVerification:
+    def _client_with_read(self, read_row):
+        cli = RecordingClient()
+        cli.responses[("res.partner", "read")] = [read_row]
+        return cli
+
+    def test_readback_confirms_written_fields(self, monkeypatch):
+        monkeypatch.setenv("RECON_ALLOW_ODOO_WRITE", "1")
+        cli = self._client_with_read(
+            {"id": 1001, "name": "Karen Namesake", "email": "k@example.test",
+             "street": "5 New Road", "ref": "BC-9001"})
+        imp = OdooImporter(client=cli)
+        op = ImportOp("create", "t", "BC-9001", "Karen Namesake",
+                      {"name": "Karen Namesake", "ref": "BC-9001",
+                       "email": "k@example.test", "street": "5 New Road"})
+        result = imp.execute([op], dry_run=False)
+        d = result["operations"][0]
+        assert d["verified"] is True
+        assert d["verify_mismatch"] == {}
+        assert result["summary"]["verified"] == 1
+        assert result["summary"]["verify_failed"] == 0
+
+    def test_readback_mismatch_is_flagged_not_hidden(self, monkeypatch):
+        monkeypatch.setenv("RECON_ALLOW_ODOO_WRITE", "1")
+        cli = self._client_with_read(
+            {"id": 1001, "name": "Karen Namesake", "email": "OTHER@example.test",
+             "street": "5 New Road", "ref": "BC-9001"})
+        imp = OdooImporter(client=cli)
+        op = ImportOp("create", "t", "BC-9001", "Karen Namesake",
+                      {"name": "Karen Namesake", "ref": "BC-9001",
+                       "email": "k@example.test", "street": "5 New Road"})
+        result = imp.execute([op], dry_run=False)
+        d = result["operations"][0]
+        assert d["verified"] is False
+        assert "email" in d["verify_mismatch"]
+        assert result["summary"]["verify_failed"] == 1
+
+    def test_many2one_readback_compares_by_id(self, monkeypatch):
+        monkeypatch.setenv("RECON_ALLOW_ODOO_WRITE", "1")
+        cli = self._client_with_read(
+            {"id": 1001, "name": "K", "ref": "BC-9001",
+             "state_id": [7, "Wicklow (IE)"]})
+        imp = OdooImporter(client=cli)
+        op = ImportOp("create", "t", "BC-9001", "K",
+                      {"name": "K", "ref": "BC-9001", "state_id": 7})
+        result = imp.execute([op], dry_run=False)
+        assert result["operations"][0]["verified"] is True
+
+    def test_dry_run_never_verifies(self):
+        cli = RecordingClient()
+        imp = OdooImporter(client=cli)
+        op = ImportOp("create", "t", "BC-9001", "K",
+                      {"name": "K", "ref": "BC-9001", "email": "k@example.test"})
+        result = imp.execute([op], dry_run=True)
+        assert result["operations"][0]["verified"] is None
+        assert all(c[1] != "read" for c in cli.calls)

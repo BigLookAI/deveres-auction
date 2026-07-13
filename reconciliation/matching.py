@@ -86,10 +86,12 @@ def _field_similarities(inc: dict, mas: dict) -> dict:
                              mas.get("address3", ""), mas.get("town", ""))
     if ia and ma:
         sims["address"] = token_set_ratio(ia, ma)
-    # postcode
+    # postcode — BINARY by client decision (8-Jul): "any change of postcode
+    # makes the postcode completely different — there's no spectrum there".
+    # Partial character overlap must not inflate the match score.
     ipc, mpc = N.normalize_postcode(inc.get("postcode", "")), N.normalize_postcode(mas.get("postcode", ""))
     if ipc and mpc:
-        sims["postcode"] = 1.0 if ipc == mpc else ratio(ipc, mpc)
+        sims["postcode"] = 1.0 if ipc == mpc else 0.0
     # country
     ic, mc = N.normalize_country(inc.get("country", "")), N.normalize_country(mas.get("country", ""))
     if ic and mc:

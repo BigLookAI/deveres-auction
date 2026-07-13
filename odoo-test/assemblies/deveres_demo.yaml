@@ -1,0 +1,61 @@
+# deVeres PUBLIC DEMO — SOR Assembly Profile
+# ============================================
+# Derived from BL-Odoo-System-of-Record/assemblies/auction_house_demo.yaml
+# (the Assembly file shared for the deVeres auction-house setup), retargeted
+# at the public demo sandbox (container deveres-odoo-test, db deveres_demo).
+#
+# Installs the full SOR auction stack:
+#   - Contact roles (bidders, buyers, sellers, artists, institutions)
+#   - Artwork as storable unique-object product
+#   - Viewing locations and rooms (salerooms, storage)
+#   - Asset paradigm (unique-object suppression for inventory UI)
+#   - Business model (commerce UI, commercial model)
+#   - Physical movement tracking (lot intake, dispatch to buyers)
+#   - Legal agreements (consignment agreements lifecycle)
+#   - Events (sale events and auction contexts)
+#   - Lotting (auction catalogue management, lot lifecycle)
+#
+# Auto-installed bridges (not listed in install:, pulled in by Odoo itself):
+#   sor_artwork_contact_roles, sor_locations_artwork, sor_locations_external,
+#   sor_asset_paradigm_artwork, sor_asset_paradigm_baseline,
+#   sor_business_model_non_commercial, sor_tracking_asset_paradigm,
+#   sor_tracking_artwork, sor_events_auction, sor_commercial_auction_house,
+#   sor_bidding, sor_lotting_contact_roles
+
+assembly: deveres_demo
+version: "1.0"
+
+target:
+  container: deveres-odoo-test          # official odoo:19 image
+  db: deveres_demo
+  addons_path: "/mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons"
+  db_host: db
+  db_port: 5432
+  db_user: odoo
+  db_password: odoo_test_2026
+
+install:
+  - sor_contact_roles
+  - sor_artwork
+  - sor_locations
+  - sor_asset_paradigm
+  - sor_business_model
+  - sor_tracking
+  - sor_legal_agreement
+  - sor_events
+  - sor_lotting
+
+# Expected auto-installs — the installer verifies these landed too.
+expect_auto:
+  - sor_artwork_contact_roles
+  - sor_locations_artwork
+  - sor_locations_external
+  - sor_asset_paradigm_artwork
+  - sor_asset_paradigm_baseline
+  - sor_business_model_non_commercial
+  - sor_tracking_asset_paradigm
+  - sor_tracking_artwork
+  - sor_events_auction
+  - sor_commercial_auction_house
+  - sor_bidding
+  - sor_lotting_contact_roles

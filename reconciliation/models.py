@@ -86,6 +86,7 @@ class ReconResult:
     history:        list[dict] = field(default_factory=list)  # state-transition audit trail
     match_evidence: dict = field(default_factory=dict)   # per-field similarity breakdown
     review_reason:  str = ""                              # why NEEDS_REVIEW fired (rule name)
+    validation_issues: list[dict] = field(default_factory=list)  # Phase 4: typed field checks
 
     def __post_init__(self):
         if self.state is None:
@@ -118,6 +119,8 @@ class ReconResult:
             "state": self.state.value,
             "edited": bool(self.edits),
             "review_reason": self.review_reason,
+            "match_score": round(self.confidence, 4),   # UI name (meeting 7-Jul)
+            "invalid": any(i.get("blocking") for i in self.validation_issues),
         }
         if full:
             base["diffs"] = [d.to_dict() for d in self.diffs]
@@ -128,6 +131,7 @@ class ReconResult:
             base["approved_values"] = self.approved_values
             base["history"] = self.history
             base["match_evidence"] = self.match_evidence
+            base["validation_issues"] = self.validation_issues
         return base
 
 
@@ -161,6 +165,7 @@ def recon_result_from_dict(d: dict) -> "ReconResult":
         history=d.get("history", []) or [],
         match_evidence=d.get("match_evidence", {}) or {},
         review_reason=d.get("review_reason", ""),
+        validation_issues=d.get("validation_issues", []) or [],
     )
 
 
