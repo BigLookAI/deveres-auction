@@ -93,6 +93,8 @@ class EvaluateResponse(BaseModel):
     reports_written: int
     emails_drafted:  int
     results:         list[BidderSummary]
+    data_source:     str = "json"      # "odoo" = live system of record
+    source_note:     str = ""          # loud fallback explanation, if any
 
 class DecisionRequest(BaseModel):
     decision: str  # "approve" | "reject" | "review"
@@ -129,12 +131,20 @@ def evaluate(req: EvaluateRequest):
     bidders_path   = req.bidders_path   or str(BIDDERS_PATH)
     past_lots_path = req.past_lots_path or (str(PAST_LOTS_PATH) if PAST_LOTS_PATH.exists() else None)
 
-    if req.use_odoo:
-        from pipeline.odoo_client import OdooClient
-        client     = OdooClient()
-        lots       = client.fetch_upcoming_lots()
-        profiles   = client.fetch_bidder_profiles()
-        past_lots  = []
+    # Pilot close-out: the evaluation runs on LIVE Odoo data (lots + bidding
+    # history from sor.lot/sor.bid) when requested or when the server is
+    # configured with BIDDER_DATA_SOURCE=odoo. A failure falls back to the
+    # JSON fixtures LOUDLY (source_note in the response) — never silently.
+    use_odoo = req.use_odoo or os.environ.get("BIDDER_DATA_SOURCE", "").lower() == "odoo"
+    data_source, source_note = "json", ""
+    if use_odoo:
+        try:
+            from pipeline.odoo_source import load_from_odoo
+            lots, profiles, past_lots = load_from_odoo()
+            data_source = "odoo"
+        except Exception as exc:                          # noqa: BLE001
+            source_note = f"Odoo data source unavailable ({type(exc).__name__}) — using the JSON fixtures."
+            lots, profiles, past_lots = load_from_json(lots_path, bidders_path, past_lots_path)
     else:
         lots, profiles, past_lots = load_from_json(lots_path, bidders_path, past_lots_path)
 
@@ -199,6 +209,8 @@ def evaluate(req: EvaluateRequest):
         reports_written = len(results),
         emails_drafted  = drafted,
         results         = [_to_summary(r) for r in results],
+        data_source     = data_source,
+        source_note     = source_note,
     )
 
 
