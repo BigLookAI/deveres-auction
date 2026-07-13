@@ -132,3 +132,35 @@ RECON_ENABLE_DEMO_RESET=1
 ```
 
 The Blue Cubes exports are static inputs and are never touched.
+
+## 9. Switching the public app between datasets (13-Jul-2026)
+
+Two databases live side-by-side in the sandbox postgres:
+
+| db | contents | public Odoo web (:8443) |
+|---|---|---|
+| `deveres_demo` | 216 synthetic contacts, seeded demo auctions | YES (`dbfilter = ^deveres_demo$`) |
+| `deveres_april` | the REAL April backup (13,652 contacts, 162 lots) | never — RPC-only from the app |
+
+Restore the April db beside the demo (safe: does not touch `deveres_demo`):
+
+```bash
+DEVERES_TEST_DB=deveres_april \
+DEVERES_TEST_ADMIN_PASSWORD='<strong password>' \
+./odoo-test/restore.sh /path/to/odoo_deveres_april_test_<stamp>.zip
+# then: upgrade the 14 assembly modules with -d deveres_april,
+# and generate a fresh API key (keys die with every restore).
+```
+
+Point the app at a dataset by editing `.env` and restarting:
+
+```bash
+ODOO_DB=deveres_april          # or deveres_demo
+ODOO_PASSWORD=<api key generated in THAT db>
+RECON_PASS=<rotated — NEVER the shareable demo password with client data>
+```
+
+Switching to `deveres_april` automatically: hides the shared-credentials note
+on the landing page, disables (and hides) the ↺ Reset demo data button, and
+keeps the public Odoo web UI pinned to the demo db via dbfilter. Switching
+back to the demo restores all three.
