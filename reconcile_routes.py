@@ -352,6 +352,84 @@ def health():
             "last_push_at": _sync_status().get("last_push_at")}
 
 
+@router.post("/demo/reset")
+def demo_reset(user: str = Depends(require_editor)):
+    """13-Jul (1.11pm) meeting: "an easy way to revert the test data back to
+    its original state so I can test it from scratch as well." One click:
+
+      1. Odoo demo data → pristine (scripts/reset_demo_state.py: push-created
+         BC-… partners deleted, seeded contacts restored to canonical values,
+         demo lots back to pre-sale — hammer 0, no buyer, state live),
+      2. app state → unreconciled (live session, session snapshots and the
+         staging DB are ARCHIVED to output/demo-archive-<ts>/, never deleted),
+      3. master re-pulled from Odoo so the next upload starts clean.
+
+    Double-gated: RECON_ENABLE_DEMO_RESET=1 must be set on the server AND the
+    configured ODOO_DB must be the demo database — this route can never touch
+    a real client dataset. The Blue Cubes export is static and untouched.
+    """
+    if os.environ.get("RECON_ENABLE_DEMO_RESET") != "1":
+        raise HTTPException(404, "Demo reset is not enabled on this server.")
+    db = os.environ.get("ODOO_DB", "")
+    if not db.startswith("deveres_demo"):
+        raise HTTPException(400, f"Refusing: ODOO_DB={db or '(unset)'!r} is not "
+                                 f"the demo database.")
+    import shutil
+    import subprocess
+    import sys as _sys
+    cid = uuid.uuid4().hex[:12]
+    t0 = time.perf_counter()
+
+    # 1. Odoo side
+    r = subprocess.run([_sys.executable,
+                        str(BASE_DIR / "scripts" / "reset_demo_state.py")],
+                       capture_output=True, text=True, timeout=600,
+                       cwd=str(BASE_DIR))
+    if r.returncode:
+        raise HTTPException(502, "Odoo demo reset failed: "
+                                 + (r.stderr or r.stdout)[-400:])
+    odoo_log = [l for l in r.stdout.splitlines() if l.strip()]
+
+    # 2. app side — archive, then start from nothing
+    global _staging
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    archive = BASE_DIR / "output" / f"demo-archive-{stamp}"
+    archive.mkdir(parents=True, exist_ok=True)
+    archived = []
+    candidates = [SESSION_PATH]
+    if SESSIONS_DIR.exists():
+        candidates += sorted(SESSIONS_DIR.glob("*.json"))
+    staging_path = Path(_get_staging().path)
+    _staging = None                      # short-lived connections — safe to move
+    if staging_path.exists():
+        candidates.append(staging_path)
+    for p in candidates:
+        if p.exists():
+            shutil.move(str(p), str(archive / p.name))
+            archived.append(p.name)
+    _state.update({"results": [], "summary": None, "filename": None,
+                   "kind": None, "session_id": None, "loaded_from_disk": False})
+
+    # 3. fresh master
+    global _master, _engine
+    try:
+        repo = _load_master()
+        from reconciliation.odoo_fields import get_schema, invalidate_cache
+        invalidate_cache()
+        _master, _engine = repo, ReconciliationEngine(repo, schema=get_schema(repo.records))
+    except Exception as exc:                              # noqa: BLE001
+        raise HTTPException(502, f"Demo reset done but master reload failed: {exc}")
+
+    ms = round((time.perf_counter() - t0) * 1000)
+    _audit("demo_reset", cid=cid, actor=user, archived=archived,
+           archive_dir=archive.name, odoo_summary=odoo_log[-3:], duration_ms=ms)
+    log.info("demo-reset[%s] by %s: %d file(s) archived, master %d records, %dms",
+             cid, user, len(archived), len(repo), ms)
+    return {"reset": True, "correlation_id": cid, "duration_ms": ms,
+            "archived": archived, "archive_dir": archive.name,
+            "odoo": odoo_log, "master_records": len(repo)}
+
+
 @router.post("/master/reload")
 def master_reload(user: str = Depends(require_editor)):
     """Re-fetch the master from the configured source without a restart —
@@ -453,7 +531,10 @@ def sync_status():
     return {"api": {"odoo_configured": bool(os.environ.get("ODOO_URL")),
                     "master_source_setting": _master_source_setting(),
                     "master_fallback": _state.get("master_fallback"),
-                    "write_enabled": os.environ.get("RECON_ALLOW_ODOO_WRITE") == "1"},
+                    "write_enabled": os.environ.get("RECON_ALLOW_ODOO_WRITE") == "1",
+                    "demo_reset_enabled":
+                        os.environ.get("RECON_ENABLE_DEMO_RESET") == "1"
+                        and os.environ.get("ODOO_DB", "").startswith("deveres_demo")},
             "master": {"source": eng.master.source, "records": len(eng.master),
                        "loaded_at": eng.master.loaded_at},
             "last_refresh": {"at": s.get("last_refresh_at"),

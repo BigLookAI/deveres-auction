@@ -476,3 +476,36 @@ class TestRefreshAndSyncStatus:
         s2 = client.get("/reconcile/sync-status", headers=ADMIN).json()
         assert s2["last_refresh"]["at"]
         assert s2["last_refresh"]["by"] == "admin@deveres.ie"
+
+
+class TestDemoReset:
+    """13-Jul (1.11pm meeting): one-click revert of the demo test data.
+    Double-gated — the route must be explicitly enabled AND pointed at the
+    demo database; anything else is refused before any work happens."""
+
+    def test_disabled_by_default_404(self, client, monkeypatch):
+        monkeypatch.delenv("RECON_ENABLE_DEMO_RESET", raising=False)
+        r = client.post("/reconcile/demo/reset", headers=ADMIN)
+        assert r.status_code == 404
+
+    def test_enabled_but_non_demo_db_refused(self, client, monkeypatch):
+        monkeypatch.setenv("RECON_ENABLE_DEMO_RESET", "1")
+        monkeypatch.setenv("ODOO_DB", "deveres")          # the REAL dataset
+        r = client.post("/reconcile/demo/reset", headers=ADMIN)
+        assert r.status_code == 400
+        assert "not the demo database" in r.json()["detail"]
+
+    def test_viewer_cannot_reset(self, client, monkeypatch):
+        monkeypatch.setenv("RECON_ENABLE_DEMO_RESET", "1")
+        monkeypatch.setenv("ODOO_DB", "deveres_demo")
+        r = client.post("/reconcile/demo/reset", headers=VIEWER)
+        assert r.status_code == 403
+
+    def test_sync_status_advertises_the_flag(self, client, monkeypatch):
+        monkeypatch.setenv("RECON_ENABLE_DEMO_RESET", "1")
+        monkeypatch.setenv("ODOO_DB", "deveres_demo")
+        s = client.get("/reconcile/sync-status", headers=ADMIN).json()
+        assert s["api"]["demo_reset_enabled"] is True
+        monkeypatch.setenv("ODOO_DB", "deveres")
+        s = client.get("/reconcile/sync-status", headers=ADMIN).json()
+        assert s["api"]["demo_reset_enabled"] is False

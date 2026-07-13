@@ -247,6 +247,7 @@
   <span id="syncTimes"></span>
   <div class="spacer"></div>
   <button class="btn sm" id="refreshBtn" title="Pull the latest contacts from Odoo and re-reconcile this session (your approvals, edits and staged changes are preserved)">⟳ Refresh contacts</button>
+  <button class="btn sm danger" id="demoResetBtn" style="display:none" title="Revert the DEMO dataset to its original state: seeded contacts restored, push-created clients removed, lots back to pre-sale (no hammer, no buyer), reconciliation session archived. The Blue Cubes export is untouched.">↺ Reset demo data</button>
 </div>
 
 <div class="wrap">
@@ -413,10 +414,22 @@ async function loadSync(){
       +` · pending push <b>${pend}</b>`
       +(s.failed_push?` · <span style="color:var(--bad)">failed ${s.failed_push} — re-push retries them</span>`:'');
     $('#masterCount').textContent=s.master.records.toLocaleString();
+    if(s.api.demo_reset_enabled)$('#demoResetBtn').style.display='';
     if(s.api.master_fallback&&!window._warnedFallback){window._warnedFallback=1;toast('⚠ Odoo master unavailable — reconciling against the CSV snapshot');}
   }catch(e){}
 }
 loadSync();setInterval(loadSync,60000);
+
+/* ── Reset demo data (13-Jul: revert the test set so it can be re-run from scratch) ── */
+$('#demoResetBtn').onclick=async function(){
+  if(!confirm('Reset the DEMO dataset to its original state?\n\n• seeded contacts restored, push-created clients removed\n• lots back to pre-sale (hammer cleared, no buyer, state Live)\n• this reconciliation session is archived and cleared\n\nThe Blue Cubes export file is untouched. Continue?'))return;
+  const b=this;b.disabled=true;const orig=b.textContent;b.textContent='↺ Resetting…';
+  try{
+    const d=await jpost('/reconcile/demo/reset');
+    toast(`↺ Demo reset complete — ${d.master_records.toLocaleString()} pristine contacts, session archived`);
+    setTimeout(()=>location.reload(),1200);
+  }catch(e){toast('✗ '+e.message);b.disabled=false;b.textContent=orig;}
+};
 
 /* ── Refresh Contacts ── */
 $('#refreshBtn').onclick=async function(){
