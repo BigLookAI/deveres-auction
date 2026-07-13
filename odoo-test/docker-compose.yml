@@ -36,6 +36,26 @@ services:
       - deveres-odoo-test-data:/var/lib/odoo
       - ./addons:/mnt/extra-addons:ro
       - ./odoo.conf:/etc/odoo/odoo.conf:ro
+  # April REVIEW web endpoint — opt-in (docker compose --profile april up -d).
+  # Same postgres + addons + data volume (filestore subdirs are per-db); its
+  # own conf pins the web UI to deveres_april only. Runs on :8073, published
+  # via Tailscale Funnel https=8444 on the deveres node.
+  odoo-april:
+    image: odoo:19
+    container_name: deveres-odoo-april
+    profiles: ["april"]
+    depends_on:
+      db:
+        condition: service_healthy
+    ports: ["8073:8069"]
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo_test_2026
+    volumes:
+      - deveres-odoo-test-data:/var/lib/odoo
+      - ./addons:/mnt/extra-addons:ro
+      - ./odoo-april.conf:/etc/odoo/odoo.conf:ro
 volumes:
   deveres-odoo-test-db:
   deveres-odoo-test-data:
