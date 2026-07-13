@@ -105,6 +105,22 @@ if lot_ids:
        "auction_result": False})
     print(f"reset {len(lot_ids)} demo lots (hammer 0, buyer cleared, state live)")
 
+# 5b. no lot ANYWHERE in the demo db keeps sale results — ad-hoc lots created
+#     during meeting walkthroughs (e.g. the 'Test' auction) must also revert,
+#     or the next push-verification starts from a dirty baseline. Their state
+#     falls back to 'catalogued' (an ad-hoc lot's intended state is unknown,
+#     but 'sold' is certainly not original).
+stray = x("sor.lot", "search",
+          ["|", "|", ["hammer_price", ">", 0], ["buyer_id", "!=", False],
+           ["state", "=", "sold"]])
+if stray:
+    x("sor.lot", "write", stray,
+      {"hammer_price": 0.0, "buyer_id": False, "auction_result": False})
+    sold = x("sor.lot", "search", [["id", "in", stray], ["state", "=", "sold"]])
+    if sold:
+        x("sor.lot", "write", sold, {"state": "catalogued"})
+    print(f"cleared sale results on {len(stray)} stray lot(s) outside the demo auction")
+
 # summary of the records the demo revolves around
 for ref in ("5003", "5010", "5011", "5012"):
     pid = x("res.partner", "search", [["ref", "=", ref]], limit=1)
