@@ -79,3 +79,36 @@ Health checks: `GET :8003/health` (no auth) → `{"status":"ok","product":"conta
   lifecycle fields default from the classification).
 * **After a live Odoo push**: reversal is an Odoo-side operation (the audit
   log + staging rows record exactly what was written, per partner id).
+
+## 7. Clean Odoo environment rebuild (production launch, 13-Jul-2026)
+
+The Assembly YAML is the source of truth for the Odoo side. Never install
+modules by hand — rebuild:
+
+```bash
+# 1. addons mount = EXACTLY the assembly module set, from the latest
+#    BL-Odoo-System-of-Record checkout (auto_install containment: sor_bidding
+#    would reinstall itself on any registry update if its code were present)
+./odoo-test/sync_addons.sh odoo-test/assemblies/deveres_april.yaml \
+    ~/Documents/Cimelium/BL-Odoo-System-of-Record
+
+# 2. fresh containers + restore the real backup
+cd odoo-test && docker compose down -v && \
+    ./restore.sh ~/Downloads/odoo_deveres_april_test_<stamp>.zip && cd ..
+
+# 3. upgrade to the latest module code, run the assembly, drop Inventory,
+#    verify (38 checks), then the full real-data workflow — one command:
+./scripts/launch_simulation.sh ~/Downloads/odoo_deveres_april_test_<stamp>.zip
+```
+
+`scripts/launch_simulation.sh` is the Phase-22 launch rehearsal: clean
+rebuild → 38 environment checks → contacts upload→approve→push→refresh
+(must converge in ONE pass) → lots hammer+buyer+sold push (verified,
+idempotent). It exits non-zero on any failure.
+
+Stack parity (deveres.yaml v1.1, Sprint 24): **no** sor_bidding, artwork,
+locations, tracking, legal-agreement, and **no Inventory (stock)** — the
+13-Jul meeting walkthrough uninstalled exactly these. `buyer_id` lives
+directly on `sor.lot` (visible below Hammer Price once the lot is Sold);
+`lot_suffix` no longer exists upstream (suffix lots are combined in
+`lot_number`, e.g. "25A", matching Blue Cubes).

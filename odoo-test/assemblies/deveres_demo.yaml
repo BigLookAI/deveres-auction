@@ -1,29 +1,24 @@
 # deVeres PUBLIC DEMO — SOR Assembly Profile
 # ============================================
-# Derived from BL-Odoo-System-of-Record/assemblies/auction_house_demo.yaml
-# (the Assembly file shared for the deVeres auction-house setup), retargeted
-# at the public demo sandbox (container deveres-odoo-test, db deveres_demo).
+# Since 13-Jul-2026 this mirrors the CLIENT production stack:
+# BL-Odoo-System-of-Record/assemblies/deveres.yaml v1.1 (Sprint 24), the
+# YAML supplied for the deVeres setup — retargeted at the public demo
+# sandbox (container deveres-odoo-test, db deveres_demo).
 #
-# Installs the full SOR auction stack:
-#   - Contact roles (bidders, buyers, sellers, artists, institutions)
-#   - Artwork as storable unique-object product
-#   - Viewing locations and rooms (salerooms, storage)
-#   - Asset paradigm (unique-object suppression for inventory UI)
-#   - Business model (commerce UI, commercial model)
-#   - Physical movement tracking (lot intake, dispatch to buyers)
-#   - Legal agreements (consignment agreements lifecycle)
-#   - Events (sale events and auction contexts)
-#   - Lotting (auction catalogue management, lot lifecycle)
-#
-# Auto-installed bridges (not listed in install:, pulled in by Odoo itself):
-#   sor_artwork_contact_roles, sor_locations_artwork, sor_locations_external,
-#   sor_asset_paradigm_artwork, sor_asset_paradigm_baseline,
-#   sor_business_model_non_commercial, sor_tracking_asset_paradigm,
-#   sor_tracking_artwork, sor_events_auction, sor_commercial_auction_house,
-#   sor_bidding, sor_lotting_contact_roles
+# Parity notes (13-Jul meeting):
+#   - sor_bidding is intentionally NOT installed — buyer/sold live directly
+#     on sor.lot (Sprint 24 buyer_id fallback path). The bidder-eval demo
+#     falls back to its sample JSON dataset (loud fallback by design).
+#   - No artwork / locations / tracking / legal-agreement verticals, and no
+#     Inventory (stock): the client's instance doesn't run them, and their
+#     presence changed the sor.lot form (the "buyer field missing below
+#     hammer price" mismatch seen in the meeting).
+#   - The addons mount must contain ONLY this module set (sync_addons.sh) —
+#     sor_bidding is auto_install and would return on any registry update
+#     if its code were present.
 
 assembly: deveres_demo
-version: "1.0"
+version: "1.1"
 
 target:
   container: deveres-odoo-test          # official odoo:19 image
@@ -35,27 +30,20 @@ target:
   db_password: odoo_test_2026
 
 install:
+  - sor_technical_menu
   - sor_contact_roles
-  - sor_artwork
-  - sor_locations
-  - sor_asset_paradigm
   - sor_business_model
-  - sor_tracking
-  - sor_legal_agreement
   - sor_events
   - sor_lotting
+  - sor_auction_documents
+  - sor_accounting
+  - sor_buyer_invoice
 
 # Expected auto-installs — the installer verifies these landed too.
 expect_auto:
-  - sor_artwork_contact_roles
-  - sor_locations_artwork
-  - sor_locations_external
-  - sor_asset_paradigm_artwork
-  - sor_asset_paradigm_baseline
   - sor_business_model_non_commercial
-  - sor_tracking_asset_paradigm
-  - sor_tracking_artwork
   - sor_events_auction
   - sor_commercial_auction_house
-  - sor_bidding
   - sor_lotting_contact_roles
+  - sor_buyer_invoice_auction_house
+  - sor_buyer_invoice_contact_roles

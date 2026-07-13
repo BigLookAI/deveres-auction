@@ -8,10 +8,11 @@
 #
 #   ./sync_addons.sh assemblies/deveres_april.yaml [path-to-SOR-repo]
 set -euo pipefail
-cd "$(dirname "$0")"
 
 ASSEMBLY=${1:?usage: sync_addons.sh <assembly.yaml> [sor-repo-path]}
+ASSEMBLY="$(cd "$(dirname "$ASSEMBLY")" && pwd)/$(basename "$ASSEMBLY")"
 SOR_REPO=${2:-"$HOME/Documents/Cimelium/BL-Odoo-System-of-Record"}
+cd "$(dirname "$0")"
 [ -d "$SOR_REPO/addons" ] || { echo "No addons/ in $SOR_REPO"; exit 1; }
 
 MODULES=$(python3 - "$ASSEMBLY" <<'PY'
