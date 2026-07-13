@@ -56,8 +56,20 @@ def flags() -> dict:
 
 
 # ── Odoo side ─────────────────────────────────────────────────────────────────
-LOT_FIELDS = ["id", "lot_number", "lot_suffix", "lot_title", "state",
+# lot_suffix was REMOVED upstream in sor_events_auction 19.0.1.1.0 — suffix
+# lots ("25A") now live combined in lot_number, matching the Blue Cubes export
+# shape. Older databases may still carry the split field, so it is requested
+# only when the target schema has it.
+LOT_FIELDS = ["id", "lot_number", "lot_title", "state",
               "hammer_price", "buyer_id", "auction_id"]
+
+
+def _lot_fields(client) -> list[str]:
+    try:
+        schema = client._execute("sor.lot", "fields_get", ["lot_suffix"])
+    except Exception:                                     # noqa: BLE001
+        schema = {}
+    return LOT_FIELDS + (["lot_suffix"] if "lot_suffix" in (schema or {}) else [])
 
 import re as _re
 
@@ -81,7 +93,7 @@ def fetch_lots(client=None, auction_id: int | None = None) -> list[dict]:
         client = OdooClient()
     domain = [["auction_id", "=", int(auction_id)]] if auction_id else []
     rows = client._execute("sor.lot", "search_read", domain,
-                           fields=LOT_FIELDS, limit=10000, order="id")
+                           fields=_lot_fields(client), limit=10000, order="id")
     for r in rows:
         r["lot_number"] = str(r.get("lot_number") or "").strip()
         r["lot_suffix"] = str(r.get("lot_suffix") or "").strip()
@@ -268,6 +280,19 @@ def plan_updates(results: list[LotResult]) -> list[dict]:
     return ops
 
 
+def bidding_installed(client) -> bool:
+    """True when the target Odoo carries the sor_bidding module. The deVeres
+    production assembly (deveres.yaml v1.1, Sprint 24) intentionally ships
+    WITHOUT sor_bidding — buyer/sold live directly on sor.lot there, and no
+    sor.bid record can (or should) be written."""
+    try:
+        return bool(client._execute(
+            "ir.module.module", "search",
+            [["name", "=", "sor_bidding"], ["state", "=", "installed"]], limit=1))
+    except Exception:                                     # noqa: BLE001
+        return False
+
+
 def execute_updates(ops: list[dict], client=None, dry_run: bool = True) -> dict:
     """Apply the lot updates. Per-op isolation + read-back verification, same
     safety envelope as the contact importer."""
@@ -276,6 +301,7 @@ def execute_updates(ops: list[dict], client=None, dry_run: bool = True) -> dict:
     if client is None and not dry_run:
         from pipeline.odoo_client import OdooClient
         client = OdooClient()
+    can_bid = bidding_installed(client) if not dry_run else False
     written = errors = verified = 0
     for op in ops:
         op["dry_run"] = dry_run
@@ -288,10 +314,14 @@ def execute_updates(ops: list[dict], client=None, dry_run: bool = True) -> dict:
             # Sold-workflow decision (13-Jul): when the completion writes a
             # buyer + sold, also record the WINNING BID so the SOR bidding
             # model stays canonical and the evaluation history accumulates.
+            # Only where sor_bidding exists — the deVeres production stack
+            # ships without it, and the lot write alone is complete there.
             if op["values"].get("state") == "sold" and op["values"].get("buyer_id"):
-                if not client._execute("sor.bid", "search",
-                                       [["lot_id", "=", op["lot_id"]],
-                                        ["is_winning_bid", "=", True]], limit=1):
+                if not can_bid:
+                    op["winning_bid_skipped"] = "sor_bidding not installed"
+                elif not client._execute("sor.bid", "search",
+                                         [["lot_id", "=", op["lot_id"]],
+                                          ["is_winning_bid", "=", True]], limit=1):
                     client._execute("sor.bid", "create", {
                         "lot_id": op["lot_id"],
                         "bidder_id": op["values"]["buyer_id"],
