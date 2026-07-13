@@ -89,6 +89,17 @@ def landing():
 </body></html>""")
 
 
+@app.get("/april")
+def april_redirect():
+    """Foolproof link to the April review Odoo. Browsers default a typed
+    host:8444 to plain http, and the Funnel port is TLS-only — the plaintext
+    request gets a bare 400 that renders as a black page (Fintan, 13-Jul
+    7:11pm). This path rides the main https:// site, so the scheme is always
+    right, and hands over to the review endpoint explicitly."""
+    from fastapi.responses import RedirectResponse as _RR
+    return _RR("https://deveres.tail915505.ts.net:8444/web/login", status_code=307)
+
+
 @app.get("/hub", response_class=HTMLResponse)
 def hub():
     """Public works hub (6-Jul request): one page connecting every deVeres
