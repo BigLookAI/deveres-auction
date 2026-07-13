@@ -1,6 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_product_template_artwork_user,product.template.artwork.user,model_product_template,base.group_user,1,1,1,1
-access_product_template_artwork_system,product.template.artwork.system,model_product_template,base.group_system,1,1,1,1
-access_sor_art_work_image_user,sor.art.work.image.user,model_sor_art_work_image,base.group_user,1,1,1,1
-access_sor_art_work_image_system,sor.art.work.image.system,model_sor_art_work_image,base.group_system,1,1,1,1
-

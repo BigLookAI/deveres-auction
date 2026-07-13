@@ -1,7 +1,5 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from datetime import date
-
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
 
@@ -43,12 +41,14 @@ class TestResPartnerCreatorFields(TransactionCase):
         self.partner.biography = 'This is a test biography.'
         self.assertEqual(self.partner.biography, 'This is a test biography.')
 
-    def test_birth_date_field_exists(self):
-        """Test birth_date field exists and accepts date."""
-        self.assertTrue(hasattr(self.partner, 'birth_date'))
-        test_date = date(1990, 1, 1)
-        self.partner.birth_date = test_date
-        self.assertEqual(self.partner.birth_date, test_date)
+    def test_life_date_fields_exist(self):
+        """Test birth_year and death_year fields exist and accept year strings."""
+        self.assertTrue(hasattr(self.partner, 'birth_year'))
+        self.assertTrue(hasattr(self.partner, 'death_year'))
+        self.partner.birth_year = '1950'
+        self.partner.death_year = '2010'
+        self.assertEqual(self.partner.birth_year, '1950')
+        self.assertEqual(self.partner.death_year, '2010')
 
     def test_nationality_field_exists(self):
         """Test nationality field exists and links to res.country."""
@@ -81,13 +81,13 @@ class TestResPartnerCreatorFields(TransactionCase):
 
         # Fields should be accessible
         self.partner.biography = 'Test biography'
-        self.partner.birth_date = date(1990, 1, 1)
+        self.partner.birth_year = '1990'
         self.partner.creator_website = 'https://example.com'
         if self.country:
             self.partner.nationality = self.country.id
 
         self.assertEqual(self.partner.biography, 'Test biography')
-        self.assertEqual(self.partner.birth_date, date(1990, 1, 1))
+        self.assertEqual(self.partner.birth_year, '1990')
         self.assertEqual(self.partner.creator_website, 'https://example.com')
 
     def test_creator_fields_visible_with_artist_subtype(self):
@@ -100,9 +100,9 @@ class TestResPartnerCreatorFields(TransactionCase):
 
         # Fields should be accessible
         partner2.biography = 'Artist biography'
-        partner2.birth_date = date(1985, 5, 15)
+        partner2.birth_year = '1985'
         self.assertEqual(partner2.biography, 'Artist biography')
-        self.assertEqual(partner2.birth_date, date(1985, 5, 15))
+        self.assertEqual(partner2.birth_year, '1985')
 
     def test_creator_fields_hidden_without_creator_type(self):
         """Test Creator fields hidden when no Creator type."""
@@ -119,7 +119,7 @@ class TestResPartnerCreatorFields(TransactionCase):
         self.partner.write({
             'contact_types': [Command.link(self.creator_type.id)],
             'biography': 'Persistent biography',
-            'birth_date': date(1990, 1, 1),
+            'birth_year': '1990',
             'creator_website': 'https://persistent.com',
         })
         if self.country:
@@ -128,7 +128,7 @@ class TestResPartnerCreatorFields(TransactionCase):
         # Reload from database
         partner_reloaded = self.Partner.browse(self.partner.id)
         self.assertEqual(partner_reloaded.biography, 'Persistent biography')
-        self.assertEqual(partner_reloaded.birth_date, date(1990, 1, 1))
+        self.assertEqual(partner_reloaded.birth_year, '1990')
         self.assertEqual(partner_reloaded.creator_website, 'https://persistent.com')
         if self.country:
             self.assertEqual(partner_reloaded.nationality, self.country)

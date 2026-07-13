@@ -193,3 +193,44 @@ class TestSorEvents(TransactionCase):
         })
         self.assertEqual(exhibition.event_type, 'exhibition')
         self.assertEqual(auction.event_type, 'auction')
+
+    # ------------------------------------------------------------------
+    # 7. Chatter — mail.thread on sor.event (Sprint 19)
+    # ------------------------------------------------------------------
+
+    def test_message_ids_field_present(self):
+        """mail.thread mixin adds message_ids to sor.event."""
+        self.assertIn('message_ids', self.env['sor.event']._fields)
+
+    def test_message_follower_ids_field_present(self):
+        """mail.thread mixin adds message_follower_ids to sor.event."""
+        self.assertIn('message_follower_ids', self.env['sor.event']._fields)
+
+    def test_action_publish_posts_chatter_message(self):
+        """action_publish posts a message to the event chatter."""
+        event = self.env['sor.event'].create({
+            'name': 'Chatter Publish Test',
+            'event_type': 'exhibition',
+            'date_start': datetime(2026, 11, 1, 10, 0, 0),
+        })
+        before_count = len(event.message_ids)
+        event.action_publish()
+        self.assertGreater(
+            len(event.message_ids), before_count,
+            'action_publish must post a chatter message',
+        )
+
+    def test_action_close_posts_chatter_message(self):
+        """action_close posts a message to the event chatter."""
+        event = self.env['sor.event'].create({
+            'name': 'Chatter Close Test',
+            'event_type': 'exhibition',
+            'date_start': datetime(2026, 11, 2, 10, 0, 0),
+            'status': 'active',
+        })
+        before_count = len(event.message_ids)
+        event.action_close()
+        self.assertGreater(
+            len(event.message_ids), before_count,
+            'action_close must post a chatter message',
+        )

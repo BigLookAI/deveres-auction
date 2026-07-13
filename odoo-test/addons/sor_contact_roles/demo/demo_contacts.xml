@@ -52,19 +52,19 @@
         <!-- Institutions -->
         <record id="demo_institution_national_gallery" model="res.partner">
             <field name="name">National Gallery of Ireland</field>
-            <field name="is_company" eval="True"/>
+            <field name="is_company" eval="False"/>
             <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
         </record>
 
         <record id="demo_institution_rha" model="res.partner">
             <field name="name">Royal Hibernian Academy</field>
-            <field name="is_company" eval="True"/>
+            <field name="is_company" eval="False"/>
             <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
         </record>
 
         <record id="demo_institution_imma" model="res.partner">
             <field name="name">Irish Museum of Modern Art</field>
-            <field name="is_company" eval="True"/>
+            <field name="is_company" eval="False"/>
             <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
         </record>
 

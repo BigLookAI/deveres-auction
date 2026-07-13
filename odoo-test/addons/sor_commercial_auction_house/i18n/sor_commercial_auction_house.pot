@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-24 10:24+0000\n"
-"PO-Revision-Date: 2026-04-24 10:24+0000\n"
+"POT-Creation-Date: 2026-07-05 13:41+0000\n"
+"PO-Revision-Date: 2026-07-05 13:41+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,9 +16,18 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: sor_commercial_auction_house
-#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.res_config_settings_view_form_auction_fees
-#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.res_partner_view_form_auction_house
-msgid "Auction House"
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fixed_charge_type__active
+msgid "Active"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__amount
+msgid "Amount"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_res_company__auction_vat_notice
+msgid "Auction VAT Notice"
 msgstr ""
 
 #. module: sor_commercial_auction_house
@@ -27,8 +36,8 @@ msgid "Break-Even"
 msgstr ""
 
 #. module: sor_commercial_auction_house
-#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.res_config_settings_view_form_auction_fees
-msgid "Buyer's Premium"
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.sor_lot_view_form_fees
+msgid "Buyer Premium %"
 msgstr ""
 
 #. module: sor_commercial_auction_house
@@ -51,6 +60,11 @@ msgid ""
 msgstr ""
 
 #. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__charge_type_id
+msgid "Charge Type"
+msgstr ""
+
+#. module: sor_commercial_auction_house
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_event__is_commercial
 msgid "Commercial Auction"
 msgstr ""
@@ -63,7 +77,15 @@ msgstr ""
 #. module: sor_commercial_auction_house
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_buyers_premium_tier__company_id
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fee_default__company_id
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__company_id
 msgid "Company"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,help:sor_commercial_auction_house.field_res_company__vat_margin_scheme
+msgid ""
+"Company-wide default for new lots. Individual lots can override this "
+"setting."
 msgstr ""
 
 #. module: sor_commercial_auction_house
@@ -72,9 +94,8 @@ msgid "Config Settings"
 msgstr ""
 
 #. module: sor_commercial_auction_house
-#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot__consignor_id
-#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.sor_lot_view_form_fees
-msgid "Consignor"
+#: model:ir.ui.menu,name:sor_commercial_auction_house.menu_sor_auctions_configuration
+msgid "Configuration"
 msgstr ""
 
 #. module: sor_commercial_auction_house
@@ -85,18 +106,34 @@ msgstr ""
 #. module: sor_commercial_auction_house
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_buyers_premium_tier__create_uid
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fee_default__create_uid
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fixed_charge_type__create_uid
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__create_uid
 msgid "Created by"
 msgstr ""
 
 #. module: sor_commercial_auction_house
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_buyers_premium_tier__create_date
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fee_default__create_date
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fixed_charge_type__create_date
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__create_date
 msgid "Created on"
 msgstr ""
 
 #. module: sor_commercial_auction_house
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_buyers_premium_tier__currency_id
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__currency_id
 msgid "Currency"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_res_partner__use_custom_default_commission
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_res_users__use_custom_default_commission
+msgid "Custom Default Commission"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.view_partner_form_inherit_sor_commercial_auction_house
+msgid "Customer Code"
 msgstr ""
 
 #. module: sor_commercial_auction_house
@@ -106,17 +143,15 @@ msgid "Default Seller's Commission %"
 msgstr ""
 
 #. module: sor_commercial_auction_house
-#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.res_config_settings_view_form_auction_fees
-msgid "Default rates for vendor-side fees. These cascade to new lots."
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_res_partner__effective_sellers_commission_pct
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_res_users__effective_sellers_commission_pct
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.res_partner_view_form_auction_house
+msgid "Default Vendor Fee %"
 msgstr ""
 
 #. module: sor_commercial_auction_house
-#: model:ir.model.fields,help:sor_commercial_auction_house.field_res_partner__default_sellers_commission_pct
-#: model:ir.model.fields,help:sor_commercial_auction_house.field_res_users__default_sellers_commission_pct
-msgid ""
-"Default seller's commission rate for lots consigned by this vendor. When "
-"non-zero, takes precedence over the company's Vendor Fee Schedule rate. Zero"
-" means use the company default."
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.res_config_settings_view_form_auction_fees
+msgid "Default rates for vendor-side fees. These cascade to new lots."
 msgstr ""
 
 #. module: sor_commercial_auction_house
@@ -133,18 +168,24 @@ msgstr ""
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_buyers_premium_tier__display_name
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_event__display_name
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fee_default__display_name
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fixed_charge_type__display_name
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot__display_name
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__display_name
 msgid "Display Name"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,help:sor_commercial_auction_house.field_res_partner__effective_sellers_commission_pct
+#: model:ir.model.fields,help:sor_commercial_auction_house.field_res_users__effective_sellers_commission_pct
+msgid ""
+"Effective vendor fee for lots consigned by this vendor. When 'Override "
+"Default Commission' is enabled, shows this vendor's custom rate; otherwise "
+"reflects the company's default fee schedule."
 msgstr ""
 
 #. module: sor_commercial_auction_house
 #: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.sor_lot_view_form_fees
 msgid "Fee Rates"
-msgstr ""
-
-#. module: sor_commercial_auction_house
-#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.res_config_settings_view_form_auction_fees
-msgid "Fee Schedule"
 msgstr ""
 
 #. module: sor_commercial_auction_house
@@ -165,6 +206,30 @@ msgid "Fees"
 msgstr ""
 
 #. module: sor_commercial_auction_house
+#: model:ir.model,name:sor_commercial_auction_house.model_sor_fixed_charge_type
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.sor_fixed_charge_type_view_form
+msgid "Fixed Charge Type"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.actions.act_window,name:sor_commercial_auction_house.action_sor_fixed_charge_type
+#: model:ir.ui.menu,name:sor_commercial_auction_house.menu_sor_fixed_charge_type
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.sor_fixed_charge_type_view_list
+msgid "Fixed Charge Types"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot__fixed_charge_ids
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.sor_lot_view_form_fees
+msgid "Fixed Charges"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:sor.fixed.charge.type,name:sor_commercial_auction_house.sor_fixed_charge_type_framing
+msgid "Framing"
+msgstr ""
+
+#. module: sor_commercial_auction_house
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_buyers_premium_tier__threshold_from
 msgid "Hammer Price From"
 msgstr ""
@@ -176,8 +241,15 @@ msgstr ""
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_buyers_premium_tier__id
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_event__id
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fee_default__id
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fixed_charge_type__id
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot__id
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__id
 msgid "ID"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:sor.fixed.charge.type,name:sor_commercial_auction_house.sor_fixed_charge_type_installation
+msgid "Installation"
 msgstr ""
 
 #. module: sor_commercial_auction_house
@@ -188,13 +260,49 @@ msgstr ""
 #. module: sor_commercial_auction_house
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_buyers_premium_tier__write_uid
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fee_default__write_uid
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fixed_charge_type__write_uid
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__write_uid
 msgid "Last Updated by"
 msgstr ""
 
 #. module: sor_commercial_auction_house
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_buyers_premium_tier__write_date
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fee_default__write_date
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fixed_charge_type__write_date
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__write_date
 msgid "Last Updated on"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot_fixed_charge__lot_id
+msgid "Lot"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model,name:sor_commercial_auction_house.model_sor_lot_fixed_charge
+msgid "Lot Fixed Charge"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fixed_charge_type__name
+msgid "Name"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot__use_custom_buyer_premium
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.sor_lot_view_form_fees
+msgid "Override Buyer Premium"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.res_partner_view_form_auction_house
+msgid "Override Default Commission"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot__use_custom_vendor_fee
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.sor_lot_view_form_fees
+msgid "Override Vendor Fee"
 msgstr ""
 
 #. module: sor_commercial_auction_house
@@ -202,6 +310,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fee_default__rate_pct
 #: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.res_config_settings_view_form_auction_fees
 msgid "Rate %"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:sor.fixed.charge.type,name:sor_commercial_auction_house.sor_fixed_charge_type_restoration
+msgid "Restoration"
 msgstr ""
 
 #. module: sor_commercial_auction_house
@@ -225,6 +338,11 @@ msgid "SOR Lot"
 msgstr ""
 
 #. module: sor_commercial_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.res_partner_view_form_auction_house
+msgid "Seller"
+msgstr ""
+
+#. module: sor_commercial_auction_house
 #: model:ir.model.fields.selection,name:sor_commercial_auction_house.selection__sor_fee_default__fee_type__sellers_commission
 msgid "Seller's Commission"
 msgstr ""
@@ -236,14 +354,44 @@ msgstr ""
 
 #. module: sor_commercial_auction_house
 #: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_buyers_premium_tier__sequence
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_fixed_charge_type__sequence
 msgid "Sequence"
 msgstr ""
 
 #. module: sor_commercial_auction_house
-#: model:ir.model.fields,help:sor_commercial_auction_house.field_sor_lot__consignor_id
+#: model:ir.model.fields,help:sor_commercial_auction_house.field_res_company__auction_vat_notice
 msgid ""
-"The vendor/consignor for this lot. When set, their default seller's "
-"commission rate takes precedence over the company default."
+"Statutory notice text printed on buyer invoices when VAT Margin Scheme is "
+"enabled. Leave empty to suppress the notice block. Set wording appropriate "
+"to the company's jurisdiction."
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,help:sor_commercial_auction_house.field_res_partner__default_sellers_commission_pct
+#: model:ir.model.fields,help:sor_commercial_auction_house.field_res_users__default_sellers_commission_pct
+msgid ""
+"Stored custom vendor fee rate for this consignor. Only applied when "
+"'Override Default Commission' is enabled."
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:sor.fixed.charge.type,name:sor_commercial_auction_house.sor_fixed_charge_type_transportation
+msgid "Transportation"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_res_company__vat_margin_scheme
+msgid "VAT Margin Scheme"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_commercial_auction_house.sor_lot_view_form_fees
+msgid "Vendor Fee %"
+msgstr ""
+
+#. module: sor_commercial_auction_house
+#: model:ir.model.fields,field_description:sor_commercial_auction_house.field_sor_lot__sellers_commission_pct_override
+msgid "Vendor Fee Override %"
 msgstr ""
 
 #. module: sor_commercial_auction_house

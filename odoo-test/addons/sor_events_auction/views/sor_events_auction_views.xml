@@ -102,14 +102,20 @@
     </record>
 
     <!-- Hide the generic Activate button on auction events — Go Live takes its place
-         and additionally cascades the live state to catalogued lots. -->
+         and additionally cascades the live state to catalogued lots.
+         Priority 20 (above default 16) ensures this view applies after sor_events_exhibition
+         also patches the same button. The combined expression covers both specialized event
+         types so the Activate button only shows on generic published events. When
+         sor_events_exhibition is not installed, 'exhibition' never matches and the expression
+         reduces to event_type == 'auction' or status != 'published'. -->
     <record id="sor_event_view_form_activate_hidden" model="ir.ui.view">
         <field name="name">sor.event.view.form.activate.hidden</field>
         <field name="model">sor.event</field>
         <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="priority">20</field>
         <field name="arch" type="xml">
-            <xpath expr="//button[@name='action_activate']" position="attributes">
-                <attribute name="invisible">event_type == 'auction' or status != 'published'</attribute>
+            <xpath expr="//button[@name='action_activate'][@class='btn-primary']" position="attributes">
+                <attribute name="invisible">event_type in ('auction', 'exhibition') or status != 'published'</attribute>
             </xpath>
         </field>
     </record>
@@ -146,37 +152,41 @@
         </field>
     </record>
 
-    <!-- Auction Details tab on sor.event form view — details only, no lot list.
-         Placed before Internal Notes via position="before" on the named page. -->
+    <!-- Auction Details in main form body and Lots as first tab.
+         Two XPaths:
+         1. Auction Details group inserted before the notebook — main area, not a tab.
+         2. Lots page inserted before Internal Notes — first auction-specific tab. -->
     <record id="sor_event_view_form_auction_tab" model="ir.ui.view">
         <field name="name">sor.event.view.form.auction.tab</field>
         <field name="model">sor.event</field>
         <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//page[@name='internal_notes']" position="before">
-                <page string="Auction Details" name="auction_details"
-                      invisible="event_type != 'auction'">
+            <!-- Auction Details fields in main form body (before the notebook) -->
+            <xpath expr="//sheet/notebook" position="before">
+                <group string="Auction Details"
+                       invisible="event_type != 'auction'">
                     <group>
-                        <group>
-                            <field name="auction_subtype"/>
-                            <field name="sale_number"/>
-                        </group>
-                        <group>
-                            <field name="preview_start"/>
-                            <field name="preview_end"/>
-                        </group>
+                        <field name="auction_subtype"/>
+                        <field name="sale_number"/>
                     </group>
-                </page>
+                    <group>
+                        <field name="preview_start"/>
+                        <field name="preview_end"/>
+                    </group>
+                </group>
+            </xpath>
+            <!-- Lots tab — first tab before Internal Notes -->
+            <xpath expr="//page[@name='internal_notes']" position="before">
                 <page string="Lots" name="auction_lots"
                       invisible="event_type != 'auction'">
                     <field name="lot_ids">
                         <list create="0" delete="0">
                             <field name="currency_id" column_invisible="1"/>
                             <field name="lot_number"/>
-                            <field name="lot_suffix"/>
-                            <field name="product_id"/>
+                            <field name="lot_item_name"/>
                             <field name="state"/>
                             <field name="reserve_price"/>
+                            <field name="hammer_price"/>
                         </list>
                     </field>
                 </page>
@@ -196,14 +206,14 @@
          ====================================================================== -->
 
     <!-- auction_id field on sor.lot form view.
-         Inserted inside the Identification group after lot_suffix. Readonly once the
+         Inserted inside the Identification group after lot_number. Readonly once the
          lot moves past Draft — auction assignment is locked when the lot is Catalogued. -->
     <record id="sor_lot_view_form_auction_id" model="ir.ui.view">
         <field name="name">sor.lot.view.form.auction.id</field>
         <field name="model">sor.lot</field>
         <field name="inherit_id" ref="sor_lotting.sor_lot_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//field[@name='lot_suffix']" position="after">
+            <xpath expr="//field[@name='lot_number']" position="after">
                 <field name="auction_id" readonly="state != 'draft'"/>
             </xpath>
         </field>
@@ -243,6 +253,38 @@
 
     <!-- Story 04 (sor_bidding) will add a bid_count stat button to sor.lot form
          via a separate view inheritance record. -->
+
+    <!-- ======================================================================
+         Auction MVP Refinements Story D: dedicated Auction Lot list view.
+         Standalone primary view (not a patch of the general Lots list) so that
+         "Catalogue Selected Lots" is scoped only to the auction's own Lots tab,
+         reached via the event's "Lots" stat button. auction_id is already added
+         to the combined base-list arch by sor_lot_view_list_auction_id above
+         (an active extension of the same root view) — not re-added here.
+         ====================================================================== -->
+    <record id="sor_lot_view_list_auction_dedicated" model="ir.ui.view">
+        <field name="name">sor.lot.view.list.auction.dedicated</field>
+        <field name="model">sor.lot</field>
+        <field name="inherit_id" ref="sor_lotting.sor_lot_view_list"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <list position="inside">
+                <header>
+                    <button name="action_catalogue_selected_lots" type="object"
+                            string="Catalogue Selected Lots"/>
+                </header>
+            </list>
+        </field>
+    </record>
+
+    <!-- Rebind the event's "Lots" stat button to the dedicated view above,
+         instead of falling back to sor_lotting's own default list view. -->
+    <record id="sor_lot_action_from_event_view_list" model="ir.actions.act_window.view">
+        <field name="sequence" eval="1"/>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="sor_lot_view_list_auction_dedicated"/>
+        <field name="act_window_id" ref="sor_lot_action_from_event"/>
+    </record>
 
     <!-- ======================================================================
          T3: MENUS

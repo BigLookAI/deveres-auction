@@ -1,3 +1,5 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_sor_fee_default_user,sor.fee.default user,model_sor_fee_default,base.group_user,1,1,1,1
 access_sor_buyers_premium_tier_user,sor.buyers.premium.tier user,model_sor_buyers_premium_tier,base.group_user,1,1,1,1
+access_sor_fixed_charge_type_user,sor.fixed.charge.type user,model_sor_fixed_charge_type,base.group_user,1,1,1,1
+access_sor_lot_fixed_charge_user,sor.lot.fixed.charge user,model_sor_lot_fixed_charge,base.group_user,1,1,1,1

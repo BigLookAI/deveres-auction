@@ -44,21 +44,49 @@
     </record>
 
     <!-- BUG-14: Restrict Invoices list to out_invoice only — remove out_receipt from domain
-         and search_default_out_receipt from context. SOR will never generate Sales Receipts. -->
+         and search_default_out_receipt from context. SOR will never generate Sales Receipts.
+         Story 05: add search_default_filter_not_reversed so the list opens pre-filtered. -->
     <record id="account.action_move_out_invoice" model="ir.actions.act_window">
         <field name="domain">[('move_type', '=', 'out_invoice')]</field>
-        <field name="context">{'default_move_type': 'out_invoice'}</field>
+        <field name="context">{'default_move_type': 'out_invoice', 'search_default_filter_not_reversed': 1}</field>
     </record>
 
-    <!-- BUG-14 (continued): Remove the Receipts filter option from the invoice search panel.
-         The action domain already excludes out_receipt records; the search filter option
-         would still show as selectable, which implies receipts are a valid document type here. -->
-    <record id="account_invoice_search_sor_buyer_invoice" model="ir.ui.view">
-        <field name="name">account.invoice.search.sor.buyer.invoice</field>
+    <!-- BUG-14 (continued): The Receipts filter removal XPath was removed because the
+         out_receipt filter is no longer present in account.view_account_invoice_filter after
+         Odoo 19's inheritance resolution — attempting to replace a non-existent element raises
+         ParseError at upgrade time. The window action domain ([move_type = out_invoice]) already
+         ensures receipts never appear in the list; removing the search filter is redundant. -->
+
+    <!-- Story 05: Add Hide Reversed (default-active) and Reversed filters to invoice search -->
+    <record id="view_account_invoice_filter_inherit_sor_reversed" model="ir.ui.view">
+        <field name="name">account.move.search.sor_reversed (sor_buyer_invoice)</field>
         <field name="model">account.move</field>
         <field name="inherit_id" ref="account.view_account_invoice_filter"/>
         <field name="arch" type="xml">
-            <xpath expr="//filter[@name='out_receipt']" position="replace"/>
+            <xpath expr="//filter[@name='late']" position="after">
+                <filter name="filter_not_reversed"
+                        string="Hide Reversed"
+                        domain="[('payment_state', '!=', 'reversed')]"/>
+                <filter name="filter_reversed"
+                        string="Reversed"
+                        domain="[('payment_state', '=', 'reversed')]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Auction MVP Refinements Story A: dedicated no-create account.payment list view,
+         substituted into the "Payments" smart button's action so staff cannot create an
+         unreconciled, context-less payment outside of Register Payment. The general
+         Payments menu keeps using the native view and is unaffected. -->
+    <record id="view_account_payment_list_no_create" model="ir.ui.view">
+        <field name="name">account.payment.list.sor.buyer.invoice.no.create</field>
+        <field name="model">account.payment</field>
+        <field name="inherit_id" ref="account.view_account_payment_tree"/>
+        <field name="mode">primary</field>
+        <field name="arch" type="xml">
+            <list position="attributes">
+                <attribute name="create">0</attribute>
+            </list>
         </field>
     </record>
 </odoo>

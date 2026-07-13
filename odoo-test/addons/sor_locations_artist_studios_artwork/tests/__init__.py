@@ -1,1 +1,0 @@
-from . import test_sor_locations_artist_studios_artwork

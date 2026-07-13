@@ -1,0 +1,36 @@
+# deVeres — SOR Assembly Profile (April real-data sandbox)
+# =========================================================
+# Environment profile of the canonical assemblies/deveres.yaml (v1.1, Sprint 24)
+# from BL-Odoo-System-of-Record, retargeted at the local April-backup sandbox
+# (db `deveres`, containers from odoo-test/docker-compose.yml).
+#
+# The module list is IDENTICAL to upstream deveres.yaml v1.1 — the client
+# production stack. sor_bidding is intentionally NOT installed (Sprint 24:
+# buyer invoices + auction documents use the sor.lot buyer_id fallback path).
+# Inventory (stock) must NOT be installed either — 13-Jul-2026 meeting.
+
+assembly: deveres_april
+version: "1.1"
+
+target:
+  db: deveres
+  container: deveres-odoo-test
+  addons_path: "/mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons"
+
+install:
+  - sor_technical_menu
+  - sor_contact_roles
+  - sor_business_model
+  - sor_events
+  - sor_lotting
+  - sor_auction_documents
+  - sor_accounting
+  - sor_buyer_invoice
+
+expect_auto:
+  - sor_business_model_non_commercial
+  - sor_events_auction
+  - sor_commercial_auction_house
+  - sor_lotting_contact_roles
+  - sor_buyer_invoice_auction_house
+  - sor_buyer_invoice_contact_roles

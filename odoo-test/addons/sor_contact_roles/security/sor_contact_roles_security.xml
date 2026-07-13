@@ -12,6 +12,18 @@
             <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
             <field name="groups" eval="[(4, ref('base.group_user'))]"/>
         </record>
+        <!-- Override Odoo 19's core partner visibility rule so art-world contacts
+             (partner_share=True, company_id=False) remain visible to all internal users
+             regardless of which company they are working in.
+             NOTE: base.res_partner_rule is the correct Odoo 19 XML ID.
+             base.res_partner_rule_private_employee does NOT exist in Odoo 19. -->
+        <record id="base.res_partner_rule" model="ir.rule">
+            <field name="domain_force">
+                ['|', ('partner_share', '=', False),
+                 '|', ('company_id', '=', False),
+                      ('company_id', 'in', company_ids)]
+            </field>
+        </record>
     </data>
 </odoo>
 

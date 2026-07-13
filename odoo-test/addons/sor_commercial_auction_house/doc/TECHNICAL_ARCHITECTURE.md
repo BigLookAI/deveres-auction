@@ -23,6 +23,8 @@ sor_business_model   sor_events   sor_lotting
 
 This module introduces two new models (`sor.fee.default`, `sor.buyers.premium.tier`), extends `res.company`, `res.partner`, `sor.lot`, and `sor.event`, and installs four business model suppression rules for the `auction_house` model value.
 
+**Auction Refinements 01, Story 3** added two further new models — `sor.fixed.charge.type` (a global, extensible registry of service-charge types) and `sor.lot.fixed.charge` (child line model recording a charge against a lot) — plus a `fixed_charge_ids` One2many on `sor.lot`. `sor_auction_documents` (a downstream, non-bridge dependent of this module) reads `fixed_charge_ids` to deduct these charges on the Vendor Settlement Statement — see that module's Technical Architecture for the compute/report extension.
+
 ---
 
 ## Module Pattern
@@ -87,6 +89,12 @@ Both the suppression rule data records and the `ir.rule` security records use `n
 
 The `sale_price_tab` `field_key` (which hides the Prices tab on product forms) is included as a fourth suppression rule alongside the three from `sor_business_model_non_commercial`. This was confirmed at Show & Tell: in an auction house deployment, pricing information on product forms is redundant because commercial terms live on the lot record.
 
+### 8. Fees tab field locking reversed (Auction MVP Refinements Story 05)
+
+The Fees tab previously locked at Catalogued (`readonly="state != 'draft'"` on the toggle, pct, and Fixed Charges fields; the two override toggles were also `invisible="state != 'draft'"`, disappearing entirely once past Draft). Direct auctioneer consultation established this was backwards: Vendor Fee, Buyer's Premium, Fixed Charges, and Withdrawal Fee all remain genuinely negotiable through pre-auction, during-auction, and after-sales (individual post-auction offers on unsold lots) — none of this content is ever printed in the catalogue. All state-gating was removed from the six Fees tab fields; `sellers_commission_pct`/`buyers_premium_pct` retain only their existing toggle-based readonly (`not use_custom_vendor_fee` / `not use_custom_buyer_premium`), with the `state != 'draft' or` clause stripped out.
+
+The governing test (see `sor_design_patterns.md` Pattern 3) is whether a field's value is printed in, or otherwise committed to, an external document — not whether it is a "fee." `lot_title`/`lot_description` (owned by `sor_lotting`, catalogue-facing content) lock at Catalogued under the same test; the Fees tab does not. A future, deliberately-deferred refinement would lock each fee field once the specific downstream document that bakes it in has actually been generated (Buyer's Premium once a Buyer Invoice references the lot; Vendor Fee/Fixed Charges once a Vendor Settlement Statement references the lot) — parked as a Sprint Finding rather than built, to keep risk down for a single-client MVP.
+
 ---
 
 ## Models
@@ -133,6 +141,7 @@ No methods.
 |----------|------|-------|
 | `fee_default_ids` | One2many `sor.fee.default` / `company_id` | Vendor fee schedule for this company. |
 | `buyers_premium_tier_ids` | One2many `sor.buyers.premium.tier` / `company_id` | Premium tiers for this company. |
+| `vat_margin_scheme` | Boolean | Company-level VAT Margin Scheme toggle for buyer invoices. No `column_name` kwarg (removed, Auction MVP Refinements Story 02 — the kwarg has no effect on any Odoo field type and was silently logging an `unknown parameter` warning on every server startup). |
 | `create` override | `@api.model_create_multi` | Calls `hooks._ensure_fee_defaults` and `hooks._ensure_buyers_premium_tier` for each new company. |
 
 The `create` override imports `hooks` from the package root and calls the private helper functions directly. This ensures the same idempotent seeding logic is used at install time (via `post_init_hook`) and at runtime (via `create`).
@@ -165,6 +174,50 @@ No methods. Read by `default_get` on `sor.lot`.
 | `default_get` | Method | Overrides `models.Model`. Implements the three-level fee cascade (see Architecture Decisions §2). |
 
 **`@api.depends` on `_compute_break_even_value`:** `('reserve_price', 'sellers_commission_pct')` — extends the base dependency on `reserve_price` by adding `sellers_commission_pct`.
+
+---
+
+### sor.fixed.charge.type (new model — Auction Refinements 01, Story 3)
+
+**File:** `models/sor_fixed_charge_type.py`
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `name` | Char | Required, `translate=True`. |
+| `sequence` | Integer | Default 10. |
+| `active` | Boolean | Default `True`. Standard archive field. |
+
+**No `company_id`** — deliberate, per `sor_multi_company.md`'s "What does NOT need `company_id`" guidance: this is a global configuration table shared across all companies, the same shape as `sor.contact.type`. `_order = 'sequence, name'`.
+
+Four records seeded on install via `data/sor_fixed_charge_type_data.xml` (`noupdate="1"`): Restoration, Framing, Transportation, Installation.
+
+**Menu placement:** `menu_sor_auctions_configuration` — a new "Configuration" menu grouping created under `sor_events_auction.menu_sor_auctions_root`, since no existing Configuration-style menu existed for auction house settings before this story (`sor.fee.default`/`sor.buyers.premium.tier` are edited inline in Settings; `sor.contact.type` lives under the developer-only Settings → Technical → SOR menu, ruled out because this registry is auctioneer-facing). `action_sor_fixed_charge_type` uses `context={'active_test': False}` so archived types remain visible to staff managing the list — the same visibility need as developer rule lists, applied here for business-facing configuration.
+
+---
+
+### sor.lot.fixed.charge (new model — Auction Refinements 01, Story 3)
+
+**File:** `models/sor_lot_fixed_charge.py`
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `lot_id` | Many2one `sor.lot` | Required. `ondelete='cascade'` — deleting a lot deletes its Fixed Charge lines. |
+| `charge_type_id` | Many2one `sor.fixed.charge.type` | Required. |
+| `amount` | Monetary | `currency_field='currency_id'`. |
+| `currency_id` | Many2one `res.currency` | `related='lot_id.currency_id'`, `store=True`. |
+| `company_id` | Many2one `res.company` | `related='lot_id.company_id'`, `store=True`, `readonly=True`. |
+
+`company_id` and `currency_id` are both `related` fields tracking the parent lot — not independently settable, so the `required=True` + `default=lambda self: self.env.company` pattern from `sor_multi_company.md` does not apply here (the value always mirrors `lot_id`). A standard multi-company `ir.rule` is still installed for defensive record-level isolation, per `sor_multi_company.md`'s directive that every model holding real financial amounts isolate its data by company from the moment it is introduced.
+
+No methods — pure data holder, read by `sor_auction_documents`'s VSS compute and report.
+
+### sor.lot (extended — Fixed Charges)
+
+**File:** `models/sor_lot_commercial.py`
+
+| Addition | Type | Notes |
+|----------|------|-------|
+| `fixed_charge_ids` | One2many `sor.lot.fixed.charge` / `lot_id` | `copy=True` — Fixed Charges are content of the lot (per `orm_and_field_patterns.md`'s `copy()` guidance), so they carry over when a lot is duplicated, unlike audit-trail or movement fields. |
 
 ---
 
@@ -218,8 +271,15 @@ Inherits `sor_lotting.sor_lot_view_form` (the base lot form view).
 - **Consignor group:** `consignor_id` field
 - **Fee Rates group:** `sellers_commission_pct`, `withdrawal_fee_pct`, `buyers_premium_pct`
 - **Break-Even group:** `break_even_value` (monetary, readonly)
+- **Fixed Charges group** (Auction Refinements 01, Story 3): `fixed_charge_ids` One2many rendered as an `editable="bottom"` list (`currency_id` declared `column_invisible="1"` for Monetary widget resolution, `charge_type_id`, `amount`). **No `readonly` gating at all (Auction MVP Refinements Story 05)** — the tab's entire field-locking convention was reversed; see Architecture Decision §8 below.
 
 **Partner form view patch:** A separate record adds a new **Seller** tab to `base.view_partner_form` containing the `default_sellers_commission_pct` field. The tab is always visible when this bridge is installed (auction house deployments only).
+
+### sor.fixed.charge.type (Configuration screen — new, Auction Refinements 01, Story 3)
+
+**File:** `views/sor_fixed_charge_type_views.xml`
+
+List view (`sequence` drag handle, `name`, `active` as a `boolean_toggle`) and form view (`name`, `sequence`, `active`), plus `action_sor_fixed_charge_type` (`context={'active_test': False}`) and two `<menuitem>` records: `menu_sor_auctions_configuration` ("Configuration", parented to `sor_events_auction.menu_sor_auctions_root`) and `menu_sor_fixed_charge_type` ("Fixed Charge Types", parented to the Configuration menu).
 
 ### sor.event (is_commercial toggle)
 
@@ -244,21 +304,25 @@ addons/sor_commercial_auction_house/
 │   ├── sor_buyers_premium_tier.py                 # New model: tiered buyer's premium schedule
 │   ├── sor_event_commercial.py                    # is_commercial Boolean on sor.event
 │   ├── sor_fee_default.py                         # New model: vendor fee defaults
-│   └── sor_lot_commercial.py                      # Fee fields, default_get cascade, break-even override
+│   ├── sor_fixed_charge_type.py                   # New model: global Fixed Charge Type registry
+│   └── sor_lot_commercial.py                      # Fee fields, default_get cascade, break-even override, fixed_charge_ids
+│   └── sor_lot_fixed_charge.py                    # New model: Lot Fixed Charge line
 ├── views/
 │   ├── res_config_settings_views.xml              # Fee schedule blocks in General Settings
 │   ├── sor_event_commercial_views.xml             # is_commercial toggle on event form
-│   └── sor_lot_commercial_views.xml               # Fees tab on lot form; partner commission field
+│   ├── sor_fixed_charge_type_views.xml            # Fixed Charge Type list/form/action/menu (Configuration)
+│   └── sor_lot_commercial_views.xml               # Fees tab on lot form (incl. Fixed Charges); partner commission field
 ├── data/
-│   └── sor_commercial_auction_house_suppression_rules.xml   # 4 sor.business.model.rule records for auction_house
+│   ├── sor_commercial_auction_house_suppression_rules.xml   # 4 sor.business.model.rule records for auction_house
+│   └── sor_fixed_charge_type_data.xml             # 4 seeded Fixed Charge Type records (noupdate="1")
 ├── security/
-│   ├── ir.model.access.csv                        # Read/write/create/delete for both new models
-│   └── sor_commercial_auction_house_rules.xml     # Multi-company ir.rule for sor.fee.default and sor.buyers.premium.tier
+│   ├── ir.model.access.csv                        # Read/write/create/delete for all four models
+│   └── sor_commercial_auction_house_rules.xml     # Multi-company ir.rule for company-scoped models
 ├── i18n/
 │   └── sor_commercial_auction_house.pot           # Translatable strings
 ├── tests/
 │   ├── __init__.py
-│   └── test_sor_commercial_auction_house.py       # 26 tests covering models, cascade, break-even, composability
+│   └── test_sor_commercial_auction_house.py       # 35 tests covering models, cascade, break-even, composability, Fixed Charges
 └── doc/
     ├── KNOWLEDGE_BASE.md                          # User-facing feature documentation
     └── TECHNICAL_ARCHITECTURE.md                 # This file
@@ -276,8 +340,10 @@ addons/sor_commercial_auction_house/
 | `models/res_company.py` | `create` override — ensures new companies are always seeded with fee records |
 | `data/sor_commercial_auction_house_suppression_rules.xml` | Four `sor.business.model.rule` records for `auction_house` with `noupdate="1"` |
 | `security/sor_commercial_auction_house_rules.xml` | Multi-company `ir.rule` for both new models with `noupdate="1"` |
-| `views/sor_lot_commercial_views.xml` | Fees tab with `is_commercial_auction` arch declaration |
-| `tests/test_sor_commercial_auction_house.py` | 26 tests covering module installs, seeding, cascade, break-even, composability |
+| `views/sor_lot_commercial_views.xml` | Fees tab with `is_commercial_auction` arch declaration; Fixed Charges editable list |
+| `models/sor_lot_fixed_charge.py` | Lot Fixed Charge line model — read by `sor_auction_documents`'s VSS deduction |
+| `data/sor_fixed_charge_type_data.xml` | Four seeded Fixed Charge Types with `noupdate="1"` |
+| `tests/test_sor_commercial_auction_house.py` | 35 tests covering module installs, seeding, cascade, break-even, composability, Fixed Charges |
 
 ---
 
@@ -315,6 +381,14 @@ The fee schedule blocks in General Settings are hidden by `invisible="business_m
 
 Each company has its own `sor.fee.default` and `sor.buyers.premium.tier` records. The `ir.rule` on both models uses `company_ids` (the Odoo context variable containing all companies the user has access to). A user with access to multiple companies can read all their fee records but cannot read records belonging to companies they do not have access to.
 
+### Fixed Charge Type is global, not per-company (Auction Refinements 01, Story 3)
+
+Unlike `sor.fee.default` and `sor.buyers.premium.tier`, `sor.fixed.charge.type` has no `company_id` and no `ir.rule` restricting its visibility — every company sees the same registry. This was a resolved domain question at Backlog Planning (see the sprint's `Sprint Findings.md`): auctioneers across every SOR-installed company share the same catalogue of service-charge types, with no requirement for a company-specific variant. `sor.lot.fixed.charge`, by contrast, is company-scoped via its `related` `company_id` (tracking the parent lot) and does carry a defensive `ir.rule`, since it holds real financial amounts.
+
+### Bridge collision check for `sor_auction_documents`
+
+`sor_auction_documents` depends directly on this module (not a bridge relationship — a feature module built on top of it), so it reading `fixed_charge_ids` from the VSS compute/report is a normal same-stack extension, not a composability violation. The VSS report's per-charge `<tr>` rows are nested inside a second-level `t-foreach="lot.fixed_charge_ids"`, confirmed not to collide with `sor_auction_documents_artwork`'s XPath overrides (which target a different table cell entirely).
+
 ---
 
 ## Running the Tests
@@ -341,6 +415,10 @@ docker exec odoo-app python3 odoo-bin \
 
 ## Story Reference
 
-Parent story: `.backlog/current/Auction Engine/stories/`
+Original module delivered in the Auction Engine sprint: `.backlog/previous/Track A/Auction Engine/stories/`
 
-Sprint: Auction Engine
+Extended by: Auction Refinements 01, Story 3 (Fixed Charges And VSS Deduction) — `.backlog/previous/`
+
+Most recently extended by Auction MVP Refinements:
+- Story 02 — Remove Dead Column Name Kwarg: `.backlog/current/Auction MVP Refinements/stories/02_Remove-Dead-Column-Name-Kwarg.md`
+- Story 05 — Fees Tab / Catalogue Content Field Locking: `.backlog/current/Auction MVP Refinements/stories/05_Fees-Tab-Catalogue-Content-Field-Locking.md`

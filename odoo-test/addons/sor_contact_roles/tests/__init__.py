@@ -1,6 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
 from . import (
+    test_partner_visibility,
     test_res_partner,
     test_res_partner_creator_fields,
     test_res_partner_customer_fields,

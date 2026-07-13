@@ -5,14 +5,14 @@
         <field name="name">sor.vendor.settlement.list</field>
         <field name="model">sor.vendor.settlement</field>
         <field name="arch" type="xml">
-            <list>
+            <list create="0">
                 <field name="name"/>
+                <field name="event_id"/>
+                <field name="consignor_id"/>
                 <field name="state" widget="badge"
                        decoration-success="state == 'sent'"
                        decoration-info="state == 'payment_confirmed'"
                        decoration-muted="state == 'cancelled'"/>
-                <field name="event_id"/>
-                <field name="consignor_id"/>
                 <field name="total_hammer" widget="monetary"
                        options="{'currency_field': 'currency_id'}"/>
                 <field name="total_commission" widget="monetary"
@@ -30,7 +30,7 @@
         <field name="name">sor.vendor.settlement.form</field>
         <field name="model">sor.vendor.settlement</field>
         <field name="arch" type="xml">
-            <form>
+            <form create="0">
                 <header>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,payment_confirmed,sent"/>
@@ -40,6 +40,9 @@
                     <button name="action_send_by_email" type="object"
                             string="Send to Consignor" class="btn-primary"
                             invisible="state != 'payment_confirmed'"/>
+                    <button name="action_send_by_email" type="object"
+                            string="Send to Consignor" class="btn-secondary"
+                            invisible="state != 'sent'"/>
                     <button name="%(action_report_sor_vendor_settlement)d" type="action"
                             string="Print" class="btn-secondary"/>
                     <button name="action_cancel" type="object"
@@ -72,7 +75,7 @@
                                     <field name="hammer_price" widget="monetary"
                                            options="{'currency_field': 'currency_id'}"/>
                                     <field name="sellers_commission_pct" string="Commission %"/>
-                                    <field name="hammer_price_vat_included" optional="hide"/>
+                                    <field name="vat_margin_scheme" optional="hide"/>
                                     <field name="currency_id" column_invisible="1"/>
                                 </list>
                             </field>
@@ -81,6 +84,7 @@
                             <group>
                                 <field name="total_hammer" widget="monetary"/>
                                 <field name="total_commission" widget="monetary"/>
+                                <field name="total_fixed_charges" widget="monetary"/>
                                 <field name="net_proceeds" widget="monetary"/>
                                 <field name="currency_id" invisible="1"/>
                             </group>
@@ -92,11 +96,35 @@
         </field>
     </record>
 
+    <!-- VSS search view -->
+    <record id="view_sor_vendor_settlement_search" model="ir.ui.view">
+        <field name="name">sor.vendor.settlement.search</field>
+        <field name="model">sor.vendor.settlement</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Reference"/>
+                <field name="event_id" string="Event"/>
+                <field name="consignor_id" string="Consignor"/>
+                <filter name="filter_draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_payment_confirmed" string="Payment Confirmed" domain="[('state', '=', 'payment_confirmed')]"/>
+                <filter name="filter_sent" string="Sent" domain="[('state', '=', 'sent')]"/>
+                <filter name="filter_cancelled" string="Cancelled" domain="[('state', '=', 'cancelled')]"/>
+                <group>
+                    <filter name="group_by_event" string="Event" context="{'group_by': 'event_id'}"/>
+                    <filter name="group_by_consignor" string="Consignor" context="{'group_by': 'consignor_id'}"/>
+                    <filter name="group_by_state" string="Status" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
     <!-- VSS window action -->
     <record id="action_sor_vendor_settlement" model="ir.actions.act_window">
         <field name="name">Vendor Settlements</field>
         <field name="res_model">sor.vendor.settlement</field>
         <field name="view_mode">list,form</field>
+        <field name="domain">[('company_id', '=', allowed_company_ids[0])]</field>
+        <field name="search_view_id" eval="False"/>
     </record>
 
     <!-- Bulk-send server action (list action) -->
@@ -106,7 +134,7 @@
         <field name="binding_model_id" ref="model_sor_vendor_settlement"/>
         <field name="binding_view_types">list</field>
         <field name="state">code</field>
-        <field name="code">records.action_bulk_mark_sent()</field>
+        <field name="code">action = records.action_bulk_send()</field>
     </record>
 
     <!-- Smart button on auction event form -->

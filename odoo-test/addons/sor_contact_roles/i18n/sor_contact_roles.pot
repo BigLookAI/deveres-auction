@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-30 08:15+0000\n"
-"PO-Revision-Date: 2026-04-30 08:15+0000\n"
+"POT-Creation-Date: 2026-06-15 09:40+0000\n"
+"PO-Revision-Date: 2026-06-15 09:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -139,15 +139,15 @@ msgid "Biography of the creator/artist."
 msgstr ""
 
 #. module: sor_contact_roles
-#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__birth_date
-#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__birth_date
-msgid "Birth Date"
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__birth_year
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__birth_year
+msgid "Birth Year"
 msgstr ""
 
 #. module: sor_contact_roles
-#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__birth_date
-#: model:ir.model.fields,help:sor_contact_roles.field_res_users__birth_date
-msgid "Birth date of the creator/artist."
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__birth_year
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__birth_year
+msgid "Birth year of the creator/artist."
 msgstr ""
 
 #. module: sor_contact_roles
@@ -242,6 +242,12 @@ msgid "Contact Information"
 msgstr ""
 
 #. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__contact_role_subtypes
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__contact_role_subtypes
+msgid "Contact Sub-Types"
+msgstr ""
+
+#. module: sor_contact_roles
 #: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
 msgid "Contact Type"
 msgstr ""
@@ -278,6 +284,7 @@ msgstr ""
 #: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_customers
 #: model:ir.ui.menu,name:sor_contact_roles.menu_sor_contacts
 #: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_tree_contacts
 msgid "Contacts"
 msgstr ""
 
@@ -361,6 +368,12 @@ msgid "Creator Information"
 msgstr ""
 
 #. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__creator_subtypes
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__creator_subtypes
+msgid "Creator Sub-Types"
+msgstr ""
+
+#. module: sor_contact_roles
 #: model:ir.actions.act_window,name:sor_contact_roles.action_sor_creators
 #: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_creators
 #: model:ir.ui.menu,name:sor_contact_roles.menu_sor_creators
@@ -378,6 +391,18 @@ msgstr ""
 #. module: sor_contact_roles
 #: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_dashboard
 msgid "Dashboard"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__death_year
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__death_year
+msgid "Death Year"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__death_year
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__death_year
+msgid "Death year of the creator/artist. Leave blank for living artists."
 msgstr ""
 
 #. module: sor_contact_roles
@@ -680,6 +705,12 @@ msgid "Social media profiles for this creator/artist."
 msgstr ""
 
 #. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__staff_subtype_ids
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__staff_subtype_ids
+msgid "Staff-Assignable Sub-Types"
+msgstr ""
+
+#. module: sor_contact_roles
 #: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
 msgid "Sub-Type"
 msgstr ""
@@ -688,6 +719,7 @@ msgstr ""
 #: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__contact_subtypes
 #: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__contact_subtypes
 #: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__child_ids
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_contact_types
 msgid "Sub-Types"
 msgstr ""
 

@@ -6,14 +6,19 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-26 13:03+0000\n"
-"PO-Revision-Date: 2026-05-26 13:03+0000\n"
+"POT-Creation-Date: 2026-07-10 09:40+0000\n"
+"PO-Revision-Date: 2026-07-10 09:40+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "<br/><strong>VAT:</strong>"
+msgstr ""
 
 #. module: sor_buyer_invoice
 #: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
@@ -27,7 +32,27 @@ msgstr ""
 
 #. module: sor_buyer_invoice
 #: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "<strong>Due Date:</strong>"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "<strong>Invoice Date:</strong>"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "<strong>Invoice No.:</strong>"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
 msgid "<strong>PSRA Licence No.:</strong>"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "<strong>VAT No.:</strong>"
 msgstr ""
 
 #. module: sor_buyer_invoice
@@ -38,8 +63,35 @@ msgid "Buyer Invoices"
 msgstr ""
 
 #. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Cancelled Credit Note"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Cancelled Invoice"
+msgstr ""
+
+#. module: sor_buyer_invoice
 #: model:ir.model,name:sor_buyer_invoice.model_res_company
 msgid "Companies"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Credit Note"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_account_bank_statement_line__partner_ref
+#: model:ir.model.fields,field_description:sor_buyer_invoice.field_account_move__partner_ref
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.account_move_view_form_sor_buyer_invoice
+msgid "Customer Code"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Description"
 msgstr ""
 
 #. module: sor_buyer_invoice
@@ -50,10 +102,24 @@ msgid "Display Name"
 msgstr ""
 
 #. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Draft Credit Note"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Draft Invoice"
+msgstr ""
+
+#. module: sor_buyer_invoice
 #: model:ir.model.fields,field_description:sor_buyer_invoice.field_account_bank_statement_line__sor_event_id
 #: model:ir.model.fields,field_description:sor_buyer_invoice.field_account_move__sor_event_id
-#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.account_move_view_form_sor_buyer_invoice
 msgid "Event"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.view_account_invoice_filter_inherit_sor_reversed
+msgid "Hide Reversed"
 msgstr ""
 
 #. module: sor_buyer_invoice
@@ -66,6 +132,11 @@ msgstr ""
 #: model:ir.model.fields,field_description:sor_buyer_invoice.field_res_company__id
 #: model:ir.model.fields,field_description:sor_buyer_invoice.field_sor_event__id
 msgid "ID"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Invoice"
 msgstr ""
 
 #. module: sor_buyer_invoice
@@ -84,8 +155,43 @@ msgid "PSRA Licence Number"
 msgstr ""
 
 #. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Quantity"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.view_account_invoice_filter_inherit_sor_reversed
+msgid "Reversed"
+msgstr ""
+
+#. module: sor_buyer_invoice
 #: model:ir.model,name:sor_buyer_invoice.model_sor_event
 msgid "SOR Event"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Subtotal"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Tax"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Total"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Unit Price"
+msgstr ""
+
+#. module: sor_buyer_invoice
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice.report_invoice_document_sor_buyer_invoice
+msgid "Untaxed Amount"
 msgstr ""
 
 #. module: sor_buyer_invoice

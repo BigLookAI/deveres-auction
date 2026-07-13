@@ -1,4 +1,5 @@
 from . import (
+    mail_bulk_send_utils,
     res_company,
     res_config_settings,
     sor_event_auction_docs,
@@ -8,4 +9,3 @@ from . import (
     sor_pre_sale_advice,
     sor_vendor_settlement,
 )
-from . import v110_compat

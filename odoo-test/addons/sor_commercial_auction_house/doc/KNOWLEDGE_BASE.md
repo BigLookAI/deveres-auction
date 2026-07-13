@@ -14,12 +14,14 @@ This is a bridge-of-bridge module. `sor_events_auction` is itself a bridge betwe
 - Installs four `sor.business.model.rule` suppression records that hide commercial product fields for `auction_house` companies
 - Adds `is_commercial` toggle to auction events; hides the Fees tab on lots when the event is non-commercial
 - Adds a **Seller** tab to the partner form with `default_sellers_commission_pct` — infrastructure for the future consignments bridge
+- Owns the **Fixed Charge Type** registry (`sor.fixed.charge.type`) — a global, configurable list of service-charge types (Restoration, Framing, Transportation, Installation seeded on install) — and the **Fixed Charges** line editor on a lot's Fees tab (`sor.lot.fixed.charge`), for recording negotiated service costs against a lot (Auction Refinements 01, Story 3)
 
 **What this module does NOT do:**
 - Record hammer prices, process payments, or manage bidding
 - Implement tiered buyer's premium calculations (MVP: single flat tier; tiered rates are deferred)
 - Suppress fees for specific lot types or product categories (per-lot override is manual)
 - Enforce any constraint between `is_commercial` on the event and the lot fee fields — the Fees tab is hidden as a UI aid, but the field values are not zeroed
+- Deduct Fixed Charges from anything itself — this module only records them on the lot; the deduction into net proceeds is computed by `sor_auction_documents` on the Vendor Settlement Statement
 
 **Depends on:** `sor_business_model`, `sor_events_auction`
 
@@ -69,6 +71,7 @@ Per-company buyer's premium schedule. MVP: one tier per company. Sequenced for f
 |-------|------|-------------|
 | `fee_default_ids` | One2many `sor.fee.default` | All vendor fee defaults for this company. |
 | `buyers_premium_tier_ids` | One2many `sor.buyers.premium.tier` | All buyer's premium tiers for this company. |
+| `vat_margin_scheme` | Boolean | Enables the Hammer Price VAT Margin Scheme treatment on buyer invoice PDFs. `sor.lot.vat_margin_scheme` (owned by `sor_auction_documents`) is the corresponding per-lot flag. |
 
 `create` is overridden to call `_ensure_fee_defaults` and `_ensure_buyers_premium_tier` whenever a new company is created, so new companies are always seeded with an empty fee schedule.
 
@@ -99,6 +102,40 @@ Per-company buyer's premium schedule. MVP: one tier per company. Sequenced for f
 | Field | Type | Description |
 |-------|------|-------------|
 | `is_commercial` | Boolean | Default `True`. When `False`, lots in this auction show no Fees tab. Used for charity or benefit auctions. Hidden on the event form when `event_type != 'auction'`. |
+
+---
+
+### sor.fixed.charge.type
+
+Global registry of Fixed Charge Types (Restoration, Framing, Transportation, Installation, and any others an auctioneer adds). **No `company_id`** — this is a deliberate choice, not an oversight: every company on the instance shares the same catalogue of service-charge types, the same way `sor.contact.type` is shared. There is no requirement for a company-specific variant of this list.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | Char (required, translate) | The charge type's label, e.g. "Restoration". |
+| `sequence` | Integer | Display order. Default 10. |
+| `active` | Boolean | Default `True`. Archiving a type removes it from the default list and from new Fixed Charge line selection, without deleting historical Fixed Charge lines that already reference it. |
+
+Four types are seeded on install (`noupdate="1"`, so administrator edits/renames survive module upgrades): Restoration, Framing, Transportation, Installation.
+
+---
+
+### sor.lot.fixed.charge
+
+A single Fixed Charge line recorded against a lot — e.g. "Restoration, €50". Always tracks its parent lot's company and currency; it has no independent company/currency of its own.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `lot_id` | Many2one `sor.lot` (required, `ondelete='cascade'`) | The lot this charge belongs to. Deleting the lot deletes its Fixed Charge lines. |
+| `charge_type_id` | Many2one `sor.fixed.charge.type` (required) | Which type of charge this is. |
+| `amount` | Monetary | The charge amount, in the lot's currency. |
+| `currency_id` | Many2one `res.currency` (related, stored) | Mirrors `lot_id.currency_id`. |
+| `company_id` | Many2one `res.company` (related, stored, readonly) | Mirrors `lot_id.company_id`. Not independently settable. |
+
+### sor.lot (extended — Fixed Charges)
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `fixed_charge_ids` | One2many `sor.lot.fixed.charge` (`copy=True`) | All Fixed Charge lines on this lot. `copy=True` because Fixed Charges are content of the lot — if a lot is duplicated, its Fixed Charges carry over with it. |
 
 ---
 
@@ -173,6 +210,20 @@ This field is available for data entry but is not currently used in the lot fee 
 **Navigation:** Auction Events list → open an event → **Commercial Auction** field (visible only when Event Type = Auction)
 
 When unchecked, the Fees tab disappears from all lots in that auction. This does not zero out existing fee values — it only hides the tab. Suitable for benefit auctions or events where no fees apply.
+
+### Managing Fixed Charge Types
+
+**Navigation:** Auctions → **Configuration** → **Fixed Charge Types**
+
+Auctioneers can view, add, rename, and archive Fixed Charge Types here — no code change or module upgrade needed. The list shows archived types too (the action opens with `active_test=False`) so staff managing the list can see and unarchive a type if needed. Four types are seeded on install: Restoration, Framing, Transportation, Installation.
+
+### Recording Fixed Charges on a lot
+
+**Navigation:** Open a lot → **Fees** tab → **Fixed Charges** section
+
+Only visible when the lot is a commercial auction lot (`is_commercial_auction`), same as the rest of the Fees tab. Add one or more lines, each with a Charge Type (from the registry above) and an Amount. **Fixed Charge lines remain editable at every lot state** — Draft, Catalogued, Sold, Passed, or Withdrawn (Auction MVP Refinements Story 05). Direct auctioneer consultation confirmed Fixed Charges — like the rest of the Fees tab — are negotiated commercial terms that continue to be adjusted pre-auction, during-auction, and in after-sales; they are never printed in the catalogue, so they fail the test that locks catalogue-facing content (`lot_title`/`lot_description` on `sor.lot`, owned by `sor_lotting`, which do lock at Catalogued). This resolves the Draft-only-lock question raised (and previously left open as a parked Sprint Finding) during Auction Refinements 01 Show & Tell — see `sor_design_patterns.md` Pattern 3.
+
+Fixed Charges reduce the lot's net proceeds on the Vendor Settlement Statement — see `sor_auction_documents`'s Knowledge Base for the VSS deduction and report rendering.
 
 ---
 
@@ -255,6 +306,27 @@ R8 — **Two events (commercial and non-commercial) coexist**
 2. Create a lot and assign it to Event A. Confirm Fees tab is visible.
 3. Reassign the lot to Event B. Confirm Fees tab is hidden.
 4. Confirm the lot's fee field values are retained (not zeroed) after reassignment.
+
+R9 — **Fixed Charge Type registry — add, rename, archive**
+1. Navigate to Auctions → Configuration → Fixed Charge Types.
+2. Add a new type (e.g. "Cleaning"). Confirm it appears in the list.
+3. Rename an existing type. Confirm the label updates immediately, with no module upgrade.
+4. Archive a type (toggle off). Confirm it disappears from the default list but remains visible with the archived filter enabled.
+
+R10 — **Fixed Charges on a lot's Fees tab**
+1. Open a Draft-state commercial auction lot. Add two Fixed Charge lines (different types, different amounts).
+2. Confirm both lines save correctly with their Charge Type and Amount.
+3. Move the lot out of Draft (e.g. Catalogue it). Confirm the Fixed Charges section — and the rest of the Fees tab — remains fully editable, not locked (Story 05).
+4. Switch the company's Business Model away from `Auction House` (or view a non-commercial-auction lot). Confirm the Fees tab — and Fixed Charges within it — is not visible.
+
+R12 — **Fees tab fields remain editable at every lot state (Auction MVP Refinements Story 05)**
+1. On a lot in any state (Draft, Catalogued, Sold, Passed, Withdrawn), confirm the Override Vendor Fee toggle, Vendor Fee %, Withdrawal Fee %, Override Buyer Premium toggle, Buyer Premium %, and Fixed Charges list are all editable and none of the toggles disappear.
+2. On the same lot, confirm `lot_title` and `lot_description` (owned by `sor_lotting`) are editable in Draft and read-only once Catalogued or later — the opposite locking behaviour from the Fees tab, and the correct one per the catalogue-commitment test.
+
+R11 — **Fixed Charges carry over on lot duplication**
+1. Add a Fixed Charge line to a lot.
+2. Duplicate the lot.
+3. Confirm the duplicated lot has the same Fixed Charge line (Charge Type and Amount both carried over).
 
 ---
 

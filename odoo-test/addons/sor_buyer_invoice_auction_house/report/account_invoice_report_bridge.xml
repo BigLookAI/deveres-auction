@@ -1,126 +1,167 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Extend the SOR buyer invoice PDF to add auction-house-specific content:
-         - Buyer's Premium column in the lot breakdown table
-         - VAT treatment indicator and VAT on Hammer columns (when hammer_price_vat_included)
-         - Summary rows: Total Hammer, Total Buyer's Premium, Invoice Total
-         - Statutory VAT notice text (when hammer_price_vat_included and notice is set) -->
+    <!-- Replaces the base template's generic fallback line-items table with the lot
+         breakdown table: Buyer's Premium column, VAT treatment indicator and VAT on
+         Hammer columns (when vat_margin_scheme), and summary rows (Total Hammer, Total
+         Buyer's Premium, Invoice Total). Separately fills the base template's
+         sor_statutory_notice anchor (after the payment-status block) with the statutory
+         VAT margin-scheme notice text — split into its own xpath, not bundled with the
+         lot table, so it renders after payment status/Amount Due rather than before it
+         (BUG-02). The base template's title logic and regulatory footer
+         (sor_auction_footer) are untouched and continue to render around both
+         replacements unmodified. -->
     <template id="report_invoice_document_sor_auction_house_bridge"
               inherit_id="sor_buyer_invoice.report_invoice_document_sor_buyer_invoice">
-        <xpath expr="//div[@name='sor_auction_footer']" position="before">
-            <t t-if="o.sor_event_id">
-                <t t-set="hammer_lines"
-                   t-value="o.invoice_line_ids.filtered(lambda l: l.sor_line_type == 'hammer')"/>
-                <t t-set="premium_lines"
-                   t-value="o.invoice_line_ids.filtered(lambda l: l.sor_line_type == 'buyers_premium')"/>
-                <t t-if="hammer_lines">
-                    <t t-set="vat_included"
-                       t-value="o.company_id.hammer_price_vat_included"/>
-                    <t t-set="total_hammer"
-                       t-value="sum(hammer_lines.mapped('price_unit'))"/>
-                    <t t-set="total_premium"
-                       t-value="sum(premium_lines.mapped('price_unit'))"/>
+        <xpath expr="//div[@name='sor_invoice_line_table']" position="replace">
+            <t t-set="hammer_lines"
+               t-value="o.invoice_line_ids.filtered(lambda l: l.sor_line_type == 'hammer')"/>
+            <t t-set="premium_lines"
+               t-value="o.invoice_line_ids.filtered(lambda l: l.sor_line_type == 'buyers_premium')"/>
+            <t t-if="hammer_lines">
+                <!-- vat_included: True if any lot in this invoice uses the margin scheme.
+                     Determines column presence in headers and tfoot; per-row values are
+                     further gated on lot.vat_margin_scheme. MVP approach: show VAT/Total
+                     columns whenever any lot is margin-scheme; non-margin rows leave cells blank. -->
+                <t t-set="vat_included"
+                   t-value="any(lot.vat_margin_scheme for lot in o.sor_lot_ids)"/>
+                <t t-set="total_hammer"
+                   t-value="sum(hammer_lines.mapped('price_unit'))"/>
+                <t t-set="total_premium"
+                   t-value="sum(premium_lines.mapped('price_unit'))"/>
 
-                    <!-- Lot breakdown table -->
-                    <div class="mt-3 mb-3" name="sor_lot_breakdown">
-                        <table class="table table-sm o_main_table" style="font-size:0.9em;">
-                            <thead>
-                                <tr>
-                                    <th>Lot No</th>
-                                    <th>Description</th>
-                                    <t t-if="vat_included">
-                                        <th class="text-center">VAT</th>
-                                    </t>
-                                    <th class="text-end">Hammer</th>
-                                    <t t-if="vat_included">
-                                        <th class="text-end">VAT on Hammer</th>
-                                    </t>
-                                    <th class="text-end">Buyer's Premium</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <t t-foreach="o.sor_lot_ids" t-as="lot">
-                                    <t t-set="h_line"
-                                       t-value="hammer_lines.filtered(lambda l: l.sor_lot_id.id == lot.id)[:1]"/>
-                                    <t t-set="p_line"
-                                       t-value="premium_lines.filtered(lambda l: l.sor_lot_id.id == lot.id)[:1]"/>
-                                    <t t-if="h_line">
-                                        <tr>
-                                            <td><span t-out="lot.lot_number or ''"/></td>
-                                            <td>
-                                                <t t-if="lot.product_id">
-                                                    <span t-out="lot.product_id.name"/>
-                                                </t>
-                                            </td>
-                                            <t t-if="vat_included">
-                                                <td class="text-center">M-</td>
+                <!-- Lot breakdown table -->
+                <div class="mt-3 mb-3" name="sor_lot_breakdown">
+                    <!-- font-size inherits the 0.9em set on div.page in the base template — this
+                         table is the size every other templated element is anchored to, so it no
+                         longer needs its own explicit declaration. o_ignore_layout_styling: the
+                         company's active report table style (o_table_bold/o_table_boxed in
+                         web/report_tables.scss) doubles cell padding on every table in every
+                         report for this company, overriding table-sm's own compact padding via
+                         ancestor-scoped CSS — this class is the native escape hatch that opts our
+                         table out of that override. -->
+                    <table class="table table-sm o_main_table o_ignore_layout_styling">
+                        <thead>
+                            <!-- Sentence case + explicit bold + nowrap: the company's active
+                                 report table style (e.g. Bold/Boxed) applies
+                                 text-transform: uppercase to every thead th globally
+                                 (web/report_tables.scss) — overridden locally here so these
+                                 headers render as authored and never wrap onto a second line. -->
+                            <tr>
+                                <th class="fw-bold text-nowrap" style="text-transform: none;">Lot no</th>
+                                <th class="fw-bold text-nowrap" style="text-transform: none;">Description</th>
+                                <t t-if="vat_included">
+                                    <th class="text-center fw-bold text-nowrap" style="text-transform: none;">VAT</th>
+                                </t>
+                                <th class="text-end fw-bold text-nowrap" style="text-transform: none;">Hammer</th>
+                                <t t-if="vat_included">
+                                    <th class="text-end fw-bold text-nowrap" style="text-transform: none;">VAT on hammer</th>
+                                </t>
+                                <th class="text-end fw-bold text-nowrap" style="text-transform: none;">Buyer's premium</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="o.sor_lot_ids" t-as="lot">
+                                <t t-set="h_line"
+                                   t-value="hammer_lines.filtered(lambda l: l.sor_lot_id.id == lot.id)[:1]"/>
+                                <t t-set="p_line"
+                                   t-value="premium_lines.filtered(lambda l: l.sor_lot_id.id == lot.id)[:1]"/>
+                                <t t-if="h_line">
+                                    <tr>
+                                        <td><span t-out="lot.lot_number or ''"/></td>
+                                        <td>
+                                            <t t-if="lot.product_id">
+                                                <span t-out="lot.product_id.name"/>
                                             </t>
-                                            <td class="text-end">
-                                                <span t-out="h_line.price_unit"
-                                                      t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                            <t t-else="">
+                                                <t t-out="lot.lot_description"/>
+                                            </t>
+                                        </td>
+                                        <t t-if="vat_included">
+                                            <td class="text-center">
+                                                <t t-if="lot.vat_margin_scheme">M-</t>
                                             </td>
-                                            <t t-if="vat_included">
-                                                <td class="text-end">
+                                        </t>
+                                        <td class="text-end">
+                                            <span t-out="h_line.price_unit"
+                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                        </td>
+                                        <t t-if="vat_included">
+                                            <td class="text-end">
+                                                <t t-if="lot.vat_margin_scheme">
                                                     <span t-out="0.0"
                                                           t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
-                                                </td>
-                                            </t>
-                                            <td class="text-end">
-                                                <t t-if="p_line">
-                                                    <span t-out="p_line.price_unit"
-                                                          t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
                                                 </t>
-                                                <t t-else="">—</t>
                                             </td>
-                                        </tr>
-                                    </t>
+                                        </t>
+                                        <td class="text-end">
+                                            <t t-if="p_line">
+                                                <span t-out="p_line.price_unit"
+                                                      t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                            </t>
+                                            <t t-else="">—</t>
+                                        </td>
+                                    </tr>
                                 </t>
-                            </tbody>
-                            <tfoot>
-                                <tr>
-                                    <td colspan="2" class="text-end"><strong>Total Hammer</strong></td>
-                                    <t t-if="vat_included"><td/><td/></t>
-                                    <td class="text-end">
-                                        <strong>
-                                            <span t-out="total_hammer"
-                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
-                                        </strong>
-                                    </td>
-                                    <td class="text-end"/>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" class="text-end"><strong>Total Buyer's Premium</strong></td>
-                                    <t t-if="vat_included"><td/><td/></t>
-                                    <td class="text-end"/>
-                                    <td class="text-end">
-                                        <strong>
-                                            <span t-out="total_premium"
-                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
-                                        </strong>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" class="text-end"><strong>Invoice Total</strong></td>
-                                    <t t-if="vat_included"><td/><td/></t>
-                                    <td colspan="2" class="text-end">
-                                        <strong>
-                                            <span t-out="total_hammer + total_premium"
-                                                  t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
-                                        </strong>
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+                            </t>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <!-- Amount lands in the Buyer's Premium column (last cell), not
+                                     the Hammer column, so all three total rows are right-aligned
+                                     flush with each other rather than staggered under their own
+                                     data column. -->
+                                <td colspan="2" class="text-end"><strong>Total Hammer</strong></td>
+                                <t t-if="vat_included"><td/><td/></t>
+                                <td class="text-end"/>
+                                <td class="text-end">
+                                    <strong>
+                                        <span t-out="total_hammer"
+                                              t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                    </strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="text-end"><strong>Total Buyer's Premium</strong></td>
+                                <t t-if="vat_included"><td/><td/></t>
+                                <td class="text-end"/>
+                                <td class="text-end">
+                                    <strong>
+                                        <span t-out="total_premium"
+                                              t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                    </strong>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="2" class="text-end"><strong>Invoice Total</strong></td>
+                                <t t-if="vat_included"><td/><td/></t>
+                                <td colspan="2" class="text-end">
+                                    <strong>
+                                        <span t-out="total_hammer + total_premium"
+                                              t-options="{'widget': 'monetary', 'display_currency': o.currency_id}"/>
+                                    </strong>
+                                </td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </t>
+        </xpath>
 
-                    <!-- Statutory VAT notice (margin scheme) -->
-                    <t t-if="vat_included and o.company_id.auction_vat_notice">
-                        <div class="mt-2 mb-3" name="sor_vat_notice"
-                             style="font-size:0.85em; border-top:1px solid #ccc; padding-top:0.5em;">
-                            <span t-out="o.company_id.auction_vat_notice"/>
-                        </div>
-                    </t>
-                </t>
+        <!-- Statutory VAT notice (margin scheme) — targets the base template's anchor
+             after the payment-status block (BUG-02: must render after payment line items
+             and Amount Due, not between the lot table and payment status). vat_included is
+             recomputed here rather than reusing the lot-table block's t-set, since QWeb
+             variable scope from inside that xpath's replacement does not extend to this
+             sibling anchor; an empty sor_lot_ids correctly yields vat_included=False via
+             any(), preserving the original suppression behaviour with no extra guard. -->
+        <xpath expr="//div[@name='sor_statutory_notice']" position="replace">
+            <!-- font-size inherits the 0.9em set on div.page in the base template — no longer a
+                 separate, smaller 0.85em; anchored to the same size as every other templated
+                 element. -->
+            <t t-if="any(lot.vat_margin_scheme for lot in o.sor_lot_ids) and o.company_id.auction_vat_notice">
+                <div class="mt-2 mb-3" name="sor_vat_notice">
+                    <span t-out="o.company_id.auction_vat_notice"/>
+                </div>
             </t>
         </xpath>
     </template>

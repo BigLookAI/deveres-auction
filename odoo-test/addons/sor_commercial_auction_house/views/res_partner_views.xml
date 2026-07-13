@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Inject Customer Code (res.partner.ref) into the contact form header.
+         Anchor: category_id is always present in base.view_partner_form regardless of
+         which optional SOR modules are installed. -->
+    <record id="view_partner_form_inherit_sor_commercial_auction_house" model="ir.ui.view">
+        <field name="name">res.partner.form.inherit.sor_commercial_auction_house</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='category_id']" position="after">
+                <field name="ref" string="Customer Code"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

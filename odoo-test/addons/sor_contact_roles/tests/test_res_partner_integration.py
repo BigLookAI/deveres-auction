@@ -1,7 +1,5 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from datetime import date
-
 from odoo.fields import Command
 from odoo.tests import TransactionCase, tagged
 
@@ -56,14 +54,14 @@ class TestResPartnerIntegration(TransactionCase):
 
         partner.write({
             'biography': 'Test biography',
-            'birth_date': date(1990, 1, 1),
+            'birth_year': '1990',
             'creator_website': 'https://example.com',
         })
         if self.country:
             partner.nationality = self.country.id
 
         self.assertEqual(partner.biography, 'Test biography')
-        self.assertEqual(partner.birth_date, date(1990, 1, 1))
+        self.assertEqual(partner.birth_year, '1990')
         self.assertEqual(partner.creator_website, 'https://example.com')
 
     def test_creator_workflow_with_social_media(self):
@@ -125,11 +123,11 @@ class TestResPartnerIntegration(TransactionCase):
         self.assertTrue(partner.has_contact_type)
 
         partner.biography = 'Creator biography'
-        partner.birth_date = date(1985, 5, 15)
+        partner.birth_year = '1985'
         partner.collection_focus = 'Art collection focus'
 
         self.assertEqual(partner.biography, 'Creator biography')
-        self.assertEqual(partner.birth_date, date(1985, 5, 15))
+        self.assertEqual(partner.birth_year, '1985')
         self.assertEqual(partner.collection_focus, 'Art collection focus')
 
     def test_subtype_onchange_workflow(self):
@@ -155,7 +153,7 @@ class TestResPartnerIntegration(TransactionCase):
         artist.write({
             'contact_subtypes': [Command.link(self.artist_subtype.id)],
             'biography': 'Artist biography',
-            'birth_date': date(1980, 1, 1),
+            'birth_year': 1980,
         })
 
         # Create bidder

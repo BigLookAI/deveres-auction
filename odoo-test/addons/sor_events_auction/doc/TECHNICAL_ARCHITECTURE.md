@@ -131,6 +131,7 @@ for event in self:
 | `auction_id` | `Many2one('sor.event')` | Domain: `[('event_type', '=', 'auction')]`. `check_company=True`. `ondelete='restrict'`. Optional. |
 | `state` | `Selection` (extended) | `selection_add=[('live', 'Live')]`. `ondelete={'live': 'set default'}`. The `ondelete` policy is required on `required` selection fields in Odoo 16+; omitting it raises `ValueError` at registry load time. |
 | `_auction_lot_number_unique` | `models.Constraint` | `UNIQUE(auction_id, lot_number)`. Applied at the database level. Constraint name suffix on the table: `sor_lot__auction_lot_number_unique`. |
+| `action_catalogue_selected_lots(self)` | Method (Auction MVP Refinements Story 04) | `self.filtered(lambda lot: lot.state == 'draft').action_catalogue()`. Bound via the dedicated Auction Lot list view's `<header>` button — see Views below. Replaces the former `action_catalogue_all_lots` global server action. |
 
 **ondelete={'live': 'set default'} rationale:** If `sor_events_auction` were uninstalled, any `sor.lot` records in `live` state would have an invalid `state` value. The `'set default'` policy reverts those records to the field's default (`'draft'`), preventing orphaned state values. In practice, uninstalling `sor_events_auction` when live auction data exists is inadvisable; this is a safety net, not an operational workflow.
 
@@ -162,7 +163,7 @@ The base `sor.event` form has no `button_box` div. This patch inserts one before
 **Inherits:** `sor_events.sor_event_view_form`
 **Mode:** non-primary
 
-Appends an **Auction Details** page to `//notebook` on the event form. Invisible when `event_type != 'auction'`. Contains two field groups (subtype + sale number; preview dates) and an inline `lot_ids` list with key lot columns (`lot_number`, `lot_suffix`, `product_id`, `state`, `reserve_price`). `currency_id` is declared with `column_invisible="1"` to satisfy the Monetary widget's currency dependency without rendering a column.
+Appends an **Auction Details** page to `//notebook` on the event form. Invisible when `event_type != 'auction'`. Contains two field groups (subtype + sale number; preview dates) and an inline `lot_ids` list with key lot columns (`lot_number`, `lot_item_name`, `state`, `reserve_price`, `hammer_price`). `currency_id` is declared with `column_invisible="1"` to satisfy the Monetary widget's currency dependency without rendering a column.
 
 ### sor.lot — auction_id field on form
 
@@ -170,7 +171,7 @@ Appends an **Auction Details** page to `//notebook` on the event form. Invisible
 **Inherits:** `sor_lotting.sor_lot_view_form`
 **Mode:** non-primary
 
-Inserts a `<group>` containing `auction_id` before the `<notebook>` on the lot form, at the D2 bridge injection point annotated in the base view.
+Inserts the `auction_id` field directly after `lot_number` in the Identification group (`//field[@name='lot_number']` position `after`), so `auction_id` renders immediately following Lot Number. Re-anchored here in the Auction Refinements 01 sprint (Story 1) after `lot_suffix` — the field this XPath previously anchored on — was removed from `sor_lotting`.
 
 ### sor.lot — live state in statusbar
 
@@ -186,13 +187,23 @@ Patches the `statusbar_visible` attribute on `//field[@name='state'][@widget='st
 **Inherits:** `sor_lotting.sor_lot_view_list`
 **Mode:** non-primary
 
-Inserts an `auction_id` column before `lot_reference` on the global lots list so auction context is visible at a glance.
+Inserts an `auction_id` column before `lot_reference` on the global lots list so auction context is visible at a glance. **Unchanged by Story 04** — this patch continues to serve the general Lots list; it is not the surface Story 04 corrected.
+
+### sor.lot — dedicated Auction Lot list view (Auction MVP Refinements Story 04)
+
+**Record ID:** `sor_lot_view_list_auction_dedicated`
+**Inherits:** `sor_lotting.sor_lot_view_list`
+**Mode:** `primary` (field value, not a record attribute — matching the precedent in `sor_buyer_invoice`'s no-create payments view and Odoo core's own `account.view_account_supplier_payment_tree`)
+
+A standalone, independently-addressable list view reached only via the event's "Lots" stat button (bound through an `ir.actions.act_window.view` record — see Window actions below). Adds a `<header>` with the `action_catalogue_selected_lots` button, scoped only to this view. Does **not** re-add `auction_id` via XPath — because `mode="primary"` inheritance resolves the combined arch from the true root of the whole inheritance chain and automatically applies every active extension-mode view along it (including `sor_lot_view_list_auction_id`, which already contributes `auction_id`), re-adding it here would produce a duplicate field. `hammer_price` is already present in the base `sor_lotting.sor_lot_view_list`, so no addition is needed for it either. Verify the actual combined arch with `env.ref('sor_events_auction.sor_lot_view_list_auction_dedicated').get_combined_arch()` before assuming a field is missing — see `odoo_conventions/view_patterns.md`.
+
+**Removed:** `data/sor_events_auction_server_actions.xml` and its `action_catalogue_all_lots` global server action. `ir.actions.server.binding_model_id` has no per-view scoping — the action appeared in the Action menu of every `sor.lot` list view, not just the auction context it was meant for. Removing `binding_model_id` would not have "moved" the action to one view; a header button on a dedicated view is the correct native mechanism instead.
 
 ### Window actions
 
 | Record ID | Description |
 |-----------|-------------|
-| `sor_lot_action_from_event` | Opens `sor.lot` list filtered by `auction_id = active_id`. Used by the stat button. |
+| `sor_lot_action_from_event` | Opens `sor.lot` list filtered by `auction_id = active_id`. Used by the stat button. As of Auction MVP Refinements Story 04, its list-mode view is bound to `sor_lot_view_list_auction_dedicated` via an explicit `ir.actions.act_window.view` record — setting `view_id` directly on the action is unreliable in Odoo 19 (see `odoo_conventions/view_patterns.md`). |
 | `sor_auction_action_all` | Opens all auction events. Uses standalone `sor_auction_view_list`. |
 | `sor_auction_action_live` | Opens active auction events only (`status = 'active'`). |
 | `sor_auction_action_upcoming` | Opens draft and published auction events. |
@@ -245,9 +256,9 @@ addons/sor_events_auction/
 |------|---------|
 | `__manifest__.py` | `auto_install=True`, `depends=['sor_events','sor_lotting']` — the composability declaration |
 | `models/sor_event_auction.py` | Auction fields on `sor.event`; `_compute_lot_count`; `action_go_live()` |
-| `models/sor_lot_auction.py` | `auction_id` field; `live` state via `selection_add`; `UNIQUE(auction_id, lot_number)` constraint |
-| `views/sor_events_auction_views.xml` | All view patches, standalone list view, window actions, menus |
-| `tests/test_sor_events_auction.py` | 16 automated tests covering all confirmed ACs |
+| `models/sor_lot_auction.py` | `auction_id` field; `live` state via `selection_add`; `UNIQUE(auction_id, lot_number)` constraint; `action_catalogue_selected_lots()` |
+| `views/sor_events_auction_views.xml` | All view patches, standalone list view, dedicated Auction Lot list view + header button, window actions (including the `ir.actions.act_window.view` binding), menus |
+| `tests/test_sor_events_auction.py` | Automated tests covering all confirmed ACs |
 
 ---
 
@@ -319,5 +330,6 @@ See `docker_dev_workflow.md` for the full Docker upgrade and restart workflow.
 
 ## Story Reference
 
-Parent story: `.backlog/current/Auction Engine/stories/03_Events-Auction-Bridge.md`
-Sprint: Sprint 09 — Auction Engine
+Parent story: `.backlog/previous/` (Sprint 09 — Auction Engine)
+
+Auction MVP Refinements Story 04 — Auction Lot Dedicated View (removed the global server action; added the dedicated list view + header button): `.backlog/current/Auction MVP Refinements/stories/04_Auction-Lot-Dedicated-View.md`

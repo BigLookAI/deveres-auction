@@ -236,10 +236,16 @@ class TestSorEventsAuction(TransactionCase):
         self.assertEqual(lot_a.state, 'live')
         self.assertEqual(lot_b.state, 'live')
 
-    def test_12_action_go_live_excludes_draft_lots(self):
-        """action_go_live does not transition Draft lots — only Catalogued lots are affected."""
+    def test_12_action_go_live_raises_when_draft_lots_present(self):
+        """action_go_live raises UserError when Draft lots remain — all lots must be catalogued.
+
+        Story 03 (Catalogue All Lots + Go Live Guard) changed the behaviour: draft lots
+        are no longer silently skipped; instead the guard blocks Go Live entirely.
+        Explicit lot_numbers avoid the sor_lot_auction_lot_number_unique constraint
+        collision that arises when two NULL lot_numbers share the same auction.
+        """
         event = self.env['sor.event'].create({
-            'name': 'Draft Exclusion Test Auction',
+            'name': 'Draft Guard Test Auction',
             'event_type': 'auction',
             'status': 'published',
             'date_start': '2026-05-25 10:00:00',
@@ -249,19 +255,25 @@ class TestSorEventsAuction(TransactionCase):
             'product_id': self.product.id,
             'company_id': self.env.company.id,
             'auction_id': event.id,
+            'lot_number': 'D01',
             'state': 'draft',
         })
         catalogued_lot = self.env['sor.lot'].create({
             'product_id': self.product.id,
             'company_id': self.env.company.id,
             'auction_id': event.id,
+            'lot_number': 'C01',
             'state': 'catalogued',
         })
-        event.action_go_live()
+        with self.assertRaises(UserError,
+                               msg="action_go_live must raise UserError when Draft lots remain"):
+            event.action_go_live()
+        self.assertEqual(event.status, 'published',
+                         "Event must remain Published after go_live guard fires.")
         self.assertEqual(draft_lot.state, 'draft',
-                         "Draft lots must remain in Draft after Go Live.")
-        self.assertEqual(catalogued_lot.state, 'live',
-                         "Catalogued lots must move to Live after Go Live.")
+                         "Draft lot must remain in Draft after go_live guard fires.")
+        self.assertEqual(catalogued_lot.state, 'catalogued',
+                         "Catalogued lot must remain Catalogued when guard blocks go_live.")
 
     def test_13_action_go_live_raises_if_not_published(self):
         """action_go_live raises UserError if the event is not in Published state."""
@@ -332,10 +344,30 @@ class TestSorEventsAuction(TransactionCase):
                       "Bridge must add 'live' state via selection_add.")
 
     # ------------------------------------------------------------------
-    # 7. action_catalogue guard — late cataloguing blocked when auction is Live
+    # 7. Chatter — action_go_live posts a message (Sprint 19)
     # ------------------------------------------------------------------
 
-    def test_17_action_catalogue_blocked_when_auction_is_live(self):
+    def test_17_action_go_live_posts_chatter_message(self):
+        """action_go_live posts a message to the auction event chatter."""
+        event = self.env['sor.event'].create({
+            'name': 'Chatter Go Live Test',
+            'event_type': 'auction',
+            'status': 'published',
+            'date_start': '2026-07-01 10:00:00',
+            'company_id': self.env.company.id,
+        })
+        before_count = len(event.message_ids)
+        event.action_go_live()
+        self.assertGreater(
+            len(event.message_ids), before_count,
+            'action_go_live must post a chatter message',
+        )
+
+    # ------------------------------------------------------------------
+    # 8. action_catalogue guard — late cataloguing blocked when auction is Live
+    # ------------------------------------------------------------------
+
+    def test_18_action_catalogue_blocked_when_auction_is_live(self):
         """action_catalogue raises UserError when the lot's auction is already Active."""
         active_auction = self.env['sor.event'].create({
             'name': 'Active Auction for Catalogue Guard Test',
@@ -354,3 +386,97 @@ class TestSorEventsAuction(TransactionCase):
             lot.action_catalogue()
         self.assertEqual(lot.state, 'draft',
                          "Lot must remain in Draft when catalogue guard raises")
+
+    # ------------------------------------------------------------------
+    # 9. Story 04 — Auction Lot Dedicated View
+    # ------------------------------------------------------------------
+
+    def test_19_action_catalogue_selected_lots_catalogues_draft_lots(self):
+        """action_catalogue_selected_lots catalogues every Draft lot in the recordset."""
+        lots = self.env['sor.lot'].create([
+            {
+                'product_id': self.product.id,
+                'company_id': self.env.company.id,
+                'auction_id': self.auction.id,
+                'lot_number': 'S4-01',
+            },
+            {
+                'product_id': self.product.id,
+                'company_id': self.env.company.id,
+                'auction_id': self.auction.id,
+                'lot_number': 'S4-02',
+            },
+        ])
+        lots.action_catalogue_selected_lots()
+        self.assertTrue(all(lot.state == 'catalogued' for lot in lots))
+
+    def test_20_action_catalogue_selected_lots_silently_skips_non_draft(self):
+        """action_catalogue_selected_lots is a safe no-op on already-Catalogued/Sold lots (Finding #1).
+
+        Confirmed non-blocking at Show & Tell: the header button itself cannot be gated on
+        selected-row state (see odoo_conventions/view_patterns.md), so the Python method must
+        be defensive. This test locks in that the defensiveness itself is correct: mixing
+        already-catalogued lots into the selection does not raise and does not change their state.
+        """
+        draft_lot = self.env['sor.lot'].create({
+            'product_id': self.product.id,
+            'company_id': self.env.company.id,
+            'auction_id': self.auction.id,
+            'lot_number': 'S4-03',
+        })
+        catalogued_lot = self.env['sor.lot'].create({
+            'product_id': self.product.id,
+            'company_id': self.env.company.id,
+            'auction_id': self.auction.id,
+            'lot_number': 'S4-04',
+        })
+        catalogued_lot.action_catalogue()
+        mixed_selection = draft_lot | catalogued_lot
+        mixed_selection.action_catalogue_selected_lots()
+        self.assertEqual(draft_lot.state, 'catalogued')
+        self.assertEqual(catalogued_lot.state, 'catalogued')
+
+    def test_21_action_catalogue_selected_lots_still_guards_missing_lot_number(self):
+        """The existing 'no lot_number' guard in action_catalogue is unchanged by this story."""
+        lot = self.env['sor.lot'].create({
+            'product_id': self.product.id,
+            'company_id': self.env.company.id,
+            'auction_id': self.auction.id,
+        })
+        with self.assertRaises(UserError):
+            lot.action_catalogue_selected_lots()
+
+    def test_22_server_action_catalogue_all_lots_removed(self):
+        """The old global server action action_catalogue_all_lots no longer exists."""
+        action = self.env['ir.actions.server'].search([
+            ('name', '=', 'Catalogue Selected Lots'),
+            ('model_id.model', '=', 'sor.lot'),
+        ])
+        self.assertFalse(
+            action, 'The global server action must be removed — replaced by a header button',
+        )
+
+    def test_23_dedicated_view_contains_auction_context_columns_and_header_button(self):
+        """The dedicated Auction Lot list view combined arch has auction_id, hammer_price, and the header button."""
+        arch = self.env.ref(
+            'sor_events_auction.sor_lot_view_list_auction_dedicated',
+        ).get_combined_arch()
+        self.assertIn('auction_id', arch)
+        self.assertIn('hammer_price', arch)
+        self.assertIn('action_catalogue_selected_lots', arch)
+        # auction_id must appear exactly once (see Developer Notes — mode="primary" combined
+        # arch already inherits sor_lot_view_list_auction_id's contribution automatically)
+        self.assertEqual(arch.count('name="auction_id"'), 1)
+
+    def test_24_lots_stat_button_bound_to_dedicated_view(self):
+        """The event's 'Lots' stat button action is bound to the dedicated view for list mode."""
+        action = self.env.ref('sor_events_auction.sor_lot_action_from_event')
+        binding = self.env['ir.actions.act_window.view'].search([
+            ('act_window_id', '=', action.id),
+            ('view_mode', '=', 'list'),
+        ])
+        self.assertTrue(binding, 'A list-mode view binding must exist for sor_lot_action_from_event')
+        self.assertEqual(
+            binding.view_id,
+            self.env.ref('sor_events_auction.sor_lot_view_list_auction_dedicated'),
+        )

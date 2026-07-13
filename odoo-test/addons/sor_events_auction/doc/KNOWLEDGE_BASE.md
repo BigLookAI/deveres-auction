@@ -38,6 +38,8 @@ Neither parent is modified. The bridge activates automatically when both parents
 | `lot_ids` | One2many → `sor.lot` | All lots assigned to this auction via `auction_id`. Read-only from the event's perspective — lots are assigned by writing `auction_id` on the lot record. |
 | `lot_count` | Integer (computed) | Count of lots in `lot_ids`. `store=False` — always computed fresh, never cached. Drives the Lots smart button on the event form. |
 
+**Note on pending count fields:** `psa_pending_count`, `posa_pending_count`, `vss_pending_count`, and `invoice_pending_count` are NOT provided by this bridge. They are added by `sor_auction_documents` and `sor_buyer_invoice_auction_house` respectively when those modules are installed. This bridge provides the lot-event linkage that those counts depend on, but does not own the fields.
+
 ### sor.lot — fields added by the bridge
 
 | Field | Type | Description |
@@ -64,6 +66,18 @@ Before delegating to `super()`, checks whether the lot is assigned to an auction
 This guard prevents a lot from being added to a sale catalogue after the auction has already opened for bidding. Lots must be catalogued before Go Live.
 
 **Draft lots without an auction** — not affected. The guard only fires when `auction_id` is set and the auction is Active.
+
+---
+
+### action_catalogue_selected_lots() (Auction MVP Refinements Story 04)
+
+**Model:** `sor.lot`
+
+**What it does:** `self.filtered(lambda lot: lot.state == 'draft').action_catalogue()` — catalogues every Draft lot in the recordset, silently skipping any non-Draft lots in the selection (no error, no state change to them). Bound as a `<header>` button on the dedicated Auction Lot list view (see Views below), not as a global server action.
+
+**Why a header button, not a server action:** `ir.actions.server.binding_model_id` has no per-view scoping mechanism — a server action bound this way appears in the Action menu of *every* list view for the model, regardless of which view opened it. The previous design (`action_catalogue_all_lots`, a global server action with a runtime `default_auction_id` context guard) has been removed entirely. A list-view `<header>` button is scoped only to the specific view it is declared in — the correct native mechanism for "this action only makes sense in this one context."
+
+**Header buttons cannot be gated on selected-row state:** Odoo does not expose the current selection's field values to a header button's `invisible` expression, so the button remains visible/clickable even when the selection includes only already-Catalogued or Sold lots. This is why the method above must be defensive (filter to Draft before acting) — the safeguard lives in Python, not the view. See `odoo_conventions/view_patterns.md`.
 
 ---
 
@@ -120,6 +134,8 @@ If a subsequent bridge or module needs to extend auction-lot behaviour — for e
 
 6. **View injection points.** The `sor.lot` form view has a comment marking the D2 bridge injection point (before the `<notebook>`). The `sor.event` form has a `button_box` div injected by this bridge. Further bridges can add stat buttons to that div using additional `<xpath expr="//div[@name='button_box']" position="inside">` patches.
 
+7. **The dedicated Auction Lot list view (`sor_lot_view_list_auction_dedicated`).** A `mode="primary"` view inheriting `sor_lotting.sor_lot_view_list`, reached only via the event's "Lots" stat button — not the general Lots list. Bulk actions that only make sense within a single auction's context (like "Catalogue Selected Lots") belong on this dedicated view's `<header>`, not as a globally-bound server action. **Before adding a field via XPath to this view, check whether an existing extension already contributes it** — `sor_lot_view_list_auction_id` (the pre-existing patch adding `auction_id` to the *general* Lots list) is automatically baked into this dedicated view's combined arch, since Odoo resolves a `mode="primary"` view's combined arch from the true root of the whole inheritance chain and applies every active extension-mode view along it, not just ones on this view's own direct ancestor path. Re-adding `auction_id` via a second XPath here would produce a duplicate field. Verify via `env.ref('sor_events_auction.sor_lot_view_list_auction_dedicated').get_combined_arch()` in the shell before assuming a field is missing.
+
 ---
 
 ## Regression Checks
@@ -144,6 +160,12 @@ These checks verify that `sor_events_auction` continues to work correctly after 
 2. Confirm the **Auction** field is present on the form.
 3. Assign the lot to an existing auction event. Save.
 4. Open the auction event. Confirm the lot count increments by 1 and the lot appears in the Auction Details tab.
+
+**R3b — Embedded Lots tab shows Hammer Price (Auction Refinements 01, Story 2)**
+
+1. Open an auction event with at least one lot assigned.
+2. Click the **Lots** tab (the embedded list, not the Lots stat button popup).
+3. Confirm a **Hammer Price** column is visible by default, alongside Lot Number, Item, State, and Reserve.
 
 **R4 — Duplicate lot number within same auction raises an error**
 
@@ -180,6 +202,13 @@ These checks verify that `sor_events_auction` continues to work correctly after 
 2. Confirm the sub-items **Live**, **Upcoming**, and **Past** are present.
 3. Navigate to **Upcoming**. Confirm only auction events with status `draft` or `published` are shown.
 4. Navigate to **Past**. Confirm only auction events with status `closed` or `archived` are shown.
+
+**R9 — Dedicated Auction Lot view scoping (Auction MVP Refinements Story 04)**
+
+1. Open an auction event's Lots tab (via the "Lots" stat button). Confirm `auction_id` and `hammer_price` columns are present, and selecting Draft lots and clicking "Catalogue Selected Lots" (in the list header) transitions them to Catalogued.
+2. Navigate to the general Lots list (not via any event). Select one or more lots and open the Action menu. Confirm "Catalogue Selected Lots" is **not** present, under any selection.
+3. Attempting to catalogue a selected lot with no `lot_number` still raises the same clear error as before.
+4. Selecting a mix of Draft and already-Catalogued/Sold lots and clicking "Catalogue Selected Lots" catalogues only the Draft ones — no error, no change to the others (the button itself cannot be hidden based on selection; the Python method is defensive instead).
 
 ---
 

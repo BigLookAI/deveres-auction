@@ -1,6 +1,4 @@
-import base64
-
-from odoo import _, fields, models
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
@@ -20,6 +18,18 @@ class SorEvent(models.Model):
     pre_sale_advice_count = fields.Integer(
         string='Pre-Sale Advices',
         compute='_compute_pre_sale_advice_count',
+        store=False,
+    )
+    psa_pending_count = fields.Integer(
+        compute='_compute_psa_pending_count',
+        store=False,
+    )
+    posa_pending_count = fields.Integer(
+        compute='_compute_posa_pending_count',
+        store=False,
+    )
+    vss_pending_count = fields.Integer(
+        compute='_compute_vss_pending_count',
         store=False,
     )
 
@@ -51,6 +61,33 @@ class SorEvent(models.Model):
             event.pre_sale_advice_count = self.env['sor.pre.sale.advice'].search_count([
                 ('event_id', '=', event.id),
             ])
+
+    @api.depends('lot_ids', 'lot_ids.state', 'lot_ids.consignor_id', 'lot_ids.pre_sale_advice_id')
+    def _compute_psa_pending_count(self):
+        for event in self:
+            event.psa_pending_count = len(event.lot_ids.filtered(
+                lambda lot: lot.state in ('catalogued', 'live')
+                and lot.consignor_id
+                and not lot.pre_sale_advice_id,
+            ))
+
+    @api.depends('lot_ids', 'lot_ids.state', 'lot_ids.consignor_id', 'lot_ids.post_sale_advice_id')
+    def _compute_posa_pending_count(self):
+        for event in self:
+            event.posa_pending_count = len(event.lot_ids.filtered(
+                lambda lot: lot.state in ('sold', 'passed')
+                and lot.consignor_id
+                and not lot.post_sale_advice_id,
+            ))
+
+    @api.depends('lot_ids', 'lot_ids.state', 'lot_ids.consignor_id', 'lot_ids.vendor_settlement_id')
+    def _compute_vss_pending_count(self):
+        for event in self:
+            event.vss_pending_count = len(event.lot_ids.filtered(
+                lambda lot: lot.state in ('sold', 'passed')
+                and lot.consignor_id
+                and not lot.vendor_settlement_id,
+            ))
 
     def action_view_post_sale_advices(self):
         self.ensure_one()
@@ -104,6 +141,10 @@ class SorEvent(models.Model):
                     'company_id': self.company_id.id,
                 })
                 consignor_lots.write({'pre_sale_advice_id': advice.id})
+        self.message_post(
+            body=_('%d Pre-Sale Advice(s) generated.') % len(consignors),
+            subtype_xmlid='mail.mt_note',
+        )
         return {
             'type': 'ir.actions.act_window',
             'name': _('Pre-Sale Advices'),
@@ -112,32 +153,6 @@ class SorEvent(models.Model):
             'domain': [('event_id', '=', self.id)],
             'context': {'default_event_id': self.id},
         }
-
-    def action_send_all_pre_sale_advices(self):
-        self.ensure_one()
-        advices = self.env['sor.pre.sale.advice'].search([
-            ('event_id', '=', self.id),
-        ])
-        report = self.env.ref('sor_auction_documents.action_report_sor_pre_sale_advice')
-        for advice in advices:
-            if not advice.consignor_id.email:
-                continue
-            pdf_content, _content_type = report._render_qweb_pdf(report.id, [advice.id])
-            attachment = self.env['ir.attachment'].create({
-                'name': f'{advice.name}.pdf',
-                'type': 'binary',
-                'datas': base64.b64encode(pdf_content),
-                'res_model': advice._name,
-                'res_id': advice.id,
-                'mimetype': 'application/pdf',
-            })
-            advice.message_post(
-                email_from=advice.company_id.email,
-                partner_ids=[advice.consignor_id.id],
-                subject=_('Pre-Sale Advice — %s') % self.name,
-                body=_('Please find your Pre-Sale Advice for %s attached.') % self.name,
-                attachment_ids=[attachment.id],
-            )
 
     def action_generate_post_sale_advices(self):
         self.ensure_one()
@@ -169,6 +184,10 @@ class SorEvent(models.Model):
                     'company_id': self.company_id.id,
                 })
                 consignor_lots.write({'post_sale_advice_id': advice.id})
+        self.message_post(
+            body=_('%d Post-Sale Advice(s) generated.') % len(consignors),
+            subtype_xmlid='mail.mt_note',
+        )
         return {
             'type': 'ir.actions.act_window',
             'name': _('Post-Sale Advices'),
@@ -177,32 +196,6 @@ class SorEvent(models.Model):
             'domain': [('event_id', '=', self.id)],
             'context': {'default_event_id': self.id},
         }
-
-    def action_send_all_post_sale_advices(self):
-        self.ensure_one()
-        advices = self.env['sor.post.sale.advice'].search([
-            ('event_id', '=', self.id),
-        ])
-        report = self.env.ref('sor_auction_documents.action_report_sor_post_sale_advice')
-        for advice in advices:
-            if not advice.consignor_id.email:
-                continue
-            pdf_content, _content_type = report._render_qweb_pdf(report.id, [advice.id])
-            attachment = self.env['ir.attachment'].create({
-                'name': f'{advice.name}.pdf',
-                'type': 'binary',
-                'datas': base64.b64encode(pdf_content),
-                'res_model': advice._name,
-                'res_id': advice.id,
-                'mimetype': 'application/pdf',
-            })
-            advice.message_post(
-                email_from=advice.company_id.email,
-                partner_ids=[advice.consignor_id.id],
-                subject=_('Post-Sale Advice — %s') % self.name,
-                body=_('Please find your Post-Sale Advice for %s attached.') % self.name,
-                attachment_ids=[attachment.id],
-            )
 
     def action_generate_vendor_settlements(self):
         self.ensure_one()
@@ -235,6 +228,10 @@ class SorEvent(models.Model):
                     'company_id': self.company_id.id,
                 })
                 consignor_lots.write({'vendor_settlement_id': vss.id})
+        self.message_post(
+            body=_('%d Vendor Settlement(s) generated.') % len(consignors),
+            subtype_xmlid='mail.mt_note',
+        )
         return {
             'type': 'ir.actions.act_window',
             'name': _('Vendor Settlements'),

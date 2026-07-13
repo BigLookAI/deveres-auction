@@ -1,6 +1,6 @@
 {
     'name': 'SOR Auction Documents',
-    'version': '19.0.1.1.0',
+    'version': '19.0.1.3.0',
     'summary': 'Pre-Sale Advice, Post-Sale Advice, and Vendor Settlement Statement for auction houses',
     'depends': ['sor_commercial_auction_house', 'mail'],
     'auto_install': False,
@@ -13,12 +13,14 @@
         'report/sor_pre_sale_advice_report.xml',
         'report/sor_post_sale_advice_report.xml',
         'report/sor_vendor_settlement_report.xml',
+        'data/mail_template_data.xml',
         'views/sor_lot_auction_docs_views.xml',
         'views/sor_event_auction_docs_views.xml',
         'views/sor_pre_sale_advice_views.xml',
         'views/sor_post_sale_advice_views.xml',
         'views/sor_vendor_settlement_views.xml',
         'views/res_config_settings_views.xml',
+        'views/menu_views.xml',
     ],
     'post_init_hook': 'post_init_hook',
     'assets': {

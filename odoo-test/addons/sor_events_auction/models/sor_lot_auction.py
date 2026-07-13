@@ -32,3 +32,6 @@ class SorLotAuction(models.Model):
                     % (lot.lot_reference, lot.auction_id.name),
                 )
         return super().action_catalogue()
+
+    def action_catalogue_selected_lots(self):
+        self.filtered(lambda lot: lot.state == 'draft').action_catalogue()

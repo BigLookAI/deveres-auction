@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Auction House Documents grouping under the Auctions root menu.
+         Sequence 40 — after Live (10), Upcoming (20), Past (30). -->
+    <menuitem
+        id="menu_sor_auction_documents"
+        name="Auction House Documents"
+        parent="sor_events_auction.menu_sor_auctions_root"
+        sequence="40"/>
+
+    <menuitem
+        id="menu_sor_pre_sale_advices"
+        name="Pre-Sale Advices"
+        parent="menu_sor_auction_documents"
+        action="action_sor_pre_sale_advice"
+        sequence="10"/>
+
+    <menuitem
+        id="menu_sor_post_sale_advices"
+        name="Post-Sale Advices"
+        parent="menu_sor_auction_documents"
+        action="action_sor_post_sale_advice"
+        sequence="20"/>
+
+    <menuitem
+        id="menu_sor_vendor_settlements"
+        name="Vendor Settlements"
+        parent="menu_sor_auction_documents"
+        action="action_sor_vendor_settlement"
+        sequence="30"/>
+</odoo>

@@ -14,5 +14,14 @@
             <field name="global" eval="True"/>
             <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
         </record>
+        <!-- company_id is a related field mirroring lot_id.company_id — this rule is
+             defensive record-level isolation, per sor_multi_company.md, since this
+             model holds real financial amounts. -->
+        <record id="sor_lot_fixed_charge_company_rule" model="ir.rule">
+            <field name="name">SOR Lot Fixed Charge: Multi-company</field>
+            <field name="model_id" ref="model_sor_lot_fixed_charge"/>
+            <field name="global" eval="True"/>
+            <field name="domain_force">['|', ('company_id', '=', False), ('company_id', 'in', company_ids)]</field>
+        </record>
     </data>
 </odoo>

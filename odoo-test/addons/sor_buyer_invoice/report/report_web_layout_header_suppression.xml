@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- BUG-03 — on a multi-page buyer invoice PDF, the logo/address header should only
+         appear on page 1; the running footer must keep repeating on every page as before.
+
+         The header/footer are wkhtmltopdf's own running header/footer mechanism, shared by
+         every PDF report in the system (native invoices, PSA/POSA/VSS, etc.) via
+         web.external_layout -> web.external_layout_<variant> and web.minimal_layout (the
+         template wkhtmltopdf actually calls per physical page via the header HTML option).
+         web.external_layout is a dynamic dispatcher (t-call="{{company.external_report_layout_id.key}}")
+         with no header div of its own — each of the 7 concrete layout templates
+         (standard/bold/boxed/striped/folder/wave/bubble, addons/web/views/report_templates.xml)
+         independently defines its own <div class="header">, so there is no single shared
+         arch node to XPath once; each variant needs its own additive marker patch below.
+         A first attempt patched only `standard` and passed on the `odoo` database (whose
+         only company uses the default), but failed UAT Round 2 against `odoo_deveres`, whose
+         company is explicitly configured to `web.external_layout_bold` — see Regression Notes
+         in BUG-03-invoice-header-page-one-only.md. All 7 variants are patched here so the fix
+         is correct regardless of which layout any current or future client selects.
+
+         Two patches, both additive XPaths, scoped so only our own event-linked buyer
+         invoice is affected:
+
+         1. Mark our own header div (in every layout variant) with a data attribute, guarded
+            on this being our own report (account.move with sor_event_id set — the exact
+            condition account.move._get_name_invoice_report() uses to dispatch to
+            sor_buyer_invoice's bespoke template, so no other report can match it).
+         2. Extend web.minimal_layout's subst() JS (called once per physical page) to check
+            that marker and, if present, suppress the header only when this is not the first
+            physical page of the current document (wkhtmltopdf's own page != frompage query
+            params, scoped per input document, not the whole combined PDF job).
+
+         Reports without the marker attribute (every other report in the system) render
+         through this same JS unmodified. -->
+    <template id="external_layout_standard_sor_buyer_invoice_header_marker"
+              inherit_id="web.external_layout_standard">
+        <xpath expr="//div[contains(@t-attf-class, 'header')]" position="attributes">
+            <attribute name="t-att-data-sor-first-page-only">'1' if o and o._name == 'account.move' and o.sor_event_id else None</attribute>
+        </xpath>
+    </template>
+
+    <template id="external_layout_bold_sor_buyer_invoice_header_marker"
+              inherit_id="web.external_layout_bold">
+        <xpath expr="//div[contains(@t-attf-class, 'header')]" position="attributes">
+            <attribute name="t-att-data-sor-first-page-only">'1' if o and o._name == 'account.move' and o.sor_event_id else None</attribute>
+        </xpath>
+    </template>
+
+    <template id="external_layout_boxed_sor_buyer_invoice_header_marker"
+              inherit_id="web.external_layout_boxed">
+        <xpath expr="//div[contains(@t-attf-class, 'header')]" position="attributes">
+            <attribute name="t-att-data-sor-first-page-only">'1' if o and o._name == 'account.move' and o.sor_event_id else None</attribute>
+        </xpath>
+    </template>
+
+    <template id="external_layout_striped_sor_buyer_invoice_header_marker"
+              inherit_id="web.external_layout_striped">
+        <xpath expr="//div[contains(@t-attf-class, 'header')]" position="attributes">
+            <attribute name="t-att-data-sor-first-page-only">'1' if o and o._name == 'account.move' and o.sor_event_id else None</attribute>
+        </xpath>
+    </template>
+
+    <template id="external_layout_folder_sor_buyer_invoice_header_marker"
+              inherit_id="web.external_layout_folder">
+        <xpath expr="//div[contains(@t-attf-class, 'header')]" position="attributes">
+            <attribute name="t-att-data-sor-first-page-only">'1' if o and o._name == 'account.move' and o.sor_event_id else None</attribute>
+        </xpath>
+    </template>
+
+    <template id="external_layout_wave_sor_buyer_invoice_header_marker"
+              inherit_id="web.external_layout_wave">
+        <xpath expr="//div[contains(@t-attf-class, 'header')]" position="attributes">
+            <attribute name="t-att-data-sor-first-page-only">'1' if o and o._name == 'account.move' and o.sor_event_id else None</attribute>
+        </xpath>
+    </template>
+
+    <template id="external_layout_bubble_sor_buyer_invoice_header_marker"
+              inherit_id="web.external_layout_bubble">
+        <xpath expr="//div[contains(@t-attf-class, 'header')]" position="attributes">
+            <attribute name="t-att-data-sor-first-page-only">'1' if o and o._name == 'account.move' and o.sor_event_id else None</attribute>
+        </xpath>
+    </template>
+
+    <template id="minimal_layout_sor_buyer_invoice_header_suppression"
+              inherit_id="web.minimal_layout">
+        <xpath expr="//script[@t-if='subst']" position="replace">
+            <script t-if="subst">
+                function subst() {
+                    var vars = {};
+                    var x = document.location.search.substring(1).split('&amp;');
+                    for (var i in x) {
+                        var z = x[i].split('=', 2);
+                        vars[z[0]] = unescape(z[1]);
+                    }
+                    var x = ['sitepage', 'sitepages', 'section', 'subsection', 'subsubsection'];
+                    var z = {'sitepage': 'page', 'sitepages': 'topage'};
+                    for (var i in x) {
+                        var y = document.getElementsByClassName(z[x[i]] || x[i])
+                        for (var j=0; j&lt;y.length; ++j)
+                            y[j].textContent = vars[x[i]];
+                    }
+
+                    var index = vars['webpage'].split('.', 4)[3];
+                    var header = document.getElementById('minimal_layout_report_headers');
+                    if(header){
+                        var companyHeader = header.children[index];
+                        header.textContent = '';
+                        // BUG-03 (sor_buyer_invoice): a header carrying our marker only
+                        // repeats on the first physical page of its own document; headers
+                        // with no marker (every other report) are unaffected.
+                        var suppressHeader = companyHeader
+                            &amp;&amp; companyHeader.getAttribute('data-sor-first-page-only')
+                            &amp;&amp; vars['page'] !== vars['frompage'];
+                        if (!suppressHeader) {
+                            header.appendChild(companyHeader);
+                        }
+                    }
+                    var footer = document.getElementById('minimal_layout_report_footers');
+                    if(footer){
+                        var companyFooter = footer.children[index];
+                        footer.textContent = '';
+                        footer.appendChild(companyFooter);
+                    }
+                }
+            </script>
+        </xpath>
+    </template>
+</odoo>

@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Developer menu: Contact Types -->
+
+    <record id="view_sor_contact_type_list" model="ir.ui.view">
+        <field name="name">sor.contact.type.list</field>
+        <field name="model">sor.contact.type</field>
+        <field name="arch" type="xml">
+            <list string="Contact Types" decoration-muted="not active">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="parent_type_id"/>
+                <field name="active" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_sor_contact_type_form" model="ir.ui.view">
+        <field name="name">sor.contact.type.form</field>
+        <field name="model">sor.contact.type</field>
+        <field name="arch" type="xml">
+            <form string="Contact Type">
+                <sheet>
+                    <group>
+                        <field name="name"/>
+                        <field name="code"/>
+                        <field name="parent_type_id"/>
+                        <field name="sequence"/>
+                        <field name="color" widget="color_picker"/>
+                        <field name="active"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_sor_contact_types_dev" model="ir.actions.act_window">
+        <field name="name">Contact Types</field>
+        <field name="res_model">sor.contact.type</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'active_test': False}</field>
+    </record>
+
+    <menuitem id="menu_sor_contact_types_dev"
+              name="Contact Types"
+              parent="sor_technical_menu.menu_sor_technical_root"
+              action="action_sor_contact_types_dev"
+              groups="base.group_no_one"
+              sequence="10"/>
+</odoo>

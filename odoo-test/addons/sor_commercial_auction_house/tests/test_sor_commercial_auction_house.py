@@ -1,3 +1,5 @@
+import re
+
 from odoo.tests import TransactionCase, tagged
 
 from odoo.addons.sor_commercial_auction_house import hooks
@@ -196,25 +198,36 @@ class TestSorCommercialAuctionHouse(TransactionCase):
         self.assertAlmostEqual(lot.break_even_value, 10000.0 / 0.90, places=2)
 
     # ------------------------------------------------------------------
-    # 4. default_get cascade — company default
+    # 4. Lot creation cascade — company default
     # ------------------------------------------------------------------
 
-    def test_12_default_get_cascades_from_company_fee_schedule(self):
-        """default_get pulls sellers_commission from company fee schedule when no consignor."""
+    def test_12_lot_creation_uses_company_fee_schedule_for_commission(self):
+        """A new lot's sellers_commission_pct is computed from company fee schedule.
+
+        sellers_commission_pct is a computed+inverse field (BUG-S04-F04/F06), so
+        default_get does not return it.  The computed value on a freshly-created
+        lot is the authoritative test for the company-schedule cascade.
+
+        withdrawal_fee_pct and buyers_premium_pct are still plain Float fields
+        populated via default_get; those remain tested via default_get.
+        """
         self.sellers_commission_fee.rate_pct = 12.0
         self.withdrawal_fee.rate_pct = 5.0
         self.premium_tier.rate_pct = 18.0
 
+        # sellers_commission_pct: verify via lot creation
+        lot = self._make_lot()
+        lot.invalidate_recordset(['sellers_commission_pct'])
+        self.assertAlmostEqual(
+            lot.sellers_commission_pct, 12.0, places=1,
+            msg="sellers_commission_pct must be computed from company fee schedule on a new lot",
+        )
+
+        # withdrawal_fee_pct and buyers_premium_pct: still via default_get
         defaults = self.env['sor.lot'].with_company(self.company).default_get([
-            'sellers_commission_pct',
             'withdrawal_fee_pct',
             'buyers_premium_pct',
         ])
-
-        self.assertEqual(
-            defaults.get('sellers_commission_pct'), 12.0,
-            "sellers_commission_pct must default from company fee schedule",
-        )
         self.assertEqual(
             defaults.get('withdrawal_fee_pct'), 5.0,
             "withdrawal_fee_pct must default from company fee schedule",
@@ -225,29 +238,34 @@ class TestSorCommercialAuctionHouse(TransactionCase):
         )
 
     # ------------------------------------------------------------------
-    # 5. default_get cascade — consignor override
+    # 5. Computed commission — company default vs consignor override
     # ------------------------------------------------------------------
 
-    def test_13_default_get_always_uses_company_default(self):
-        """default_get always returns company fee schedule — consignor cascade removed (fix #22)."""
+    def test_13_sellers_commission_uses_company_default_without_consignor_override(self):
+        """sellers_commission_pct uses company rate unless consignor.use_custom_default_commission.
+
+        sellers_commission_pct is a computed+inverse field (BUG-S04-F04/F06).
+        The old default_get cascade was removed.  Verify the computed field
+        behaviour via lot creation: company default always wins unless the
+        consignor explicitly has use_custom_default_commission=True.
+        """
         self.sellers_commission_fee.rate_pct = 10.0
 
-        defaults = self.env['sor.lot'].with_company(self.company).default_get([
-            'sellers_commission_pct',
-        ])
-        self.assertEqual(
-            defaults.get('sellers_commission_pct'), 10.0,
-            "Company fee schedule must be used when no consignor cascade exists",
+        # Lot without consignor — must use company rate
+        lot_no_consignor = self._make_lot()
+        lot_no_consignor.invalidate_recordset(['sellers_commission_pct'])
+        self.assertAlmostEqual(
+            lot_no_consignor.sellers_commission_pct, 10.0, places=1,
+            msg="Company fee schedule must be used when no consignor is set",
         )
 
-        # Even if default_consignor_id is in context (from a partner action),
-        # default_get no longer reads the consignor rate — company default is always used.
-        defaults_with_ctx = self.env['sor.lot'].with_company(self.company).with_context(
-            default_consignor_id=self.consignor.id,
-        ).default_get(['sellers_commission_pct'])
-        self.assertEqual(
-            defaults_with_ctx.get('sellers_commission_pct'), 10.0,
-            "Company default must be returned even when consignor context is present",
+        # Lot with a consignor who does NOT have use_custom_default_commission=True
+        # (cls.consignor has default_sellers_commission_pct=15.0 but the toggle is off)
+        lot_with_consignor = self._make_lot(consignor_id=self.consignor.id)
+        lot_with_consignor.invalidate_recordset(['sellers_commission_pct'])
+        self.assertAlmostEqual(
+            lot_with_consignor.sellers_commission_pct, 10.0, places=1,
+            msg="Company default must be used when consignor.use_custom_default_commission is False",
         )
 
     def test_14_default_sellers_commission_pct_field_on_partner(self):
@@ -437,3 +455,148 @@ class TestSorCommercialAuctionHouse(TransactionCase):
                 field_rec.modules,
                 f"sor.lot.{field_name} must be attributed to sor_commercial_auction_house",
             )
+
+    # ------------------------------------------------------------------
+    # 11. Fixed Charge Type registry
+    # ------------------------------------------------------------------
+
+    def test_27_fixed_charge_type_model_installed(self):
+        """sor.fixed.charge.type model is accessible from the environment."""
+        self.assertIn('sor.fixed.charge.type', self.env)
+
+    def test_28_fixed_charge_type_seeded_four_types(self):
+        """Four Fixed Charge Types are seeded on install."""
+        names = self.env['sor.fixed.charge.type'].search([]).mapped('name')
+        for expected in ('Restoration', 'Framing', 'Transportation', 'Installation'):
+            self.assertIn(expected, names)
+
+    def test_29_fixed_charge_type_has_no_company_id(self):
+        """sor.fixed.charge.type is a global registry — no company_id field."""
+        self.assertNotIn('company_id', self.env['sor.fixed.charge.type']._fields)
+
+    def test_30_fixed_charge_type_shared_across_companies(self):
+        """The same Fixed Charge Type records are visible regardless of company context."""
+        company_b = self.env['res.company'].create({'name': 'Company B — Fixed Charge Test'})
+        names_main = self.env['sor.fixed.charge.type'].search([]).mapped('name')
+        names_company_b = self.env['sor.fixed.charge.type'].with_company(company_b).search([]).mapped('name')
+        self.assertEqual(sorted(names_main), sorted(names_company_b))
+
+    def test_31_fixed_charge_type_archive_excludes_from_default_search(self):
+        """Archiving a Fixed Charge Type hides it from default (active_test=True) searches."""
+        charge_type = self.env['sor.fixed.charge.type'].create({'name': 'Test Archivable Type'})
+        charge_type.active = False
+        self.assertNotIn(
+            charge_type, self.env['sor.fixed.charge.type'].search([]),
+        )
+        self.assertIn(
+            charge_type,
+            self.env['sor.fixed.charge.type'].with_context(active_test=False).search([]),
+        )
+
+    # ------------------------------------------------------------------
+    # 12. Lot Fixed Charge line model
+    # ------------------------------------------------------------------
+
+    def test_32_lot_fixed_charge_model_installed(self):
+        """sor.lot.fixed.charge model is accessible from the environment."""
+        self.assertIn('sor.lot.fixed.charge', self.env)
+
+    def test_33_lot_fixed_charge_currency_and_company_track_lot(self):
+        """currency_id and company_id on a Fixed Charge line mirror the parent lot."""
+        lot = self._make_lot()
+        charge_type = self.env['sor.fixed.charge.type'].search([('name', '=', 'Restoration')], limit=1)
+        charge = self.env['sor.lot.fixed.charge'].create({
+            'lot_id': lot.id,
+            'charge_type_id': charge_type.id,
+            'amount': 50.0,
+        })
+        self.assertEqual(charge.currency_id, lot.currency_id)
+        self.assertEqual(charge.company_id, lot.company_id)
+
+    def test_34_lot_fixed_charge_cascade_delete_with_lot(self):
+        """Deleting a lot deletes its Fixed Charge lines (ondelete=cascade)."""
+        lot = self._make_lot()
+        charge_type = self.env['sor.fixed.charge.type'].search([('name', '=', 'Framing')], limit=1)
+        charge = self.env['sor.lot.fixed.charge'].create({
+            'lot_id': lot.id,
+            'charge_type_id': charge_type.id,
+            'amount': 30.0,
+        })
+        charge_id = charge.id
+        lot.unlink()
+        self.assertFalse(self.env['sor.lot.fixed.charge'].search([('id', '=', charge_id)]))
+
+    def test_35_fixed_charge_ids_copy_true_carries_over_on_lot_copy(self):
+        """Fixed Charges are content of the lot — copy=True carries them to a duplicated lot."""
+        lot = self._make_lot()
+        charge_type = self.env['sor.fixed.charge.type'].search([('name', '=', 'Transportation')], limit=1)
+        self.env['sor.lot.fixed.charge'].create({
+            'lot_id': lot.id,
+            'charge_type_id': charge_type.id,
+            'amount': 20.0,
+        })
+        copied_lot = lot.copy()
+        self.assertEqual(len(copied_lot.fixed_charge_ids), 1)
+        self.assertEqual(copied_lot.fixed_charge_ids.charge_type_id, charge_type)
+
+    # ------------------------------------------------------------------
+    # 13. Story 02 — Remove Dead Column Name Kwarg (res.company.vat_margin_scheme)
+    # ------------------------------------------------------------------
+
+    def test_36_vat_margin_scheme_field_has_no_column_name_kwarg(self):
+        """res.company.vat_margin_scheme carries no column_name kwarg (dead parameter removed)."""
+        field = self.env['res.company']._fields['vat_margin_scheme']
+        self.assertFalse(
+            hasattr(field, 'column_name'),
+            "vat_margin_scheme must not declare a column_name kwarg",
+        )
+
+    def test_37_vat_margin_scheme_read_write_unaffected(self):
+        """vat_margin_scheme on res.company still reads/writes correctly after kwarg removal."""
+        self.company.vat_margin_scheme = True
+        self.assertTrue(self.company.vat_margin_scheme)
+        self.company.vat_margin_scheme = False
+        self.assertFalse(self.company.vat_margin_scheme)
+
+    # ------------------------------------------------------------------
+    # 14. Story 05 — Fees tab / catalogue-content field locking
+    # ------------------------------------------------------------------
+
+    def _fees_tab_combined_arch(self):
+        return self.env.ref('sor_commercial_auction_house.sor_lot_view_form_fees').get_combined_arch()
+
+    def _field_tag(self, arch, field_name):
+        """Return the opening <field name="field_name" .../> tag (self-closed or not) from arch."""
+        match = re.search(rf'<field name="{field_name}"[^>]*?/?>', arch)
+        self.assertIsNotNone(match, f"<field name=\"{field_name}\"> not found in combined arch")
+        return match.group(0)
+
+    def test_38_fees_tab_toggle_fields_never_locked_by_state(self):
+        """The two override toggles carry no readonly or invisible expression at all (never lock/disappear)."""
+        arch = self._fees_tab_combined_arch()
+        for field_name in ('use_custom_vendor_fee', 'use_custom_buyer_premium'):
+            tag = self._field_tag(arch, field_name)
+            self.assertNotIn('readonly', tag, f"{field_name} must not be readonly-gated")
+            self.assertNotIn('invisible', tag, f"{field_name} must not be invisible-gated")
+
+    def test_39_fees_tab_pct_fields_gated_only_by_toggle_not_state(self):
+        """Vendor/Buyer Premium % fields are readonly only when their own toggle is off — no state clause."""
+        arch = self._fees_tab_combined_arch()
+        vendor_tag = self._field_tag(arch, 'sellers_commission_pct')
+        self.assertIn('readonly="not use_custom_vendor_fee"', vendor_tag)
+        self.assertNotIn('state', vendor_tag)
+        premium_tag = self._field_tag(arch, 'buyers_premium_pct')
+        self.assertIn('readonly="not use_custom_buyer_premium"', premium_tag)
+        self.assertNotIn('state', premium_tag)
+
+    def test_40_withdrawal_fee_pct_never_locked(self):
+        """withdrawal_fee_pct carries no readonly attribute at all."""
+        arch = self._fees_tab_combined_arch()
+        tag = self._field_tag(arch, 'withdrawal_fee_pct')
+        self.assertNotIn('readonly', tag)
+
+    def test_41_fixed_charge_ids_not_locked_by_state(self):
+        """fixed_charge_ids's own field tag carries no readonly attribute."""
+        arch = self._fees_tab_combined_arch()
+        tag = self._field_tag(arch, 'fixed_charge_ids')
+        self.assertNotIn('readonly', tag)

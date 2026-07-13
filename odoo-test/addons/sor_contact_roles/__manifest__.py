@@ -9,6 +9,7 @@
     'license': 'LGPL-3',
     'depends': [
         'contacts',
+        'sor_technical_menu',
     ],
     'data': [
         'security/ir.model.access.csv',
@@ -16,6 +17,7 @@
         'data/sor_contact_type_data.xml',
         'views/res_partner_views.xml',
         'views/sor_contact_nav_views.xml',
+        'views/sor_contact_type_views.xml',
     ],
     'post_init_hook': 'post_init_hook',
     'demo': [

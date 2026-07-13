@@ -1,6 +1,7 @@
-import base64
+from odoo import _, api, fields, models
+from odoo.exceptions import UserError
 
-from odoo import api, fields, models
+from .mail_bulk_send_utils import bulk_send_notification, bulk_send_via_template
 
 
 class SorPostSaleAdvice(models.Model):
@@ -14,6 +15,17 @@ class SorPostSaleAdvice(models.Model):
         string='Reference',
         compute='_compute_name',
         store=True,
+    )
+    state = fields.Selection(
+        selection=[
+            ('draft', 'Draft'),
+            ('sent', 'Sent'),
+        ],
+        string='Status',
+        default='draft',
+        required=True,
+        copy=False,
+        tracking=True,
     )
     company_id = fields.Many2one(
         comodel_name='res.company',
@@ -49,16 +61,8 @@ class SorPostSaleAdvice(models.Model):
 
     def action_send_by_email(self):
         self.ensure_one()
-        report = self.env.ref('sor_auction_documents.action_report_sor_post_sale_advice')
-        pdf_content, _content_type = report._render_qweb_pdf(report.id, [self.id])
-        attachment = self.env['ir.attachment'].create({
-            'name': f'{self.name}.pdf',
-            'type': 'binary',
-            'datas': base64.b64encode(pdf_content),
-            'res_model': self._name,
-            'res_id': self.id,
-            'mimetype': 'application/pdf',
-        })
+        if self.state == 'draft':
+            self.write({'state': 'sent'})
         return {
             'type': 'ir.actions.act_window',
             'res_model': 'mail.compose.message',
@@ -69,7 +73,23 @@ class SorPostSaleAdvice(models.Model):
                 'default_res_ids': [self.id],
                 'default_email_from': self.company_id.email,
                 'default_partner_ids': [self.consignor_id.id] if self.consignor_id else [],
-                'default_attachment_ids': [attachment.id],
-                'default_subject': f'Post-Sale Advice — {self.event_id.name}',
+                'default_template_id': self.env.ref(
+                    'sor_auction_documents.mail_template_sor_post_sale_advice',
+                ).id,
             },
         }
+
+    def action_bulk_send(self):
+        to_send = self.filtered(lambda r: r.state == 'draft' and r.consignor_id)
+        if not to_send:
+            raise UserError(_('No unsent Post-Sale Advices selected.'))
+        not_eligible_count = len(self) - len(to_send)
+        template = self.env.ref('sor_auction_documents.mail_template_sor_post_sale_advice')
+        sent, skipped = bulk_send_via_template(
+            to_send, template,
+            _('Post-Sale Advice not sent: %s has no email on file.'),
+        )
+        sent.write({'state': 'sent'})
+        return bulk_send_notification(
+            len(sent), len(skipped), _('Post-Sale Advice(s)'), not_eligible_count,
+        )

@@ -5,10 +5,13 @@
         <field name="name">sor.pre.sale.advice.list</field>
         <field name="model">sor.pre.sale.advice</field>
         <field name="arch" type="xml">
-            <list>
+            <list create="0">
                 <field name="name"/>
                 <field name="event_id"/>
                 <field name="consignor_id"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'sent'"
+                       decoration-muted="state == 'draft'"/>
                 <field name="company_id" groups="base.group_multi_company"/>
             </list>
         </field>
@@ -19,10 +22,15 @@
         <field name="name">sor.pre.sale.advice.form</field>
         <field name="model">sor.pre.sale.advice</field>
         <field name="arch" type="xml">
-            <form>
+            <form create="0">
                 <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent"/>
                     <button name="action_send_by_email" type="object"
-                            string="Send by Email" class="btn-primary"/>
+                            string="Send by Email" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_send_by_email" type="object"
+                            string="Send by Email" class="btn-secondary"
+                            invisible="state != 'sent'"/>
                     <button name="%(action_report_sor_pre_sale_advice)d" type="action"
                             string="Print" class="btn-secondary"/>
                 </header>
@@ -63,11 +71,42 @@
         </field>
     </record>
 
+    <!-- Pre-Sale Advice search view -->
+    <record id="view_sor_pre_sale_advice_search" model="ir.ui.view">
+        <field name="name">sor.pre.sale.advice.search</field>
+        <field name="model">sor.pre.sale.advice</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Reference"/>
+                <field name="event_id" string="Event"/>
+                <field name="consignor_id" string="Consignor"/>
+                <filter name="filter_draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_sent" string="Sent" domain="[('state', '=', 'sent')]"/>
+                <group>
+                    <filter name="group_by_event" string="Event" context="{'group_by': 'event_id'}"/>
+                    <filter name="group_by_consignor" string="Consignor" context="{'group_by': 'consignor_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
     <!-- Pre-Sale Advice window action -->
     <record id="action_sor_pre_sale_advice" model="ir.actions.act_window">
         <field name="name">Pre-Sale Advices</field>
         <field name="res_model">sor.pre.sale.advice</field>
         <field name="view_mode">list,form</field>
+        <field name="domain">[('company_id', '=', allowed_company_ids[0])]</field>
+        <field name="search_view_id" eval="False"/>
+    </record>
+
+    <!-- Bulk send server action for the PSA list view -->
+    <record id="action_server_bulk_send_pre_sale_advice" model="ir.actions.server">
+        <field name="name">Send to Consignors</field>
+        <field name="model_id" ref="model_sor_pre_sale_advice"/>
+        <field name="binding_model_id" ref="model_sor_pre_sale_advice"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_bulk_send()</field>
     </record>
 
     <!-- Smart button on auction event form -->

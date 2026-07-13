@@ -1,30 +1,87 @@
-from odoo import _, fields, models
+
+from odoo import _, api, fields, models
 from odoo.exceptions import UserError
 
 
 class SorEvent(models.Model):
     _inherit = 'sor.event'
 
+    invoice_pending_count = fields.Integer(
+        compute='_compute_invoice_pending_count',
+        store=False,
+    )
+
+    @api.depends()
+    def _compute_invoice_pending_count(self):
+        bidding_installed = 'sor.bid' in self.env.registry
+        for event in self:
+            already_invoiced_lot_ids = set(
+                self.env['account.move'].search([
+                    ('sor_event_id', '=', event.id),
+                    ('move_type', '=', 'out_invoice'),
+                ]).sor_lot_ids.ids,
+            )
+            if bidding_installed:
+                winning_bids = self.env['sor.bid'].search([
+                    ('lot_id.auction_id', '=', event.id),
+                    ('is_winning_bid', '=', True),
+                ])
+                pending_buyers = {
+                    bid.bidder_id.id for bid in winning_bids
+                    if bid.bidder_id and bid.lot_id.id not in already_invoiced_lot_ids
+                }
+            else:
+                sold_lots = self.env['sor.lot'].search([
+                    ('auction_id', '=', event.id),
+                    ('state', '=', 'sold'),
+                    ('buyer_id', '!=', False),
+                ])
+                pending_buyers = {
+                    lot.buyer_id.id for lot in sold_lots
+                    if lot.id not in already_invoiced_lot_ids
+                }
+            event.invoice_pending_count = len(pending_buyers)
+
     def action_generate_buyer_invoices(self):
         self.ensure_one()
+        bidding_installed = 'sor.bid' in self.env.registry
 
-        # Idempotency guard — raise if invoices already exist
-        existing = self.env['account.move'].search([
-            ('sor_event_id', '=', self.id),
-        ], limit=1)
-        if existing:
+        # Find lots already invoiced for this event — skip them (incremental)
+        already_invoiced_lot_ids = set(
+            self.env['account.move'].search([
+                ('sor_event_id', '=', self.id),
+                ('move_type', '=', 'out_invoice'),
+            ]).sor_lot_ids.ids,
+        )
+
+        # Build buyer_map: buyer → list of lots (bidding path) or lots (fallback path)
+        buyer_map = {}
+        if bidding_installed:
+            winning_bids = self.env['sor.bid'].search([
+                ('lot_id.auction_id', '=', self.id),
+                ('is_winning_bid', '=', True),
+            ])
+            if not winning_bids:
+                raise UserError(_('No winning bids found for this auction.'))
+            for bid in winning_bids:
+                if bid.bidder_id and bid.lot_id.id not in already_invoiced_lot_ids:
+                    buyer_map.setdefault(bid.bidder_id, []).append(bid.lot_id)
+        else:
+            sold_lots = self.env['sor.lot'].search([
+                ('auction_id', '=', self.id),
+                ('state', '=', 'sold'),
+                ('buyer_id', '!=', False),
+            ])
+            if not sold_lots:
+                raise UserError(_('No sold lots with a buyer recorded for this auction.'))
+            for lot in sold_lots:
+                if lot.id not in already_invoiced_lot_ids:
+                    buyer_map.setdefault(lot.buyer_id, []).append(lot)
+
+        if not buyer_map:
             raise UserError(_(
-                'Buyer invoices have already been generated for this auction. '
-                'Delete the existing invoices first to regenerate.',
+                'All buyer invoices have already been generated for this auction.',
             ))
-
-        # Find winning bids linked to this event's lots
-        winning_bids = self.env['sor.bid'].search([
-            ('lot_id.auction_id', '=', self.id),
-            ('is_winning_bid', '=', True),
-        ])
-        if not winning_bids:
-            raise UserError(_('No winning bids found for this auction.'))
 
         # Locate Auction Sales journal for this company
         journal = self.env['account.journal'].search([
@@ -42,13 +99,8 @@ class SorEvent(models.Model):
             ('company_id', '=', self.company_id.id),
         ], limit=1)
 
-        # Group winning bids by buyer
-        buyer_map = {}
-        for bid in winning_bids:
-            buyer_map.setdefault(bid.bidder_id, []).append(bid)
-
-        for buyer, bids in buyer_map.items():
-            lots = self.env['sor.lot'].browse([b.lot_id.id for b in bids])
+        for buyer, lots_list in buyer_map.items():
+            lots = self.env['sor.lot'].browse([lot.id for lot in lots_list])
             lines = self._prepare_buyer_invoice_lines(lots, buyer)
             move = self.env['account.move'].create({
                 'move_type': 'out_invoice',
@@ -66,6 +118,11 @@ class SorEvent(models.Model):
                 sale_number = getattr(self, 'sale_number', None)
                 move.name = f'{seq_val}/{sale_number}' if sale_number else seq_val
 
+        invoice_count = len(buyer_map)
+        self.message_post(
+            body=_('%d buyer invoice(s) generated.') % invoice_count,
+            subtype_xmlid='mail.mt_note',
+        )
         return {
             'type': 'ir.actions.act_window',
             'name': _('Buyer Invoices'),

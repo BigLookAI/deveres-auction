@@ -212,6 +212,52 @@ Both fields are `store=False` computed Many2many. They do not have their own dat
 
 ---
 
+## Guide 6 — Contact Types in Developer Mode
+
+**When to use:** When a developer or technical administrator needs to inspect, archive, or modify contact type records directly.
+
+### Steps
+
+1. Enable developer mode: **Settings → Activate Developer Mode**.
+2. Navigate to **Settings → Technical → SOR → Contact Types**.
+3. The list shows all contact types, including archived ones (rendered in muted text).
+4. Click any row to open its form view.
+
+### Expected outcome
+
+- All contact types are visible, including archived types.
+- Each row is clickable.
+
+### Regression check
+
+| # | Check | Expected |
+|---|-------|----------|
+| R14 | Settings → Technical → SOR → Contact Types menu is visible in developer mode | Yes |
+| R15 | List includes archived contact types (rendered muted) | Yes |
+| R16 | Clicking a row opens the contact type form | Yes |
+
+---
+
+## Guide 7 — Individual/Company Toggle on SOR Contacts
+
+SOR-managed contacts (those with `is_contact=True`) have the Individual/Company toggle hidden in the form view. The contact type (individual or company) was established at creation and should not be changed via the UI.
+
+### Behaviour
+
+- On a contact with `is_contact=True`: the **Individual / Company** toggle is not visible.
+- On standard Odoo customers/vendors (`is_contact=False`): the toggle remains fully visible and functional.
+- If an attempt is made via the ORM to set `is_company=True` on a partner whose `is_contact=True`, a `ValidationError` is raised with the message: *"SOR-managed contacts cannot be set to Company type. To make this record a company, first remove its SOR contact type assignments."*
+
+### Regression check
+
+| # | Check | Expected |
+|---|-------|----------|
+| R17 | Open a contact with Contact or Creator type assigned — toggle not visible | Hidden |
+| R18 | Open a standard Odoo customer with no SOR types — toggle visible | Visible |
+| R19 | ORM write of `is_company=True` on an `is_contact=True` partner raises ValidationError | Error raised |
+
+---
+
 ## Interoperability
 
 | Module | Relationship |
@@ -220,4 +266,5 @@ Both fields are `store=False` computed Many2many. They do not have their own dat
 | `sor_locations_external` | Uses `is_contact` (renamed from `is_customer`) to control the External Locations smart button and `contact_id` domain on contact forms |
 | `sor_locations_artist_studios` | Uses `is_artist` to link contacts to artist studio locations |
 | `sor_bidding` | Uses `is_bidder` domain filter on `bidder_id`; auto-assigns Bidder sub-type when a bid is placed |
+| `sor_consignment_agreements` | Auto-assigns Consignor sub-type to the counterparty when a Consignment In agreement is created; sets `is_consignor=True` |
 | All future SOR modules | Use `is_*` boolean flags for domain restrictions and UI visibility |

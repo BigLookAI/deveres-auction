@@ -56,6 +56,37 @@ def _ensure_auction_journal(env, company):
         existing.sudo().write({'default_account_id': income_account.id})
 
 
+def _ensure_auction_payment_methods(env, company):
+    """Provision the four auction payment methods on the company's Bank journal, if absent.
+
+    Each line's payment_account_id is set explicitly to the journal's own default
+    account (reconcile=False in this codebase's chart) — Odoo's UI default for a
+    manually-created line is Outstanding Receipts (reconcile=True), which is what
+    causes a registered payment to stay "In Process" indefinitely instead of
+    posting straight to Paid. This is applied going forward only: a company that
+    already has lines under these names (e.g. manually configured before this
+    story) is left untouched.
+    """
+    journal = env['account.journal'].sudo().search([
+        ('company_id', '=', company.id),
+        ('type', '=', 'bank'),
+    ], limit=1)
+    if not journal:
+        return
+
+    manual_in = env.ref('account.account_payment_method_manual_in')
+    existing_names = set(journal.inbound_payment_method_line_ids.mapped('name'))
+    for label in ('Debit Card', 'Bank Transfer', 'Cheque', 'Bank Draft'):
+        if label in existing_names:
+            continue
+        env['account.payment.method.line'].sudo().create({
+            'name': label,
+            'payment_method_id': manual_in.id,
+            'journal_id': journal.id,
+            'payment_account_id': journal.default_account_id.id,
+        })
+
+
 def _ensure_buyer_invoice_sequence(env, company):
     """Provision a per-company buyer invoice sequence if absent."""
     existing = env['ir.sequence'].search([
@@ -79,5 +110,6 @@ def post_init_hook(env):
     _logger.info('sor_buyer_invoice_auction_house post_init_hook: starting')
     for company in env['res.company'].search([]):
         _ensure_auction_journal(env, company)
+        _ensure_auction_payment_methods(env, company)
         _ensure_buyer_invoice_sequence(env, company)
     _logger.info('sor_buyer_invoice_auction_house post_init_hook: complete')

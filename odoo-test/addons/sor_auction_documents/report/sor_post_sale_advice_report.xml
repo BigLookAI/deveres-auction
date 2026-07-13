@@ -13,109 +13,147 @@
         <t t-call="web.html_container">
             <t t-foreach="docs" t-as="doc">
                 <t t-call="web.external_layout">
-                    <div class="page">
-                        <h2>Post-Sale Advice</h2>
+                    <div class="page" style="font-size:13px;">
+                        <h4>Post-Sale Advice (<t t-out="doc.name"/>)</h4>
 
-                        <!-- Consignor and event details -->
+                        <!-- Consignor and event details. Column split matches web.external_layout_bold's
+                             own header address block (col-6 / col-5 offset-1) so this row lines up
+                             horizontally with the company address block above it. -->
                         <div class="row mb-4">
-                            <div class="col-6">
-                                <strong>To:</strong><br/>
-                                <t t-out="doc.consignor_id.name"/><br/>
-                                <t t-if="doc.consignor_id.street">
-                                    <t t-out="doc.consignor_id.street"/><br/>
-                                </t>
-                                <t t-if="doc.consignor_id.city">
-                                    <t t-out="doc.consignor_id.city"/>
-                                </t>
-                                <t t-if="doc.consignor_id.vat">
-                                    <br/>VAT: <t t-out="doc.consignor_id.vat"/>
-                                </t>
-                            </div>
                             <div class="col-6">
                                 <t t-if="doc.consignor_id.ref">
                                     <strong>Seller Reference:</strong>
                                     <t t-out="doc.consignor_id.ref"/><br/>
                                 </t>
+                                <t t-out="doc.consignor_id.name"/><br/>
+                                <t t-if="doc.consignor_id.street">
+                                    <t t-out="doc.consignor_id.street"/><br/>
+                                </t>
+                                <t t-if="doc.consignor_id.street2">
+                                    <t t-out="doc.consignor_id.street2"/><br/>
+                                </t>
+                                <t t-if="doc.consignor_id.city">
+                                    <t t-out="doc.consignor_id.city"/>
+                                </t>
+                                <t t-if="doc.consignor_id.state_id">
+                                    <t t-if="doc.consignor_id.city">, </t>
+                                    <t t-out="doc.consignor_id.state_id.name"/>
+                                </t>
+                                <t t-if="doc.consignor_id.zip">
+                                    <t t-if="doc.consignor_id.city or doc.consignor_id.state_id">, </t>
+                                    <t t-out="doc.consignor_id.zip"/>
+                                </t>
+                                <t t-if="doc.consignor_id.vat">
+                                    <br/><strong>VAT:</strong> <t t-out="doc.consignor_id.vat"/>
+                                </t>
+                            </div>
+                            <div class="col-5 offset-1">
                                 <strong>Sale:</strong>
                                 <t t-out="doc.event_id.name"/>
                                 <t t-if="doc.event_id.sale_number">
                                     (<t t-out="doc.event_id.sale_number"/>)
                                 </t>
-                                <br/>
-                                <strong>Reference:</strong>
-                                <t t-out="doc.name"/>
+                                <t t-if="doc.event_id.date_end">
+                                    <br/>
+                                    <strong>End Date:</strong>
+                                    <t t-out="doc.event_id.date_end" t-options="{'widget': 'date'}"/>
+                                </t>
                             </div>
                         </div>
 
-                        <!-- Results table -->
+                        <!-- Top content block -->
+                        <t t-if="doc.company_id.posa_content_top">
+                            <div class="mb-4">
+                                <t t-out="doc.company_id.posa_content_top"/>
+                            </div>
+                        </t>
+
+                        <!-- Results table: 7 columns — Lot No | Receipt No | Description | Reserve | Hammer | VAT | Total -->
+                        <t t-set="posa_total_hammer"
+                           t-value="sum(0.0 if lot.state == 'passed' else lot.hammer_price for lot in doc.lot_ids)"/>
                         <table class="table table-sm table-bordered">
                             <thead>
                                 <tr>
-                                    <th>Lot Ref</th>
-                                    <th class="text-center">Lot No.</th>
-                                    <th>Description</th>
-                                    <th class="text-end">Hammer Price</th>
-                                    <th class="text-end">VAT</th>
+                                    <th class="text-center" style="font-weight:bold; text-transform:none !important; white-space:nowrap;">Lot no</th>
+                                    <th style="font-weight:bold; text-transform:none !important; white-space:nowrap;">Receipt no</th>
+                                    <th style="font-weight:bold; text-transform:none !important; white-space:nowrap;">Description</th>
+                                    <th class="text-end" style="font-weight:bold; text-transform:none !important; white-space:nowrap;">Reserve</th>
+                                    <th class="text-end" style="font-weight:bold; text-transform:none !important; white-space:nowrap;">Hammer</th>
+                                    <th class="text-end" style="font-weight:bold; text-transform:none !important; white-space:nowrap;">VAT</th>
+                                    <th class="text-end" style="font-weight:bold; text-transform:none !important; white-space:nowrap;">Total</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <t t-foreach="doc.lot_ids.sorted('lot_number')" t-as="lot">
                                     <tr>
-                                        <td><t t-out="lot.lot_reference or ''"/></td>
                                         <td class="text-center"><t t-out="lot.lot_number or ''"/></td>
-                                        <td><t t-out="lot.product_id.name or ''"/></td>
-                                        <!-- Passed lots: hammer and VAT shown as zero in company currency -->
+                                        <td><t t-out="lot.sor_receipt_number or ''"/></td>
+                                        <td>
+                                            <t t-if="lot.product_id">
+                                                <t t-out="lot.product_id.name"/>
+                                            </t>
+                                            <t t-if="not lot.product_id and lot.lot_description">
+                                                <t t-out="lot.lot_description"/>
+                                            </t>
+                                        </td>
+                                        <td class="text-end">
+                                            <t t-out="lot.reserve_price"
+                                               t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
+                                        </td>
+                                        <!-- Hammer: passed lots show 0.00 -->
                                         <t t-if="lot.state == 'passed'">
                                             <td class="text-end">
-                                                <t t-out="lot.hammer_price"
+                                                <t t-out="0.0"
                                                    t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
                                             </td>
-                                            <td class="text-end">
-                                                <t t-out="lot.hammer_price"
-                                                   t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
-                                            </td>
+                                            <td class="text-end">—</td>
+                                            <td class="text-end">—</td>
                                         </t>
-                                        <!-- Margin scheme lots -->
-                                        <t t-elif="lot.hammer_price_vat_included">
+                                        <!-- Margin scheme lots: VAT = €0.00, Total = hammer -->
+                                        <t t-elif="lot.vat_margin_scheme">
                                             <td class="text-end">
                                                 <t t-out="lot.hammer_price"
                                                    t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
-                                                M-
                                             </td>
                                             <td class="text-end">
                                                 <t t-out="lot.hammer_price * 0"
                                                    t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
                                             </td>
+                                            <td class="text-end">
+                                                <t t-out="lot.hammer_price"
+                                                   t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
+                                            </td>
                                         </t>
-                                        <!-- Standard sold lots -->
+                                        <!-- Standard sold lots: VAT and Total not applicable -->
                                         <t t-else="">
                                             <td class="text-end">
                                                 <t t-out="lot.hammer_price"
                                                    t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
                                             </td>
                                             <td class="text-end">—</td>
+                                            <td class="text-end">—</td>
                                         </t>
                                     </tr>
                                 </t>
                             </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="6" class="text-end" style="font-weight:bold;">Total</td>
+                                    <td class="text-end" style="font-weight:bold;">
+                                        <t t-out="posa_total_hammer"
+                                           t-options="{'widget': 'monetary', 'display_currency': doc.company_id.currency_id}"/>
+                                    </td>
+                                </tr>
+                            </tfoot>
                         </table>
 
-                        <!-- Auction sale terms -->
-                        <t t-if="doc.company_id.auction_sale_terms">
+                        <!-- Bottom content block -->
+                        <t t-if="doc.company_id.posa_content_bottom">
                             <div class="mt-4">
-                                <t t-out="doc.company_id.auction_sale_terms"/>
+                                <t t-out="doc.company_id.posa_content_bottom"/>
                             </div>
                         </t>
 
-                        <!-- Footer: licence reference and director signature -->
-                        <div class="mt-4">
-                            <t t-if="doc.company_id.auction_licence_ref">
-                                <p><t t-out="doc.company_id.auction_licence_ref"/></p>
-                            </t>
-                            <t t-if="doc.company_id.auction_director_signature">
-                                <p><t t-out="doc.company_id.auction_director_signature"/></p>
-                            </t>
-                        </div>
                     </div>
                 </t>
             </t>

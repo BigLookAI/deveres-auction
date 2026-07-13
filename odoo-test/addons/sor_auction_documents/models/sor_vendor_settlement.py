@@ -1,7 +1,7 @@
-import base64
-
 from odoo import _, api, fields, models
 from odoo.exceptions import UserError
+
+from .mail_bulk_send_utils import bulk_send_notification, bulk_send_via_template
 
 
 class SorVendorSettlement(models.Model):
@@ -70,13 +70,22 @@ class SorVendorSettlement(models.Model):
         compute='_compute_totals',
         store=True,
     )
+    total_fixed_charges = fields.Monetary(
+        string='Total Fixed Charges',
+        compute='_compute_totals',
+        store=True,
+    )
     net_proceeds = fields.Monetary(
         string='Net Proceeds',
         compute='_compute_totals',
         store=True,
     )
 
-    @api.depends('lot_ids.hammer_price', 'lot_ids.sellers_commission_pct')
+    @api.depends(
+        'lot_ids.hammer_price',
+        'lot_ids.sellers_commission_pct',
+        'lot_ids.fixed_charge_ids.amount',
+    )
     def _compute_totals(self):
         for vss in self:
             hammer = sum(vss.lot_ids.mapped('hammer_price'))
@@ -84,9 +93,11 @@ class SorVendorSettlement(models.Model):
                 lot.hammer_price * lot.sellers_commission_pct / 100.0
                 for lot in vss.lot_ids
             )
+            fixed_charges = sum(vss.lot_ids.mapped('fixed_charge_ids.amount'))
             vss.total_hammer = hammer
             vss.total_commission = commission
-            vss.net_proceeds = hammer - commission
+            vss.total_fixed_charges = fixed_charges
+            vss.net_proceeds = hammer - commission - fixed_charges
 
     @api.model_create_multi
     def create(self, vals_list):
@@ -126,16 +137,6 @@ class SorVendorSettlement(models.Model):
         self.ensure_one()
         if self.state == 'payment_confirmed':
             self.write({'state': 'sent'})
-        report = self.env.ref('sor_auction_documents.action_report_sor_vendor_settlement')
-        pdf_content, _content_type = report._render_qweb_pdf(report.id, [self.id])
-        attachment = self.env['ir.attachment'].create({
-            'name': f'{self.name}.pdf',
-            'type': 'binary',
-            'datas': base64.b64encode(pdf_content),
-            'res_model': self._name,
-            'res_id': self.id,
-            'mimetype': 'application/pdf',
-        })
         return {
             'type': 'ir.actions.act_window',
             'res_model': 'mail.compose.message',
@@ -146,33 +147,23 @@ class SorVendorSettlement(models.Model):
                 'default_res_ids': [self.id],
                 'default_email_from': self.company_id.email,
                 'default_partner_ids': [self.consignor_id.id] if self.consignor_id else [],
-                'default_attachment_ids': [attachment.id],
-                'default_subject': f'Vendor Settlement Statement — {self.event_id.name}',
+                'default_template_id': self.env.ref(
+                    'sor_auction_documents.mail_template_sor_vendor_settlement',
+                ).id,
             },
         }
 
-    def action_bulk_mark_sent(self):
-        report = self.env.ref('sor_auction_documents.action_report_sor_vendor_settlement')
+    def action_bulk_send(self):
         to_send = self.filtered(lambda v: v.state == 'payment_confirmed')
         if not to_send:
             raise UserError(_('No Payment Confirmed statements selected.'))
-        for vss in to_send:
-            if not vss.consignor_id.email:
-                continue
-            pdf_content, _content_type = report._render_qweb_pdf(report.id, [vss.id])
-            attachment = self.env['ir.attachment'].create({
-                'name': f'{vss.name}.pdf',
-                'type': 'binary',
-                'datas': base64.b64encode(pdf_content),
-                'res_model': vss._name,
-                'res_id': vss.id,
-                'mimetype': 'application/pdf',
-            })
-            vss.message_post(
-                email_from=vss.company_id.email,
-                partner_ids=[vss.consignor_id.id],
-                subject=_('Vendor Settlement Statement — %s') % vss.event_id.name,
-                body=_('Please find your Vendor Settlement Statement for %s attached.') % vss.event_id.name,
-                attachment_ids=[attachment.id],
-            )
-            vss.write({'state': 'sent'})
+        not_eligible_count = len(self) - len(to_send)
+        template = self.env.ref('sor_auction_documents.mail_template_sor_vendor_settlement')
+        sent, skipped = bulk_send_via_template(
+            to_send, template,
+            _('Vendor Settlement Statement not sent: %s has no email on file.'),
+        )
+        sent.write({'state': 'sent'})
+        return bulk_send_notification(
+            len(sent), len(skipped), _('Vendor Settlement Statement(s)'), not_eligible_count,
+        )

@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-24 10:24+0000\n"
-"PO-Revision-Date: 2026-04-24 10:24+0000\n"
+"POT-Creation-Date: 2026-06-27 09:38+0000\n"
+"PO-Revision-Date: 2026-06-27 09:38+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -18,7 +18,22 @@ msgstr ""
 #. module: sor_events_auction
 #. odoo-python
 #: code:addons/sor_events_auction/models/sor_event_auction.py:0
+msgid ""
+"%(count)d lot(s) are still in Draft state. Catalogue all lots before going "
+"live."
+msgstr ""
+
+#. module: sor_events_auction
+#. odoo-python
+#: code:addons/sor_events_auction/models/sor_event_auction.py:0
 msgid "%d lot(s) transitioned to Live."
+msgstr ""
+
+#. module: sor_events_auction
+#: model_terms:ir.ui.view,arch_db:sor_events_auction.sor_lot_view_form_live_badge
+msgid ""
+"<span class=\"badge rounded-pill text-bg-success align-self-center px-3 "
+"py-2\" invisible=\"state != 'live'\">● Live</span>"
 msgstr ""
 
 #. module: sor_events_auction
@@ -43,9 +58,15 @@ msgid "Auction opened — Go Live triggered."
 msgstr ""
 
 #. module: sor_events_auction
+#: model:ir.actions.act_window,name:sor_events_auction.sor_auction_action_all
 #: model:ir.ui.menu,name:sor_events_auction.menu_sor_auctions_root
 #: model_terms:ir.ui.view,arch_db:sor_events_auction.sor_auction_view_list
 msgid "Auctions"
+msgstr ""
+
+#. module: sor_events_auction
+#: model:ir.actions.server,name:sor_events_auction.action_catalogue_all_lots
+msgid "Catalogue All Lots"
 msgstr ""
 
 #. module: sor_events_auction
@@ -79,6 +100,14 @@ msgid "Live"
 msgstr ""
 
 #. module: sor_events_auction
+#. odoo-python
+#: code:addons/sor_events_auction/models/sor_lot_auction.py:0
+msgid ""
+"Lot \"%s\" cannot be catalogued because its auction \"%s\" is already Live. "
+"Lots cannot be added to an active auction."
+msgstr ""
+
+#. module: sor_events_auction
 #: model:ir.model.fields,field_description:sor_events_auction.field_sor_event__lot_count
 msgid "Lot Count"
 msgstr ""
@@ -91,6 +120,7 @@ msgstr ""
 #. module: sor_events_auction
 #: model:ir.actions.act_window,name:sor_events_auction.sor_lot_action_from_event
 #: model:ir.model.fields,field_description:sor_events_auction.field_sor_event__lot_ids
+#: model_terms:ir.ui.view,arch_db:sor_events_auction.sor_event_view_form_auction_tab
 #: model_terms:ir.ui.view,arch_db:sor_events_auction.sor_event_view_form_lots_button
 msgid "Lots"
 msgstr ""

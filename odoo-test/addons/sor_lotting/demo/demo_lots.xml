@@ -145,6 +145,7 @@
              Two buyers: John wins lots 201 and 203 (one invoice, two lines);
              Thomas wins lot 202 (separate invoice, one line).
              hammer_price matches winning bids in demo_bids.xml.
+             buyer_id is set in sor_lotting_contact_roles demo (bridge owns cross-module refs).
              buyers_premium_pct (25%) set in sor_buyer_invoice_auction_house demo — that
              module loads after sor_commercial_auction_house adds the field to sor.lot.
              Reuse existing demo products: product_type may default to 'artwork' when
@@ -181,7 +182,8 @@
             <field name="state">sold</field>
         </record>
 
-        <!-- Passed lots (2) — assigned to past event in demo_auction_links.xml -->
+        <!-- Passed lots (2) — assigned to past event in demo_auction_links.xml.
+             consignor_id is set in sor_lotting_contact_roles demo (bridge owns cross-module refs). -->
         <record id="demo_lot_passed_01" model="sor.lot">
             <field name="lot_number">53</field>
             <field name="product_id" ref="demo_product_lot_10"/>
@@ -208,6 +210,16 @@
             <field name="estimate_high">20000.0</field>
             <field name="reserve_price">13000.0</field>
             <field name="state">withdrawn</field>
+        </record>
+
+        <!-- Fallback-only draft lot (1) — no product_id; uses lot_title for description.
+             Demonstrates the QWeb fallback chain when sor_base (vertical module) is absent. -->
+        <record id="demo_lot_fallback_01" model="sor.lot">
+            <field name="lot_number">99</field>
+            <field name="lot_title">Unsigned Work — Attribution Pending</field>
+            <field name="estimate_low">500.0</field>
+            <field name="estimate_high">800.0</field>
+            <field name="state">draft</field>
         </record>
     </data>
 </odoo>

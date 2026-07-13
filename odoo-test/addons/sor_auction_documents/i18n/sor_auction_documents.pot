@@ -6,14 +6,46 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 19.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-06-03 23:02+0000\n"
-"PO-Revision-Date: 2026-06-03 23:02+0000\n"
+"POT-Creation-Date: 2026-07-11 13:08+0000\n"
+"PO-Revision-Date: 2026-07-11 13:08+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: \n"
 "Plural-Forms: \n"
+
+#. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/mail_bulk_send_utils.py:0
+msgid "%(count)d %(noun)s sent."
+msgstr ""
+
+#. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/mail_bulk_send_utils.py:0
+msgid ""
+"%(sent)d %(noun)s sent, %(skipped)d skipped — no email on file. See the "
+"chatter on each skipped record for details."
+msgstr ""
+
+#. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
+msgid "%d Post-Sale Advice(s) generated."
+msgstr ""
+
+#. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
+msgid "%d Pre-Sale Advice(s) generated."
+msgstr ""
+
+#. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
+msgid "%d Vendor Settlement(s) generated."
+msgstr ""
 
 #. module: sor_auction_documents
 #: model:ir.actions.report,print_report_name:sor_auction_documents.action_report_sor_post_sale_advice
@@ -32,34 +64,61 @@ msgstr ""
 
 #. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
 msgid ""
-"<br/>\n"
-"                                <strong>Reference:</strong>"
-msgstr ""
-
-#. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
-msgid ""
-"<br/>\n"
-"                                <strong>Sale:</strong>"
+"* VAT and Total apply only to lots sold under the VAT Margin Scheme (marked "
+"M-)."
 msgstr ""
 
 #. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
-msgid "<br/>VAT:"
-msgstr ""
-
-#. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
-msgid "<strong>Bank Account Details:</strong><br/>"
+msgid ""
+"<br/>\n"
+"                                    <strong>End Date:</strong>"
 msgstr ""
 
 #. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
+msgid "<br/><strong>VAT:</strong>"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,body_html:sor_auction_documents.mail_template_sor_post_sale_advice
+msgid ""
+"<div>\n"
+"                    <p>Dear <t t-out=\"object.consignor_id.name\"/>,</p>\n"
+"                    <p>Please find your Post-Sale Advice attached.</p>\n"
+"                </div>\n"
+"            "
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,body_html:sor_auction_documents.mail_template_sor_pre_sale_advice
+msgid ""
+"<div>\n"
+"                    <p>Dear <t t-out=\"object.consignor_id.name\"/>,</p>\n"
+"                    <p>Please find your Pre-Sale Advice attached.</p>\n"
+"                </div>\n"
+"            "
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,body_html:sor_auction_documents.mail_template_sor_vendor_settlement
+msgid ""
+"<div>\n"
+"                    <p>Dear <t t-out=\"object.consignor_id.name\"/>,</p>\n"
+"                    <p>Please find your Vendor Settlement Statement for <t t-out=\"object.event_id.name\"/> attached.</p>\n"
+"                </div>\n"
+"            "
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
 msgid "<strong>Sale:</strong>"
 msgstr ""
 
@@ -68,18 +127,6 @@ msgstr ""
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
 msgid "<strong>Seller Reference:</strong>"
-msgstr ""
-
-#. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
-msgid "<strong>Statement Ref:</strong>"
-msgstr ""
-
-#. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
-msgid "<strong>To:</strong><br/>"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -126,7 +173,22 @@ msgstr ""
 
 #. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
-msgid "Auction Documents"
+msgid "Auction Documents: Margin Scheme"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
+msgid "Auction Documents: Post-Sale Advice Content"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
+msgid "Auction Documents: Pre-Sale Advice Content"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
+msgid "Auction Documents: Vendor Settlement Content"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -137,17 +199,8 @@ msgid "Auction Event"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__auction_licence_ref
-#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__auction_licence_ref
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
-msgid "Auction Licence Reference"
-msgstr ""
-
-#. module: sor_auction_documents
-#: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__auction_sale_terms
-#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__auction_sale_terms
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
-msgid "Auction Sale Terms"
+#: model:ir.ui.menu,name:sor_auction_documents.menu_sor_auction_documents
+msgid "Auction House Documents"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -157,26 +210,19 @@ msgid "Auction VAT Notice"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__auction_bank_details
-#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__auction_bank_details
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
-msgid "Bank Account Details"
+msgid "Bottom"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model:ir.model.fields,help:sor_auction_documents.field_res_company__auction_bank_details
-#: model:ir.model.fields,help:sor_auction_documents.field_res_config_settings__auction_bank_details
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
-msgid "Bank details printed on Vendor Settlement Statements."
-msgstr ""
-
-#. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_form
-msgid "Cancel"
+#. odoo-python
+#: code:addons/sor_auction_documents/models/mail_bulk_send_utils.py:0
+msgid "Bulk Send"
 msgstr ""
 
 #. module: sor_auction_documents
 #: model:ir.model.fields.selection,name:sor_auction_documents.selection__sor_vendor_settlement__state__cancelled
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_search
 msgid "Cancelled"
 msgstr ""
 
@@ -186,7 +232,6 @@ msgid "Commission"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_pre_sale_advice_form
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_form
 msgid "Commission %"
 msgstr ""
@@ -204,7 +249,7 @@ msgid "Company"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model:ir.model.fields,help:sor_auction_documents.field_res_config_settings__hammer_price_vat_included
+#: model:ir.model.fields,help:sor_auction_documents.field_res_config_settings__vat_margin_scheme
 msgid ""
 "Company-wide default for new lots. Individual lots can override this "
 "setting."
@@ -221,11 +266,18 @@ msgid "Confirm Payment"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_lot__consignor_id
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_post_sale_advice__consignor_id
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_pre_sale_advice__consignor_id
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_vendor_settlement__consignor_id
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_post_sale_advice_search
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_pre_sale_advice_search
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_search
 msgid "Consignor"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_lot__consignor_company
+msgid "Consignor Company"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -263,13 +315,6 @@ msgid "Description"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__auction_director_signature
-#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__auction_director_signature
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
-msgid "Director Signature"
-msgstr ""
-
-#. module: sor_auction_documents
 #: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__display_name
 #: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__display_name
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_event__display_name
@@ -281,13 +326,25 @@ msgid "Display Name"
 msgstr ""
 
 #. module: sor_auction_documents
+#: model:ir.model.fields.selection,name:sor_auction_documents.selection__sor_post_sale_advice__state__draft
+#: model:ir.model.fields.selection,name:sor_auction_documents.selection__sor_pre_sale_advice__state__draft
 #: model:ir.model.fields.selection,name:sor_auction_documents.selection__sor_vendor_settlement__state__draft
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_post_sale_advice_search
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_pre_sale_advice_search
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_search
 msgid "Draft"
 msgstr ""
 
 #. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
 msgid "Estimate"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_post_sale_advice_search
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_pre_sale_advice_search
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_search
+msgid "Event"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -312,16 +369,28 @@ msgid "Font awesome icon e.g. fa-tasks"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
-msgid "Hammer Price"
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_auction_docs_buttons
+msgid "Generate Post-Sale Advices"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__hammer_price_vat_included
-#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_lot__hammer_price_vat_included
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
-msgid "Hammer Price VAT Included"
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_auction_docs_buttons
+msgid "Generate Pre-Sale Advices"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_auction_docs_buttons
+msgid "Generate Vendor Settlements"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
+msgid "Hammer"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
+msgid "Hammer Price"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -395,14 +464,22 @@ msgid "Last Updated on"
 msgstr ""
 
 #. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
+msgid "Less:"
+msgstr ""
+
+#. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
+msgid "Lot No"
+msgstr ""
+
+#. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
 msgid "Lot No."
 msgstr ""
 
 #. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
 msgid "Lot Ref"
 msgstr ""
@@ -455,6 +532,13 @@ msgid "Net Proceeds"
 msgstr ""
 
 #. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_post_sale_advice__activity_calendar_event_id
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_pre_sale_advice__activity_calendar_event_id
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_vendor_settlement__activity_calendar_event_id
+msgid "Next Activity Calendar Event"
+msgstr ""
+
+#. module: sor_auction_documents
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_post_sale_advice__activity_date_deadline
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_pre_sale_advice__activity_date_deadline
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_vendor_settlement__activity_date_deadline
@@ -492,6 +576,18 @@ msgstr ""
 #. odoo-python
 #: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
 msgid "No lots in Sold or Passed state with a consignor found for this event."
+msgstr ""
+
+#. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/sor_post_sale_advice.py:0
+msgid "No unsent Post-Sale Advices selected."
+msgstr ""
+
+#. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/sor_pre_sale_advice.py:0
+msgid "No unsent Pre-Sale Advices selected."
 msgstr ""
 
 #. module: sor_auction_documents
@@ -536,34 +632,25 @@ msgstr ""
 
 #. module: sor_auction_documents
 #: model:ir.model.fields.selection,name:sor_auction_documents.selection__sor_vendor_settlement__state__payment_confirmed
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_search
 msgid "Payment Confirmed"
 msgstr ""
 
 #. module: sor_auction_documents
-#. odoo-python
-#: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
-msgid "Please find your Post-Sale Advice for %s attached."
-msgstr ""
-
-#. module: sor_auction_documents
-#. odoo-python
-#: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
-msgid "Please find your Pre-Sale Advice for %s attached."
-msgstr ""
-
-#. module: sor_auction_documents
-#. odoo-python
-#: code:addons/sor_auction_documents/models/sor_vendor_settlement.py:0
-msgid "Please find your Vendor Settlement Statement for %s attached."
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_event__posa_pending_count
+msgid "Posa Pending Count"
 msgstr ""
 
 #. module: sor_auction_documents
 #: model:ir.actions.report,name:sor_auction_documents.action_report_sor_post_sale_advice
 #: model:ir.model,name:sor_auction_documents.model_sor_post_sale_advice
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_lot__post_sale_advice_id
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_auction_docs_buttons
 msgid "Post-Sale Advice"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
+msgid "Post-Sale Advice ("
 msgstr ""
 
 #. module: sor_auction_documents
@@ -574,8 +661,36 @@ msgstr ""
 
 #. module: sor_auction_documents
 #. odoo-python
-#: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
-msgid "Post-Sale Advice — %s"
+#: code:addons/sor_auction_documents/models/sor_post_sale_advice.py:0
+msgid "Post-Sale Advice not sent: %s has no email on file."
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__posa_content_bottom
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__posa_content_bottom
+msgid "Post-Sale Advice — Bottom"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__posa_content_top
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__posa_content_top
+msgid "Post-Sale Advice — Top"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,subject:sor_auction_documents.mail_template_sor_post_sale_advice
+msgid "Post-Sale Advice — {{ object.event_id.name }}"
+msgstr ""
+
+#. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/sor_post_sale_advice.py:0
+msgid "Post-Sale Advice(s)"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,name:sor_auction_documents.mail_template_sor_post_sale_advice
+msgid "Post-Sale Advice: Sending"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -583,6 +698,7 @@ msgstr ""
 #: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
 #: model:ir.actions.act_window,name:sor_auction_documents.action_sor_post_sale_advice
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_event__post_sale_advice_count
+#: model:ir.ui.menu,name:sor_auction_documents.menu_sor_post_sale_advices
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_posa_smart_button
 msgid "Post-Sale Advices"
 msgstr ""
@@ -591,9 +707,12 @@ msgstr ""
 #: model:ir.actions.report,name:sor_auction_documents.action_report_sor_pre_sale_advice
 #: model:ir.model,name:sor_auction_documents.model_sor_pre_sale_advice
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_lot__pre_sale_advice_id
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_auction_docs_buttons
 msgid "Pre-Sale Advice"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
+msgid "Pre-Sale Advice ("
 msgstr ""
 
 #. module: sor_auction_documents
@@ -604,8 +723,36 @@ msgstr ""
 
 #. module: sor_auction_documents
 #. odoo-python
-#: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
-msgid "Pre-Sale Advice — %s"
+#: code:addons/sor_auction_documents/models/sor_pre_sale_advice.py:0
+msgid "Pre-Sale Advice not sent: %s has no email on file."
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__psa_content_bottom
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__psa_content_bottom
+msgid "Pre-Sale Advice — Bottom"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__psa_content_top
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__psa_content_top
+msgid "Pre-Sale Advice — Top"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,subject:sor_auction_documents.mail_template_sor_pre_sale_advice
+msgid "Pre-Sale Advice — {{ object.event_id.name }}"
+msgstr ""
+
+#. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/sor_pre_sale_advice.py:0
+msgid "Pre-Sale Advice(s)"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,name:sor_auction_documents.mail_template_sor_pre_sale_advice
+msgid "Pre-Sale Advice: Sending"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -613,6 +760,7 @@ msgstr ""
 #: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
 #: model:ir.actions.act_window,name:sor_auction_documents.action_sor_pre_sale_advice
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_event__pre_sale_advice_count
+#: model:ir.ui.menu,name:sor_auction_documents.menu_sor_pre_sale_advices
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_psa_smart_button
 msgid "Pre-Sale Advices"
 msgstr ""
@@ -625,6 +773,11 @@ msgid "Print"
 msgstr ""
 
 #. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_event__psa_pending_count
+msgid "Psa Pending Count"
+msgstr ""
+
+#. module: sor_auction_documents
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_post_sale_advice__rating_ids
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_pre_sale_advice__rating_ids
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_vendor_settlement__rating_ids
@@ -632,18 +785,63 @@ msgid "Ratings"
 msgstr ""
 
 #. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_lot__sor_receipt_number
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
+msgid "Receipt No"
+msgstr ""
+
+#. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
-msgid "Receipt Description"
+msgid "Receipt No."
 msgstr ""
 
 #. module: sor_auction_documents
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_post_sale_advice__name
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_pre_sale_advice__name
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_vendor_settlement__name
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_post_sale_advice_search
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_pre_sale_advice_search
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_search
 msgid "Reference"
 msgstr ""
 
 #. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
+msgid "Rendered above the lot table on Pre-Sale Advice documents."
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
+msgid "Rendered above the lot table on Vendor Settlement Statements."
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
+msgid "Rendered above the results table on Post-Sale Advice documents."
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
+msgid ""
+"Rendered below the lot table on Pre-Sale Advice documents (e.g. sale terms)."
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
+msgid ""
+"Rendered below the lot table on Vendor Settlement Statements (e.g. bank "
+"details, sale terms)."
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
+msgid ""
+"Rendered below the results table on Post-Sale Advice documents (e.g. sale "
+"terms)."
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
 msgid "Reserve"
 msgstr ""
@@ -673,16 +871,6 @@ msgid "SOR Lot"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_posa_send_button
-msgid "Send Post-Sale Advices"
-msgstr ""
-
-#. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_auction_docs_buttons
-msgid "Send Pre-Sale Advices"
-msgstr ""
-
-#. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_post_sale_advice_form
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_pre_sale_advice_form
 msgid "Send by Email"
@@ -694,17 +882,42 @@ msgid "Send to Consignor"
 msgstr ""
 
 #. module: sor_auction_documents
+#: model:ir.actions.server,name:sor_auction_documents.action_server_bulk_send_post_sale_advice
+#: model:ir.actions.server,name:sor_auction_documents.action_server_bulk_send_pre_sale_advice
 #: model:ir.actions.server,name:sor_auction_documents.action_server_vss_bulk_mark_sent
 msgid "Send to Consignors"
 msgstr ""
 
 #. module: sor_auction_documents
+#: model:ir.model.fields.selection,name:sor_auction_documents.selection__sor_post_sale_advice__state__sent
+#: model:ir.model.fields.selection,name:sor_auction_documents.selection__sor_pre_sale_advice__state__sent
 #: model:ir.model.fields.selection,name:sor_auction_documents.selection__sor_vendor_settlement__state__sent
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_post_sale_advice_search
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_pre_sale_advice_search
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_search
 msgid "Sent"
 msgstr ""
 
 #. module: sor_auction_documents
+#: model:mail.template,description:sor_auction_documents.mail_template_sor_post_sale_advice
+msgid "Sent to consignors with their Post-Sale Advice attached"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,description:sor_auction_documents.mail_template_sor_pre_sale_advice
+msgid "Sent to consignors with their Pre-Sale Advice attached"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,description:sor_auction_documents.mail_template_sor_vendor_settlement
+msgid "Sent to consignors with their Vendor Settlement Statement attached"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_post_sale_advice__state
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_pre_sale_advice__state
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_vendor_settlement__state
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_search
 msgid "Status"
 msgstr ""
 
@@ -722,26 +935,28 @@ msgstr ""
 #. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
 msgid ""
-"Statutory notice text printed on buyer invoices when Hammer Price VAT "
-"Included is enabled. Leave empty to suppress the notice block."
+"Statutory notice text printed on buyer invoices when VAT Margin Scheme is "
+"enabled. Leave empty to suppress the notice block."
 msgstr ""
 
 #. module: sor_auction_documents
 #: model:ir.model.fields,help:sor_auction_documents.field_res_config_settings__auction_vat_notice
 msgid ""
-"Statutory notice text printed on buyer invoices when Hammer Price VAT "
-"Included is enabled. Leave empty to suppress the notice block. Set wording "
-"appropriate to the company's jurisdiction."
+"Statutory notice text printed on buyer invoices when VAT Margin Scheme is "
+"enabled. Leave empty to suppress the notice block. Set wording appropriate "
+"to the company's jurisdiction."
 msgstr ""
 
 #. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_pre_sale_advice
-msgid "Stock Ref"
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_form
+msgid ""
+"This will permanently void the Vendor Settlement Statement and cannot be "
+"undone. Are you sure?"
 msgstr ""
 
 #. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
-msgid "Terms and conditions printed on Pre-Sale Advice documents."
+msgid "Top"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -750,8 +965,19 @@ msgid "Total Commission"
 msgstr ""
 
 #. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_vendor_settlement__total_fixed_charges
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
+msgid "Total Fixed Charges"
+msgstr ""
+
+#. module: sor_auction_documents
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_vendor_settlement__total_hammer
 msgid "Total Hammer"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
+msgid "Total*"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -768,8 +994,21 @@ msgid "Type of the exception activity on record."
 msgstr ""
 
 #. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/mail_bulk_send_utils.py:0
+msgid "Unknown"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__vat_margin_scheme
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_lot__vat_margin_scheme
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
+msgid "VAT Margin Scheme"
+msgstr ""
+
+#. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
-msgid "VAT"
+msgid "VAT*"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -780,14 +1019,46 @@ msgstr ""
 #. module: sor_auction_documents
 #: model:ir.actions.report,name:sor_auction_documents.action_report_sor_vendor_settlement
 #: model:ir.model,name:sor_auction_documents.model_sor_vendor_settlement
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
 msgid "Vendor Settlement Statement"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
+msgid "Vendor Settlement Statement ("
 msgstr ""
 
 #. module: sor_auction_documents
 #. odoo-python
 #: code:addons/sor_auction_documents/models/sor_vendor_settlement.py:0
-msgid "Vendor Settlement Statement — %s"
+msgid "Vendor Settlement Statement not sent: %s has no email on file."
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,subject:sor_auction_documents.mail_template_sor_vendor_settlement
+msgid "Vendor Settlement Statement — {{ object.event_id.name }}"
+msgstr ""
+
+#. module: sor_auction_documents
+#. odoo-python
+#: code:addons/sor_auction_documents/models/sor_vendor_settlement.py:0
+msgid "Vendor Settlement Statement(s)"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:mail.template,name:sor_auction_documents.mail_template_sor_vendor_settlement
+msgid "Vendor Settlement Statement: Sending"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__vss_content_bottom
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__vss_content_bottom
+msgid "Vendor Settlement — Bottom"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_company__vss_content_top
+#: model:ir.model.fields,field_description:sor_auction_documents.field_res_config_settings__vss_content_top
+msgid "Vendor Settlement — Top"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -795,7 +1066,7 @@ msgstr ""
 #: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
 #: model:ir.actions.act_window,name:sor_auction_documents.action_sor_vendor_settlement
 #: model:ir.model.fields,field_description:sor_auction_documents.field_sor_event__vendor_settlement_count
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_auction_docs_buttons
+#: model:ir.ui.menu,name:sor_auction_documents.menu_sor_vendor_settlements
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_event_form_inherit_vss_smart_button
 msgid "Vendor Settlements"
 msgstr ""
@@ -804,6 +1075,16 @@ msgstr ""
 #. odoo-python
 #: code:addons/sor_auction_documents/models/sor_event_auction_docs.py:0
 msgid "Vendor Settlements can only be generated for Active or Closed events."
+msgstr ""
+
+#. module: sor_auction_documents
+#: model_terms:ir.ui.view,arch_db:sor_auction_documents.view_sor_vendor_settlement_form
+msgid "Void"
+msgstr ""
+
+#. module: sor_auction_documents
+#: model:ir.model.fields,field_description:sor_auction_documents.field_sor_event__vss_pending_count
+msgid "Vss Pending Count"
 msgstr ""
 
 #. module: sor_auction_documents
@@ -821,35 +1102,11 @@ msgid "Website communication history"
 msgstr ""
 
 #. module: sor_auction_documents
-#: model:ir.model.fields,help:sor_auction_documents.field_sor_lot__hammer_price_vat_included
+#: model:ir.model.fields,help:sor_auction_documents.field_sor_lot__vat_margin_scheme
 msgid ""
 "When enabled, the hammer price is treated as VAT-inclusive under the margin "
 "scheme. PDF documents display the hammer price with an M- annotation and VAT"
 " as €0.00. Defaults from the company setting; override per lot as needed."
-msgstr ""
-
-#. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
-msgid ""
-"e.g. PSRA Licence No. 002261 — printed in PDF footer on Pre-Sale Advice, "
-"Post-Sale Advice, and Vendor Settlement Statement."
-msgstr ""
-
-#. module: sor_auction_documents
-#: model:ir.model.fields,help:sor_auction_documents.field_res_company__auction_licence_ref
-#: model:ir.model.fields,help:sor_auction_documents.field_res_config_settings__auction_licence_ref
-msgid "e.g. PSRA Licence No. 002261 — rendered in PDF footer."
-msgstr ""
-
-#. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.res_config_settings_view_form_inherit_auction_docs
-msgid "e.g. Rory Guthrie, Director — printed as sign-off block in PDFs."
-msgstr ""
-
-#. module: sor_auction_documents
-#: model:ir.model.fields,help:sor_auction_documents.field_res_company__auction_director_signature
-#: model:ir.model.fields,help:sor_auction_documents.field_res_config_settings__auction_director_signature
-msgid "e.g. Rory Guthrie, Director — rendered as sign-off block in PDFs."
 msgstr ""
 
 #. module: sor_auction_documents
@@ -861,9 +1118,4 @@ msgstr ""
 #. module: sor_auction_documents
 #: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_vendor_settlement
 msgid "— NOT SOLD"
-msgstr ""
-
-#. module: sor_auction_documents
-#: model_terms:ir.ui.view,arch_db:sor_auction_documents.report_sor_post_sale_advice
-msgid "€0.00"
 msgstr ""

@@ -6,15 +6,15 @@ from .. import hooks
 class ResCompany(models.Model):
     _inherit = 'res.company'
 
-    hammer_price_vat_included = fields.Boolean(
-        string='Hammer Price VAT Included',
+    vat_margin_scheme = fields.Boolean(
+        string='VAT Margin Scheme',
         default=False,
         help='Company-wide default for new lots. Individual lots can override this setting.',
     )
-    auction_vat_notice = fields.Text(
+    auction_vat_notice = fields.Html(
         string='Auction VAT Notice',
         help=(
-            'Statutory notice text printed on buyer invoices when Hammer Price VAT Included '
+            'Statutory notice text printed on buyer invoices when VAT Margin Scheme '
             'is enabled. Leave empty to suppress the notice block. Set wording appropriate '
             "to the company's jurisdiction."
         ),

@@ -4,27 +4,17 @@ from odoo import fields, models
 class ResConfigSettings(models.TransientModel):
     _inherit = 'res.config.settings'
 
-    auction_sale_terms = fields.Html(
-        related='company_id.auction_sale_terms',
+    psa_content_top = fields.Html(related='company_id.psa_content_top', readonly=False)
+    psa_content_bottom = fields.Html(related='company_id.psa_content_bottom', readonly=False)
+    posa_content_top = fields.Html(related='company_id.posa_content_top', readonly=False)
+    posa_content_bottom = fields.Html(related='company_id.posa_content_bottom', readonly=False)
+    vss_content_top = fields.Html(related='company_id.vss_content_top', readonly=False)
+    vss_content_bottom = fields.Html(related='company_id.vss_content_bottom', readonly=False)
+    vat_margin_scheme = fields.Boolean(
+        related='company_id.vat_margin_scheme',
         readonly=False,
     )
-    auction_bank_details = fields.Text(
-        related='company_id.auction_bank_details',
-        readonly=False,
-    )
-    hammer_price_vat_included = fields.Boolean(
-        related='company_id.hammer_price_vat_included',
-        readonly=False,
-    )
-    auction_vat_notice = fields.Text(
+    auction_vat_notice = fields.Html(
         related='company_id.auction_vat_notice',
-        readonly=False,
-    )
-    auction_licence_ref = fields.Char(
-        related='company_id.auction_licence_ref',
-        readonly=False,
-    )
-    auction_director_signature = fields.Text(
-        related='company_id.auction_director_signature',
         readonly=False,
     )

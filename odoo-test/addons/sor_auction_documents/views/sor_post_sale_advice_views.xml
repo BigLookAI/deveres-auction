@@ -5,10 +5,13 @@
         <field name="name">sor.post.sale.advice.list</field>
         <field name="model">sor.post.sale.advice</field>
         <field name="arch" type="xml">
-            <list>
+            <list create="0">
                 <field name="name"/>
                 <field name="event_id"/>
                 <field name="consignor_id"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'sent'"
+                       decoration-muted="state == 'draft'"/>
                 <field name="company_id" groups="base.group_multi_company"/>
             </list>
         </field>
@@ -19,10 +22,15 @@
         <field name="name">sor.post.sale.advice.form</field>
         <field name="model">sor.post.sale.advice</field>
         <field name="arch" type="xml">
-            <form>
+            <form create="0">
                 <header>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,sent"/>
                     <button name="action_send_by_email" type="object"
-                            string="Send by Email" class="btn-primary"/>
+                            string="Send by Email" class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_send_by_email" type="object"
+                            string="Send by Email" class="btn-secondary"
+                            invisible="state != 'sent'"/>
                     <button name="%(action_report_sor_post_sale_advice)d" type="action"
                             string="Print" class="btn-secondary"/>
                 </header>
@@ -49,7 +57,7 @@
                                     <field name="state"/>
                                     <field name="hammer_price" widget="monetary"
                                            options="{'currency_field': 'currency_id'}"/>
-                                    <field name="hammer_price_vat_included"/>
+                                    <field name="vat_margin_scheme"/>
                                     <field name="currency_id" column_invisible="1"/>
                                 </list>
                             </field>
@@ -61,11 +69,42 @@
         </field>
     </record>
 
+    <!-- Post-Sale Advice search view -->
+    <record id="view_sor_post_sale_advice_search" model="ir.ui.view">
+        <field name="name">sor.post.sale.advice.search</field>
+        <field name="model">sor.post.sale.advice</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name" string="Reference"/>
+                <field name="event_id" string="Event"/>
+                <field name="consignor_id" string="Consignor"/>
+                <filter name="filter_draft" string="Draft" domain="[('state', '=', 'draft')]"/>
+                <filter name="filter_sent" string="Sent" domain="[('state', '=', 'sent')]"/>
+                <group>
+                    <filter name="group_by_event" string="Event" context="{'group_by': 'event_id'}"/>
+                    <filter name="group_by_consignor" string="Consignor" context="{'group_by': 'consignor_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
     <!-- Post-Sale Advice window action -->
     <record id="action_sor_post_sale_advice" model="ir.actions.act_window">
         <field name="name">Post-Sale Advices</field>
         <field name="res_model">sor.post.sale.advice</field>
         <field name="view_mode">list,form</field>
+        <field name="domain">[('company_id', '=', allowed_company_ids[0])]</field>
+        <field name="search_view_id" eval="False"/>
+    </record>
+
+    <!-- Bulk send server action for the POSA list view -->
+    <record id="action_server_bulk_send_post_sale_advice" model="ir.actions.server">
+        <field name="name">Send to Consignors</field>
+        <field name="model_id" ref="model_sor_post_sale_advice"/>
+        <field name="binding_model_id" ref="model_sor_post_sale_advice"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_bulk_send()</field>
     </record>
 
     <!-- Smart button on auction event form -->
@@ -86,18 +125,4 @@
         </field>
     </record>
 
-    <!-- Add batch Send Post-Sale Advices button to event form -->
-    <record id="view_sor_event_form_inherit_posa_send_button" model="ir.ui.view">
-        <field name="name">sor.event.form.inherit.posa.send.button</field>
-        <field name="model">sor.event</field>
-        <field name="inherit_id" ref="sor_auction_documents.view_sor_event_form_inherit_auction_docs_buttons"/>
-        <field name="arch" type="xml">
-            <xpath expr="//button[@name='action_generate_post_sale_advices']" position="after">
-                <button name="action_send_all_post_sale_advices"
-                        string="Send Post-Sale Advices"
-                        type="object"
-                        invisible="not is_commercial or status not in ('active', 'closed')"/>
-            </xpath>
-        </field>
-    </record>
 </odoo>

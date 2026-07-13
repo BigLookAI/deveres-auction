@@ -26,6 +26,8 @@
                     <!-- Helper fields for attrs (invisible) -->
                     <field name="has_creator_type" invisible="1"/>
                     <field name="has_contact_type" invisible="1"/>
+                    <field name="is_contact" invisible="1"/>
+                    <field name="is_consignor" invisible="1"/>
                 </xpath>
             </field>
         </record>
@@ -72,7 +74,8 @@
                         <group>
                             <group>
                                 <field name="biography" placeholder="Enter biography of the creator/artist..."/>
-                                <field name="birth_date"/>
+                                <field name="birth_year" placeholder="e.g. 1945"/>
+                                <field name="death_year" placeholder="e.g. 2001"/>
                                 <field name="nationality"/>
                                 <field name="creator_website" placeholder="https://example.com"/>
                             </group>
@@ -81,6 +84,30 @@
                             <field name="social_media_ids" nolabel="1"/>
                         </group>
                     </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Hide Individual/Company toggle on SOR-managed contacts (Story 02) -->
+        <record id="view_partner_form_inherit_company_toggle" model="ir.ui.view">
+            <field name="name">res.partner.form.inherit.sor_contact_roles.company_toggle</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='company_type'][@widget='radio']" position="attributes">
+                    <attribute name="invisible">is_contact or has_creator_type</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Hide Contacts tab on person records (Gap 04) -->
+        <record id="view_partner_form_inherit_contacts_tab_visibility" model="ir.ui.view">
+            <field name="name">res.partner.form.inherit.sor_contact_roles.contacts_tab_visibility</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='contact_addresses']" position="attributes">
+                    <attribute name="invisible">not is_company</attribute>
                 </xpath>
             </field>
         </record>
@@ -122,7 +149,7 @@
                     <field name="email"/>
                     <field name="phone"/>
                     <field name="nationality" optional="show"/>
-                    <field name="birth_date" optional="hide"/>
+                    <field name="birth_year" optional="hide"/>
                     <field name="creator_website" optional="hide"/>
                     <field name="contact_types" widget="many2many_tags" optional="hide"/>
                     <field name="creator_subtypes" widget="many2many_tags"/>

@@ -23,17 +23,26 @@
                             type="object"
                             confirm="Withdraw this lot? This cannot be undone."
                             invisible="state not in ('draft', 'catalogued')"/>
+                    <button name="action_mark_collected" string="Mark as Collected"
+                            type="object"
+                            confirm="Mark this lot as Collected? This cannot be undone."
+                            invisible="is_collected or state not in ('sold', 'passed')"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="draft,catalogued,sold,passed,withdrawn"/>
+                    <field name="is_collected" invisible="1"/>
+                    <field name="collected_display" widget="badge" readonly="1"
+                           decoration-success="is_collected"
+                           invisible="not is_collected"/>
                 </header>
                 <sheet>
                     <group>
                         <group string="Identification">
                             <field name="lot_reference" readonly="1"/>
                             <field name="lot_number" readonly="state != 'draft'"/>
-                            <field name="lot_suffix" readonly="state != 'draft'"/>
-                            <label for="product_id"/>
-                            <div class="d-flex align-items-center gap-2">
+                            <!-- product_id hidden when no vertical (sor_base) is installed.
+                                 Revealed by sor_lotting_base bridge when a vertical is present. -->
+                            <label for="product_id" invisible="1"/>
+                            <div class="d-flex align-items-center gap-2" invisible="1">
                                 <field name="product_id" nolabel="1"
                                        context="{'suppress_product_code': True}"
                                        options="{'no_open': True}"
@@ -45,6 +54,10 @@
                                         invisible="not product_id"/>
                             </div>
                             <field name="company_id" groups="base.group_multi_company" readonly="1"/>
+                            <!-- Fallback description fields — visible when no vertical (sor_base)
+                                 is installed. Hidden by sor_lotting_base bridge when vertical present. -->
+                            <field name="lot_title" readonly="state != 'draft'"/>
+                            <field name="consignor_id"/>
                         </group>
                         <group string="Financial" name="financial">
                             <!-- currency_id declared invisible — required by Monetary widgets
@@ -56,16 +69,26 @@
                             <field name="no_reserve" readonly="state != 'draft'"/>
                             <field name="starting_bid" readonly="state != 'draft'"/>
                             <field name="hammer_price"/>
+                            <field name="buyer_id" invisible="state != 'sold'"/>
                             <field name="break_even_value" readonly="1"/>
                         </group>
                     </group>
-                    <!-- D2 bridge injection point: auction_id and fee tabs go here -->
+                    <!-- D2 bridge injection point: fee tabs go here.
+                         auction_id is inserted inside the Identification group, after
+                         lot_number (re-anchored there in Auction Refinements 01 — see
+                         sor_events_auction_views.xml). -->
                     <notebook>
+                        <!-- lot_description_page: fallback rich-text description when no vertical
+                             installed. Hidden by sor_lotting_base bridge when sor_base is present. -->
+                        <page name="lot_description_page" string="Lot Description">
+                            <field name="lot_description" nolabel="1" readonly="state != 'draft'"/>
+                        </page>
                         <page name="internal_notes" string="Internal Notes">
                             <field name="internal_notes" nolabel="1"/>
                         </page>
                     </notebook>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
@@ -85,12 +108,13 @@
                 <field name="currency_id" optional="hide"/>
                 <field name="lot_reference"/>
                 <field name="lot_number"/>
-                <field name="lot_suffix"/>
-                <field name="product_id" context="{'suppress_product_code': True}"/>
+                <field name="lot_item_name"/>
                 <field name="state"/>
-                <field name="estimate_low"/>
-                <field name="estimate_high"/>
+                <field name="is_collected" string="Collected" optional="show"/>
+                <field name="estimate_low" optional="hide"/>
+                <field name="estimate_high" optional="hide"/>
                 <field name="reserve_price"/>
+                <field name="hammer_price"/>
             </list>
         </field>
     </record>
@@ -101,6 +125,8 @@
         <field name="model">sor.lot</field>
         <field name="arch" type="xml">
             <search string="Search Lots">
+                <field name="lot_title" string="Item"
+                       filter_domain="['|', ('lot_title', 'ilike', self), ('product_id.name', 'ilike', self)]"/>
                 <field name="lot_reference" string="Lot Reference"/>
                 <field name="lot_number" string="Lot Number"
                        filter_domain="[('lot_number', '=', self)]"/>
@@ -118,6 +144,11 @@
                         domain="[('state', '=', 'passed')]"/>
                 <filter string="Withdrawn" name="filter_withdrawn"
                         domain="[('state', '=', 'withdrawn')]"/>
+                <separator/>
+                <filter string="Sold" name="filter_result_sold"
+                        domain="[('auction_result', '=', 'sold')]"/>
+                <filter string="Passed" name="filter_result_passed"
+                        domain="[('auction_result', '=', 'passed')]"/>
             </search>
         </field>
     </record>

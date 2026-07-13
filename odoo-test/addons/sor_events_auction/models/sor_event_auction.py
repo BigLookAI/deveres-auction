@@ -53,6 +53,13 @@ class SorEventAuction(models.Model):
                       'Auction "%s" is currently %s.')
                     % (event.name, dict(self._fields['status'].selection)[event.status]),
                 )
+            draft_lots = event.lot_ids.filtered(lambda lot: lot.state == 'draft')
+            if draft_lots:
+                raise UserError(_(
+                    "%(count)d lot(s) are still in Draft state. "
+                    "Catalogue all lots before going live.",
+                    count=len(draft_lots),
+                ))
             event.status = 'active'
             event.message_post(body=_('Auction opened — Go Live triggered.'))
             catalogued_lots = event.lot_ids.filtered(

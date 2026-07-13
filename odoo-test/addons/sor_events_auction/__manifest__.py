@@ -1,6 +1,6 @@
 {
     'name': 'SOR Events Auction',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.1.0',
     'description': (
         'Bridge: links sor_events and sor_lotting — adds auction-specific '
         'fields to events and links lots to auctions.'

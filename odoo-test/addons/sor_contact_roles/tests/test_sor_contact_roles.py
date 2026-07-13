@@ -1,5 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
+import ast
+
 from psycopg2 import IntegrityError
 
 from odoo.exceptions import ValidationError
@@ -181,3 +183,45 @@ class TestSorContactRoles(TransactionCase):
             expected_codes.issubset(actual_codes),
             "Contact sub-types missing: %s" % (expected_codes - actual_codes),
         )
+
+
+@tagged('post_install', '-at_install')
+class TestSorContactRolesSprint22(TransactionCase):
+    """Story 01 + Story 02 — developer menu and toggle suppression additions."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.ContactType = cls.env['sor.contact.type']
+        cls.Partner = cls.env['res.partner']
+        cls.contact_type = cls.ContactType.search(
+            [('code', '=', 'contact'), ('parent_type_id', '=', False)],
+            limit=1,
+        )
+
+    def test_developer_action_has_active_test_false(self):
+        """Story 01 AC 3: Contact Types developer action must have active_test=False
+        in context so archived types are visible in the list."""
+        action = self.env.ref(
+            'sor_contact_roles.action_sor_contact_types_dev',
+            raise_if_not_found=False,
+        )
+        self.assertTrue(action, 'Developer action action_sor_contact_types_dev not found')
+        ctx = ast.literal_eval(action.context) if isinstance(action.context, str) else action.context
+        self.assertIn('active_test', ctx, "Developer action context must include active_test")
+        self.assertFalse(ctx.get('active_test'), "active_test must be False to show archived types")
+
+    def test_is_company_blocked_when_is_contact_true(self):
+        """Story 02 AC 3: setting is_company=True on a partner with is_contact=True raises ValidationError."""
+        partner = self.Partner.create({'name': 'Test Contact Constraint — sprint22 suite'})
+        partner.contact_types = [(4, self.contact_type.id)]
+        self.assertTrue(partner.is_contact, "Partner must have is_contact=True after Contact type assigned")
+        with self.assertRaises(ValidationError):
+            partner.write({'is_company': True})
+
+    def test_individual_contact_is_not_blocked(self):
+        """Story 02 AC 2: assigning the Contact type to an individual partner does not raise an error."""
+        partner = self.Partner.create({'name': 'Test Individual to Contact — sprint22 suite'})
+        self.assertFalse(partner.is_contact)
+        partner.contact_types = [(4, self.contact_type.id)]
+        self.assertTrue(partner.is_contact)

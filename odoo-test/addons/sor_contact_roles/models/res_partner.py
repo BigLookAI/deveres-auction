@@ -1,6 +1,7 @@
 # Part of Odoo. See LICENSE file for full copyright and licensing details.
 
-from odoo import api, fields, models
+from odoo import _, api, fields, models
+from odoo.exceptions import ValidationError
 
 ACTIVITY_EARNED_CODES = frozenset({'bidder', 'buyer', 'consignor', 'donor', 'lender'})
 
@@ -297,9 +298,13 @@ class ResPartner(models.Model):
         string='Biography',
         help="Biography of the creator/artist.",
     )
-    birth_date = fields.Date(
-        string='Birth Date',
-        help="Birth date of the creator/artist.",
+    birth_year = fields.Char(
+        string='Birth Year',
+        help="Birth year of the creator/artist (four-digit year, e.g. 1945).",
+    )
+    death_year = fields.Char(
+        string='Death Year',
+        help="Death year of the creator/artist. Leave blank for living artists.",
     )
     nationality = fields.Many2one(
         'res.country',
@@ -317,6 +322,31 @@ class ResPartner(models.Model):
         string='Social Media',
         help="Social media profiles for this creator/artist.",
     )
+
+    @api.constrains('is_company', 'is_contact')
+    def _check_contact_company_conflict(self):
+        for partner in self:
+            if partner.is_company and partner.is_contact:
+                raise ValidationError(_(
+                    "SOR-managed contacts cannot be set to Company type. "
+                    "To make this record a company, first remove its SOR contact type assignments.",
+                ))
+
+    @api.constrains('birth_year', 'death_year')
+    def _check_life_years(self):
+        for partner in self:
+            for year_str, label in ((partner.birth_year, 'Birth Year'), (partner.death_year, 'Death Year')):
+                if year_str:
+                    if not year_str.isdigit() or not (1000 <= int(year_str) <= 2099):
+                        raise ValidationError(
+                            _('%s must be a four-digit year between 1000 and 2099.') % label,
+                        )
+            if partner.birth_year and partner.death_year:
+                try:
+                    if int(partner.death_year) < int(partner.birth_year):
+                        raise ValidationError(_('Death Year cannot be earlier than Birth Year.'))
+                except ValueError:
+                    pass
 
     # Contact Fields (visible when Contact type or any Contact sub-type is assigned)
     collection_focus = fields.Text(

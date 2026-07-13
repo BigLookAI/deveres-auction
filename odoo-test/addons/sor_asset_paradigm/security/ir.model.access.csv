@@ -1,5 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_sor_asset_paradigm_rule_user,sor.asset.paradigm.rule user,model_sor_asset_paradigm_rule,base.group_user,1,0,0,0
-access_sor_asset_paradigm_rule_admin,sor.asset.paradigm.rule admin,model_sor_asset_paradigm_rule,base.group_system,1,1,0,0
-access_sor_asset_paradigm_rule_manifestation_user,sor.asset.paradigm.rule.manifestation user,model_sor_asset_paradigm_rule_manifestation,base.group_user,1,0,0,0
-access_sor_asset_paradigm_rule_manifestation_admin,sor.asset.paradigm.rule.manifestation admin,model_sor_asset_paradigm_rule_manifestation,base.group_system,1,1,1,1

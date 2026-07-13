@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <record id="mail_template_sor_buyer_invoice_bulk" model="mail.template">
+            <field name="name">Buyer Invoice: Bulk Sending</field>
+            <field name="model_id" ref="account.model_account_move"/>
+            <field name="email_from">{{ object.company_id.email or user.email_formatted }}</field>
+            <field name="use_default_to" eval="False"/>
+            <field name="partner_to">{{ object.partner_id.id }}</field>
+            <field name="subject">Buyer Invoice — {{ object.sor_event_id.name or object.name }}</field>
+            <field name="description">Sent to buyers with their Buyer Invoice attached (bulk send)</field>
+            <field name="report_template_ids" eval="[(4, ref('account.account_invoices'))]"/>
+            <field name="body_html" type="html">
+                <div>
+                    <p>Dear <t t-out="object.partner_id.name"/>,</p>
+                    <p>Please find your buyer invoice attached.</p>
+                </div>
+            </field>
+        </record>
+    </data>
+</odoo>

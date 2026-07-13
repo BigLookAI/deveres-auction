@@ -1,4 +1,0 @@
-id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
-access_sor_tracking_dashboard_user,sor.tracking.dashboard user,model_sor_tracking_dashboard,,1,1,1,0
-access_sor_movement_location_confirm_user,sor.movement.location.confirm user,model_sor_movement_location_confirm,,1,1,1,0
-access_sor_movement_source_location_confirm_user,sor.movement.source.location.confirm user,model_sor_movement_source_location_confirm,base.group_user,1,1,1,1

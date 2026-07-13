@@ -13,18 +13,33 @@
                 <field name="is_commercial_auction" invisible="1"/>
             </xpath>
             <!-- Fees tab: placed before Internal Notes; visible only for commercial auction lots.
-                 Fields locked at Catalogued — core lot financials committed to printed catalogue. -->
+                 Fees tab fields remain editable at every lot state — commercial terms continue
+                 to be negotiated pre-auction, during-auction, and in after-sales; see
+                 sor_design_patterns.md Pattern 3. -->
             <xpath expr="//page[@name='internal_notes']" position="before">
                 <page string="Fees" invisible="not is_commercial_auction">
                     <group>
                         <group string="Fee Rates">
-                            <field name="sellers_commission_pct" readonly="state != 'draft'"/>
-                            <field name="withdrawal_fee_pct" readonly="state != 'draft'"/>
-                            <field name="buyers_premium_pct" readonly="state != 'draft'"/>
+                            <field name="use_custom_vendor_fee" string="Override Vendor Fee"/>
+                            <field name="sellers_commission_pct" string="Vendor Fee %"
+                                   readonly="not use_custom_vendor_fee"/>
+                            <field name="withdrawal_fee_pct"/>
+                            <field name="use_custom_buyer_premium" string="Override Buyer Premium"/>
+                            <field name="buyers_premium_pct" string="Buyer Premium %"
+                                   readonly="not use_custom_buyer_premium"/>
                         </group>
                         <group string="Break-Even">
                             <field name="break_even_value" widget="monetary" readonly="1"/>
                         </group>
+                    </group>
+                    <group string="Fixed Charges">
+                        <field name="fixed_charge_ids" nolabel="1" colspan="2">
+                            <list editable="bottom">
+                                <field name="currency_id" column_invisible="1"/>
+                                <field name="charge_type_id"/>
+                                <field name="amount"/>
+                            </list>
+                        </field>
                     </group>
                 </page>
             </xpath>
@@ -46,7 +61,10 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Seller" name="seller_auction">
                     <group>
-                        <field name="default_sellers_commission_pct"/>
+                        <field name="use_custom_default_commission" string="Override Default Commission"/>
+                        <field name="effective_sellers_commission_pct"
+                               string="Default Vendor Fee %"
+                               readonly="not use_custom_default_commission"/>
                     </group>
                 </page>
             </xpath>

@@ -5,4 +5,3 @@ from . import (
     res_company,
     sor_event,
 )
-from . import invoice_pending_compat

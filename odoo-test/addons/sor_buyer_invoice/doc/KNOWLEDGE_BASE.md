@@ -2,9 +2,9 @@
 
 ## 1. Overview
 
-**What it does:** Provides the business-model-agnostic event-invoice link layer. It adds an `Event` field (`sor_event_id`) to `account.move`, a smart button on the auction event form showing linked invoice count, a `PSRA Licence Number` field on `res.company`, and a regulatory footer on the invoice PDF (bank details, PSRA, company reg, VAT number) that appears on all invoices linked to an event.
+**What it does:** Provides the business-model-agnostic event-invoice link layer. It adds an `Event` field (`sor_event_id`) to `account.move`, a smart button on the auction event form showing linked invoice count, a `PSRA Licence Number` field on `res.company`, and renders a fully bespoke, standalone invoice PDF (`report_invoice_document_sor_buyer_invoice`) for every event-linked invoice — company branding, customer block, title, a generic line-items fallback table, a payment-status block (Paid on / Amount Due, mirroring native Odoo), and the regulatory footer (bank details, PSRA, company reg, VAT number). It also restricts the invoice's "Payments" smart button to a no-create list view once 2+ payments exist, so staff cannot create an unreconciled payment outside the "Pay" flow.
 
-**What it does NOT do:** It does not generate invoices, add lot fields, calculate buyer's premium, or render a lot breakdown table. All auction-specific invoice content belongs in `sor_buyer_invoice_auction_house`.
+**What it does NOT do:** It does not generate invoices, add lot fields, calculate buyer's premium, or render a lot breakdown table. All auction-specific invoice content belongs in `sor_buyer_invoice_auction_house`, which replaces this module's generic fallback table with a lot breakdown table.
 
 **Dependencies:** `sor_accounting`, `sor_events`
 
@@ -27,6 +27,8 @@
 |-------|--------|-------------|
 | `sor.event` | `action_view_buyer_invoices()` | Returns a window action opening all invoices with `sor_event_id = self.id` |
 | `sor.event` | `_compute_invoice_count()` | Counts `account.move` records linked to this event via `search_count` |
+| `account.move` | `open_payments()` | Overrides the native "Payments" smart button action — once 2+ payments are reconciled, substitutes a dedicated no-create list view (`sor_buyer_invoice.view_account_payment_list_no_create`) so staff cannot create a payment outside "Pay". Existing payments remain fully readable/editable; only creation from this specific list is blocked. |
+| `account.move` | `_get_name_invoice_report()` | Report-dispatch extension point (per Odoo's own documented pattern, see `l10n_ar` for a native example). Returns `sor_buyer_invoice.report_invoice_document_sor_buyer_invoice` when `sor_event_id` is set; falls through to native `account.report_invoice_document` otherwise. |
 
 ---
 
@@ -44,13 +46,24 @@ No SOR developer menu entries in this module.
 
 ## 6. Building on this module
 
-`sor_buyer_invoice` provides the invoice-event link and the PDF footer anchor (`sor_auction_footer`). Bridge modules that add auction-specific invoice content should:
+`report_invoice_document_sor_buyer_invoice` is a fully standalone template (no `inherit_id`) — it does not extend Odoo's native `account.report_invoice_document`. Bridge modules that add auction-specific invoice content should:
 
 1. Depend on `sor_buyer_invoice` (and other parent modules as appropriate)
 2. Add lot fields to `account.move` and `account.move.line` in the bridge
-3. Extend `sor_buyer_invoice.report_invoice_document_sor_buyer_invoice` via XPath at `//div[@name='sor_auction_footer']` position="before" to insert content above the regulatory footer
+3. Inherit `sor_buyer_invoice.report_invoice_document_sor_buyer_invoice` and use `position="replace"` on `//div[@name='sor_invoice_line_table']` to swap the generic fallback table for a lot breakdown table
+4. Extend the same template at `//div[@name='sor_auction_footer']` position="before" to insert content above the regulatory footer
 
-The `sor_auction_footer` anchor is deliberately placed at the bottom of the PDF content area so bridge content always appears above the regulatory footer without needing to know the footer's internal structure.
+Three named anchors exist in the base template, each with a distinct purpose:
+
+| Anchor | Purpose | Survives bridge `position="replace"` on `sor_invoice_line_table`? |
+|--------|---------|------|
+| `sor_invoice_line_table` | Generic fallback line-items table + totals — the extension point bridges replace wholesale | N/A — this is the div being replaced |
+| `sor_invoice_payment_status` | Payment status (Paid on / Amount Due) — a sibling of `sor_invoice_line_table`, not nested inside it | Yes — untouched by the bridge's replace, renders identically in both Group 1 (standalone) and Group 2 (combined) cases |
+| `sor_auction_footer` | Regulatory footer (bank details, PSRA, company reg, VAT) | Yes — same reason |
+
+**Why `sor_invoice_payment_status` is a sibling, not nested:** it was added after `sor_invoice_line_table` specifically so a bridge's `position="replace"` on the fallback table does not also delete the payment-status content (BUG-01, Auction MVP Refinements Show & Tell). Any future content that must survive regardless of which downstream bridge module is installed should be placed as a sibling of `sor_invoice_line_table`, not inside it.
+
+The dispatch mechanism (`_get_name_invoice_report()` + the `report_invoice` template's `t-elif` extension) follows Odoo's own documented extension point — see `l10n_ar` for a native example of the same pattern. Non-event invoices are entirely unaffected; they never reach the SOR branch.
 
 ---
 
@@ -67,6 +80,14 @@ The `sor_auction_footer` anchor is deliberately placed at the bottom of the PDF 
 **R5 — Document type selector suppressed:** Open any buyer invoice form. Confirm there is no radio button or dropdown widget near the invoice title allowing staff to switch document types (Journal Entry / Customer Invoice / Credit Note / Vendor Bill etc.). The form should show only the invoice number without a type switcher.
 
 **R6 — Receipts filter absent from search panel:** Navigate to Invoicing → Customers → Invoices. Open the search filter dropdown. Confirm "Receipts" is not listed as a selectable filter option — only "Invoices", "Credit Notes", and state/date filters should be present.
+
+**R7 — Payments smart button has no "New" with 2+ payments:** Open a buyer invoice with 2 or more reconciled payments. Click the "Payments" smart button. Confirm the list opens with no "New" button. The general Payments menu (Accounting → Customers → Payments) and "Pay" (Register Payment) are both unaffected.
+
+**R8 — Title and body correct across state/move_type:** Print a posted, draft, and cancelled event-linked invoice, and an event-linked credit note. Confirm titles read "Invoice"/"Draft Invoice"/"Cancelled Invoice"/"Credit Note" respectively, with the same body structure in every case.
+
+**R9 — Payment status shown on paid invoices:** Print a fully-paid event-linked invoice. Confirm the PDF shows "Paid on <date> <amount>" and "Amount Due <amount>", matching what the invoice form itself displays. An unpaid draft shows neither line.
+
+**R10 — Standalone fallback table when the bridge is absent:** With `sor_buyer_invoice` installed and `sor_buyer_invoice_auction_house` not installed, print an event-linked invoice. Confirm a generic Description/Quantity/Unit Price/Subtotal table with an Untaxed Amount/Tax/Total footer renders with no errors, and no lot breakdown content appears.
 
 ---
 

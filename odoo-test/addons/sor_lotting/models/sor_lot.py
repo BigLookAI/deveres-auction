@@ -4,6 +4,7 @@ from odoo.exceptions import UserError
 
 class SorLot(models.Model):
     _name = 'sor.lot'
+    _inherit = ['mail.thread', 'mail.activity.mixin']
     _description = 'SOR Lot'
     _rec_name = 'lot_reference'
     _order = 'lot_reference asc'
@@ -22,15 +23,17 @@ class SorLot(models.Model):
         string='Lot Number',
         size=10,
     )
-    lot_suffix = fields.Char(
-        string='Suffix',
-        size=3,
-    )
     product_id = fields.Many2one(
         comodel_name='product.template',
         string='Product',
-        required=True,
         domain=[('type', 'not in', ('service',))],
+    )
+    lot_title = fields.Char(string='Lot Title')
+    lot_description = fields.Html(string='Lot Description')
+    lot_item_name = fields.Char(
+        string='Item',
+        compute='_compute_lot_item_name',
+        store=False,
     )
     company_id = fields.Many2one(
         comodel_name='res.company',
@@ -83,6 +86,18 @@ class SorLot(models.Model):
         ),
     )
 
+    # Parties
+    consignor_id = fields.Many2one(
+        comodel_name='res.partner',
+        string='Consignor',
+        check_company=True,
+    )
+    buyer_id = fields.Many2one(
+        comodel_name='res.partner',
+        string='Buyer',
+        check_company=True,
+    )
+
     # Status
     state = fields.Selection(
         selection=[
@@ -96,9 +111,26 @@ class SorLot(models.Model):
         default='draft',
         required=True,
         copy=False,
+        tracking=True,
+    )
+    auction_result = fields.Selection(
+        selection=[('sold', 'Sold'), ('passed', 'Passed')],
+        string='Auction Result',
+        copy=False,
+    )
+    is_collected = fields.Boolean(
+        string='Collected',
+        default=False,
+        copy=False,
+        tracking=True,
+    )
+    collected_display = fields.Char(
+        compute='_compute_collected_display',
+        store=False,
     )
 
     # Internal notes
+
     internal_notes = fields.Html(
         string='Internal Notes',
     )
@@ -131,34 +163,64 @@ class SorLot(models.Model):
                 )
         return super().unlink()
 
+    @api.model
+    def _name_search(self, name='', domain=None, operator='ilike', limit=100, order=None):
+        if name:
+            domain = ['|', ('lot_reference', operator, name), ('lot_title', operator, name)] + (domain or [])
+            return self._search(domain, limit=limit, order=order)
+        return super()._name_search(name=name, domain=domain, operator=operator, limit=limit, order=order)
+
+    @api.depends('product_id', 'product_id.name', 'lot_title')
+    def _compute_lot_item_name(self):
+        for lot in self:
+            lot.lot_item_name = lot.product_id.name or lot.lot_title or ''
+
     @api.depends('reserve_price')
     def _compute_break_even_value(self):
         for lot in self:
             lot.break_even_value = lot.reserve_price or 0.0
 
+    @api.depends('is_collected')
+    def _compute_collected_display(self):
+        for lot in self:
+            lot.collected_display = 'Collected' if lot.is_collected else ''
+
     def action_catalogue(self):
         for lot in self:
             if lot.state != 'draft':
                 raise UserError(_('Only a Draft lot can be catalogued.'))
+        missing = self.filtered(lambda lot: not lot.lot_number)
+        if missing:
+            raise UserError(_(
+                '%(count)d lot(s) cannot be catalogued — Please provide a Lot Number for: %(refs)s',
+                count=len(missing),
+                refs=', '.join(missing.mapped('lot_reference')),
+            ))
         self.write({'state': 'catalogued'})
 
     def action_mark_sold(self):
         for lot in self:
             if lot.state not in ('catalogued', 'live'):
                 raise UserError(_('Only a Catalogued or Live lot can be marked Sold.'))
-        self.write({'state': 'sold'})
+        self.write({'state': 'sold', 'auction_result': 'sold'})
 
     def action_mark_passed(self):
         for lot in self:
             if lot.state not in ('catalogued', 'live'):
                 raise UserError(_('Only a Catalogued or Live lot can be marked Passed.'))
-        self.write({'state': 'passed'})
+        self.write({'state': 'passed', 'auction_result': 'passed'})
 
     def action_withdraw(self):
         for lot in self:
             if lot.state not in ('draft', 'catalogued'):
                 raise UserError(_('Only a Draft or Catalogued lot can be withdrawn.'))
         self.write({'state': 'withdrawn'})
+
+    def action_mark_collected(self):
+        for lot in self:
+            if lot.state not in ('sold', 'passed'):
+                raise UserError(_('Only a Sold or Passed lot can be marked as Collected.'))
+        self.write({'is_collected': True})
 
     def action_open_product(self):
         self.ensure_one()

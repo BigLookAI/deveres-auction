@@ -122,7 +122,7 @@ Each breaking change to the data model bumps the module version and adds a migra
 |-------|---------|
 | `show_subtypes` | `True` when Creator or Contact is in `contact_types` — controls sub-types widget visibility |
 
-**Creator-specific fields:** `biography`, `birth_date`, `nationality`, `website`, `social_media_ids` (One2many to `sor.contact.social.media`)
+**Creator-specific fields:** `biography`, `birth_year` (Integer), `death_year` (Integer), `nationality`, `website`, `social_media_ids` (One2many to `sor.contact.social.media`)
 
 **Contact-specific fields:** `collection_focus`, `preferred_artist_ids`
 
