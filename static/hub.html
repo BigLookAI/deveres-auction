@@ -97,9 +97,9 @@
     <b>synthetic data only</b>.</div>
   <div class="pillrow">
     <span class="pill"><b>2</b> live apps + full Odoo 19</span>
-    <span class="pill"><b>224</b> automated tests</span>
-    <span class="pill"><b>216</b> demo contacts · <b>50</b> live auction lots</span>
-    <span class="pill"><b>0</b> real client records exposed</span>
+    <span class="pill"><b>231</b> automated tests</span>
+    <span class="pill"><b>216</b> demo contacts · <b>2</b> demo auctions + bid history</span>
+    <span class="pill">real-data rehearsal: <b>131/131 lots completed</b> (local sandbox)</span>
   </div>
 
   <h2 id="products">Live products — open &amp; test</h2>
@@ -128,14 +128,14 @@
       <p>The same import continues into the auction: lots are located in Odoo <b>by lot number</b> (never
          title), <b>hammer prices import from the winning bids</b> with per-lot verification, and every buyer
          carries its contact-engine match score. Missing lots and duplicates become explicit exceptions —
-         nothing is ever created or overwritten silently. Buyer assignment &amp; Sold status are designed,
-         implemented and <span class="tag t-flag" style="padding:1px 8px">feature-flagged</span> pending the
-         final Odoo auction setup.</p>
+         nothing is ever created or overwritten silently. <b>Buyer assignment and Sold status are LIVE on the demo</b> — the import completes the
+         auction in one pass (hammer → buyer → sold, each verified), and uncertain buyers are never
+         assigned. Imports can be scoped to a single auction; suffix lots (25A/78B) match correctly.</p>
       <div class="try"><b>Try in 2 minutes</b>
         <ol>
           <li>Open the Lots stage (button below) — 11 ready · 1 missing lot · 1 duplicate</li>
-          <li>👁 Preview: the exact plan, including what the deferred flags would write</li>
-          <li>🔨 Import hammer prices → “11 written · 11 ✓ verified” → see them in Odoo</li>
+          <li>👁 Preview: the exact plan — hammer, buyer and Sold per lot</li>
+          <li>🔨 Import → “11 written · 11 ✓ verified” → the lots are <b>Sold with buyers</b> in Odoo</li>
         </ol></div>
       <div class="btnrow"><a class="btn" href="/reconcile?view=lots">Open Lot Reconciliation →</a></div>
       <div class="cred">Same login as Reconciliation · lots seeded in “deVeres Demo Auction — July 2026”</div>
@@ -143,10 +143,10 @@
 
     <div class="card">
       <span class="tag t-live">● Live · public</span>
-      <h3>3 · AI Bidder Evaluation</h3>
-      <p>The original deVeres product: scores every known bidder against upcoming lots on six deterministic
-         dimensions, ranks the best prospects per lot, explains each score, and drafts personalised
-         outreach emails.</p>
+      <h3>3 · AI Bidder Evaluation — now on live Odoo data</h3>
+      <p>Scores every known bidder against the upcoming September auction on six deterministic dimensions —
+         <b>reading lots and bidding history live from Odoo</b> (sor.lot / sor.bid), the pilot's declared
+         end-state. Ranks prospects per lot, explains each score, drafts outreach.</p>
       <div class="try"><b>Try in 2 minutes</b>
         <ol>
           <li>Log in as admin → <i>Run evaluation</i></li>
@@ -182,7 +182,7 @@
     <div class="stage"><div class="n">4 · Push</div><div class="t">Contacts → Odoo</div><div class="d">staging is the only payload · dry-run first · verified by read-back</div></div>
     <div class="stage"><div class="n">5 · Lots</div><div class="t">Locate by number</div><div class="d">missing = exception (never auto-created) · duplicates → review</div></div>
     <div class="stage"><div class="n">6 · Hammer</div><div class="t">Winning bid → price</div><div class="d">estimates &amp; reserves untouched · idempotent re-runs</div></div>
-    <div class="stage flagged"><div class="n">7 · Complete</div><div class="t">Buyer + Sold</div><div class="d">designed &amp; feature-flagged — one switch once the Odoo setup is agreed</div></div>
+    <div class="stage"><div class="n">7 · Complete</div><div class="t">Buyer + Sold</div><div class="d">LIVE — buyers assigned at ≥90% match only; lots marked Sold; verified per lot</div></div>
     <div class="stage"><div class="n">Always</div><div class="t">🕘 Audit</div><div class="d">append-only trail: user, timestamp, old→new values, verification</div></div>
   </div>
 
@@ -209,6 +209,12 @@
       <div class="s">SOR auction modules installed from the Assembly profile (9 + 12 auto-bridges, zero dependency errors); every contact field verified editable via UI, ORM and API; ⟳ Refresh contacts (session-preserving re-pull); 🚀 push with per-record read-back verification; sync status bar; public demo hub.</div></div>
     <div class="item"><div class="d">7 July (am)</div><div class="t">Metadata-aware validation · enterprise UX</div>
       <div class="s">Typed res.partner schema from Odoo; dropdown validation with suggestions (invalid counties can never push silently); missing-contacts root cause documented — no data was ever lost; full UX redesign: KPI-card filters, Match score breakdown, contextual actions, activity timeline, light enterprise theme.</div></div>
+    <div class="item"><div class="d">13 July</div><div class="t">Full auction completion · live Odoo bidder data · real-data rehearsal</div>
+      <div class="s">Buyer assignment &amp; Sold status enabled (one pass: hammer → buyer → sold, verified per lot;
+      uncertain buyers never assigned); suffix-lot matching and single-auction scoping; Bidder Evaluation now runs
+      on live Odoo bidding history; post-sale documents module installed (post-sale advice + vendor settlements);
+      and a full production rehearsal on the real April dataset — 83 contacts reconciled, 131/131 lots completed
+      with zero errors, on the local sandbox only. 231 automated tests.</div></div>
     <div class="item"><div class="d">8–10 July</div><div class="t">Review-driven refinements</div>
       <div class="s">Client review actioned: the match panel is now a plain-language <b>checklist</b> (✓ Match / ≈ Close /
       ✗ Different) instead of raw percentages; postcode similarity is binary ("there's no spectrum"); the Lots stage
