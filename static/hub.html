@@ -104,13 +104,14 @@
   <h1>The auction house, reconciled.</h1>
   <div class="sub">From a Blue Cubes export to a completed auction in Odoo: contact reconciliation with
     typed validation, a verified push, and the new <b>lot reconciliation</b> stage that imports hammer
-    prices against live auction lots. Every link below is public and safe to test — the demo runs on
-    <b>synthetic data only</b>.</div>
+    prices against live auction lots. The Odoo demo and Bidder Evaluation run on <b>synthetic data</b>;
+    the Reconciliation app is currently connected to the <b>realistic April dataset</b> behind a
+    restricted login.</div>
   <div class="pillrow">
     <span class="pill"><b>2</b> live apps + full Odoo 19</span>
-    <span class="pill"><b>231</b> automated tests</span>
+    <span class="pill"><b>247</b> automated tests</span>
     <span class="pill"><b>216</b> demo contacts · <b>2</b> demo auctions + bid history</span>
-    <span class="pill">real-data rehearsal: <b>131/131 lots completed</b> (local sandbox)</span>
+    <span class="pill">April dataset live: <b>13,652 contacts · 162 lots</b></span>
   </div>
 
   <h2 id="products">Live products — open &amp; test</h2>
@@ -244,10 +245,11 @@
       reset → contacts push → sales push → reset. 247 automated tests.</div></div>
   </div>
 
-  <div class="note"><b style="color:var(--ink)">Safe to test, on purpose.</b> All demo apps run on generated
-  sample data (<code>@example.test</code> contacts, fictional lots and bidders). The real client master, real
-  sessions and production credentials are stored offline on the server and are not reachable from these
-  links. Break anything — the <b>↺ Reset demo data</b> button in the reconciliation app reverts the whole
-  dataset to its original state in one click.</div>
+  <div class="note"><b style="color:var(--ink)">Data handling.</b> The Odoo demo (:8443) and Bidder
+  Evaluation run on generated sample data (<code>@example.test</code> contacts, fictional lots and bidders)
+  and are safe to break. The Reconciliation app is currently connected to the <b>realistic April dataset</b>
+  — its login is restricted and its credentials are issued directly by Cimelium; production credentials are
+  never displayed on these pages. In demo mode the app additionally offers a one-click
+  <b>↺ Reset demo data</b> button.</div>
 </div>
 </body></html>
