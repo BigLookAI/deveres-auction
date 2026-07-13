@@ -220,24 +220,32 @@
       <div class="s">SOR auction modules installed from the Assembly profile (9 + 12 auto-bridges, zero dependency errors); every contact field verified editable via UI, ORM and API; ⟳ Refresh contacts (session-preserving re-pull); 🚀 push with per-record read-back verification; sync status bar; public demo hub.</div></div>
     <div class="item"><div class="d">7 July (am)</div><div class="t">Metadata-aware validation · enterprise UX</div>
       <div class="s">Typed res.partner schema from Odoo; dropdown validation with suggestions (invalid counties can never push silently); missing-contacts root cause documented — no data was ever lost; full UX redesign: KPI-card filters, Match score breakdown, contextual actions, activity timeline, light enterprise theme.</div></div>
-    <div class="item"><div class="d">13 July</div><div class="t">Full auction completion · live Odoo bidder data · real-data rehearsal</div>
-      <div class="s">Buyer assignment &amp; Sold status enabled (one pass: hammer → buyer → sold, verified per lot;
-      uncertain buyers never assigned); suffix-lot matching and single-auction scoping; Bidder Evaluation now runs
-      on live Odoo bidding history; post-sale documents module installed (post-sale advice + vendor settlements);
-      and a full production rehearsal on the real April dataset — 83 contacts reconciled, 131/131 lots completed
-      with zero errors, on the local sandbox only. 231 automated tests.</div></div>
+    <div class="item"><div class="d">7 July (pm)</div><div class="t">Lot Reconciliation pipeline</div>
+      <div class="s">50 live lots seeded in a demo auction; lots located by number; hammer prices imported from winning bids with per-lot verification and idempotent re-runs; missing-lot and duplicate exceptions; buyer matching reuses the contact engine (90% floor); buyer assignment &amp; Sold status implemented behind feature flags pending the Odoo auction setup. 224 automated tests.</div></div>
     <div class="item"><div class="d">8–10 July</div><div class="t">Review-driven refinements</div>
       <div class="s">Client review actioned: the match panel is now a plain-language <b>checklist</b> (✓ Match / ≈ Close /
       ✗ Different) instead of raw percentages; postcode similarity is binary ("there's no spectrum"); the Lots stage
-      gained its own ⟳ Refresh. Next on the runway: the live-sale week — invoicing &amp; mail on the Odoo side, and
-      linking bidding history into Odoo to complete the pilot.</div></div>
-    <div class="item"><div class="d">7 July (pm)</div><div class="t">Lot Reconciliation pipeline</div>
-      <div class="s">50 live lots seeded in a demo auction; lots located by number; hammer prices imported from winning bids with per-lot verification and idempotent re-runs; missing-lot and duplicate exceptions; buyer matching reuses the contact engine (90% floor); buyer assignment &amp; Sold status implemented behind feature flags pending the Odoo auction setup. 224 automated tests.</div></div>
+      gained its own ⟳ Refresh.</div></div>
+    <div class="item"><div class="d">13 July (am)</div><div class="t">Full auction completion · real-data rehearsal · launch simulation</div>
+      <div class="s">Buyer assignment &amp; Sold status enabled (one pass: hammer → buyer → sold, verified per lot;
+      uncertain buyers never assigned); suffix-lot matching and single-auction scoping; post-sale documents module
+      installed (post-sale advice + vendor settlements); a clean environment rebuilt strictly from the client
+      Assembly YAML with 38 automated parity checks; and a full production rehearsal on the real April dataset —
+      83 contacts reconciled converging in a single approve→push pass, 131/131 lots completed with zero errors,
+      on the local sandbox only.</div></div>
+    <div class="item"><div class="d">13 July (pm)</div><div class="t">Demo parity · checklist register · one-click reset</div>
+      <div class="s">This demo now runs the exact client module stack on the latest code — the lot form shows
+      Lot Title, Lot Description and Buyer (below Hammer Price, once Sold) precisely as on the client's instance.
+      The register dropped percentages for a ✓/✗ field checklist. And the whole demo dataset reverts to its
+      original unreconciled state with one click (<b>↺ Reset demo data</b>), so the full pipeline — contact
+      reconciliation and sales reconciliation — can be tested from scratch, repeatedly. Verified live:
+      reset → contacts push → sales push → reset. 247 automated tests.</div></div>
   </div>
 
   <div class="note"><b style="color:var(--ink)">Safe to test, on purpose.</b> All demo apps run on generated
   sample data (<code>@example.test</code> contacts, fictional lots and bidders). The real client master, real
   sessions and production credentials are stored offline on the server and are not reachable from these
-  links. Break anything — it reseeds in one command.</div>
+  links. Break anything — the <b>↺ Reset demo data</b> button in the reconciliation app reverts the whole
+  dataset to its original state in one click.</div>
 </div>
 </body></html>

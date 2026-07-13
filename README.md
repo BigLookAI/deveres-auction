@@ -46,12 +46,19 @@ Blue Cube Export → Reconciliation Engine → Review → Approval → Staging �
 ```bash
 ./setup.sh                     # one-time: venv + deps
 ./run.sh                       # http://localhost:8003 → open /reconcile
-python3 -m pytest tests -q     # 131 tests
+python3 -m pytest tests -q     # 247 tests
 ```
 
 Login (HTTP Basic, override via `RECON_USER`/`RECON_PASS`):
 `admin@deveres.ie` / `Admin2026!` · optional read-only account via
 `RECON_VIEWER_USER`/`RECON_VIEWER_PASS`.
+
+**Demo reset** (`↺ Reset demo data`, admin-only): reverts the demo dataset to
+its original unreconciled state — seeded contacts restored, push-created
+clients removed, lots back to pre-sale — and archives the working session to
+`output/demo-archive-<ts>/`. Double-gated: the server must set
+`RECON_ENABLE_DEMO_RESET=1` **and** `ODOO_DB` must be the demo database, so
+the route cannot exist against client data.
 
 Live demo: **https://deveres.tail915505.ts.net**
 

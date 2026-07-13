@@ -112,3 +112,23 @@ locations, tracking, legal-agreement, and **no Inventory (stock)** — the
 directly on `sor.lot` (visible below Hammer Price once the lot is Sold);
 `lot_suffix` no longer exists upstream (suffix lots are combined in
 `lot_number`, e.g. "25A", matching Blue Cubes).
+
+## 8. Demo reset (self-serve, 13-Jul-2026)
+
+`POST /reconcile/demo/reset` (admin) — reverts the demo dataset to its
+original unreconciled state so the full pipeline can be re-tested from
+scratch: seeded contacts restored (push-created `BC-…` clients removed),
+every lot back to pre-sale (hammer 0, no buyer, not Sold — stray ad-hoc lots
+included), the working session/staging ARCHIVED to `output/demo-archive-<ts>/`,
+and the master re-pulled from Odoo. Exposed in the UI as the red
+**↺ Reset demo data** button on the sync bar.
+
+Enable on the demo server only:
+
+```bash
+# .env — demo box (the route 404s without this, and refuses any ODOO_DB
+# that is not the demo database)
+RECON_ENABLE_DEMO_RESET=1
+```
+
+The Blue Cubes exports are static inputs and are never touched.
