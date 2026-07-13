@@ -461,6 +461,9 @@ def sync_status():
                              "records": s.get("last_refresh_records")},
             "last_push": {"at": s.get("last_push_at"), "by": s.get("last_push_by"),
                           "summary": s.get("last_push_summary")},
+            "last_lot_push": {"at": s.get("last_lot_push_at"),
+                              "by": s.get("last_lot_push_by"),
+                              "summary": s.get("last_lot_push_summary")},
             "pending_push": counts.get("ready", {}),
             "failed_push": s.get("last_push_failed", 0)}
 

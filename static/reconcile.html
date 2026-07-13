@@ -282,7 +282,7 @@
     <div class="controls">
       <input type="search" id="search" placeholder="🔍 Search within this view — name, email, phone, town, buyer no.  ( / )" aria-label="Search records"/>
       <select id="sort" aria-label="Sort records">
-        <option value="confidence">Sort: Match score</option>
+        <option value="confidence">Sort: Match strength</option>
         <option value="state">Sort: Status</option>
         <option value="name">Sort: Name</option>
         <option value="changes">Sort: Changes</option>
@@ -305,7 +305,7 @@
           <th style="width:26px"><input type="checkbox" id="selAll" aria-label="Select all rows on this page"/></th>
           <th data-s="state">Status</th><th data-s="confidence" title="Weighted field-similarity between the incoming contact and its best master match">Match</th>
           <th>Odoo (master)</th><th>Incoming (Blue Cubes)</th>
-          <th>Matched by</th><th>Changed fields</th><th style="width:170px">Quick actions</th>
+          <th>Changed fields</th><th style="width:170px">Quick actions</th>
         </tr></thead>
         <tbody id="rows"></tbody>
       </table>
@@ -405,9 +405,11 @@ async function loadSync(){
       :(s.api.master_fallback?'Odoo unreachable — running on the CSV snapshot':'Odoo not configured — CSV master');
     $('#syncMaster').innerHTML=`<b>${s.master.records.toLocaleString()}</b> master contacts · ${live?'live Odoo':'CSV snapshot'}${s.api.write_enabled?'':' · <span style="color:var(--update)">writes disabled</span>'}`;
     const pend=(s.pending_push.update||0)+(s.pending_push.create||0);
+    const lot=s.last_lot_push&&s.last_lot_push.at
+      ?` · lots pushed <b>${fmtT(s.last_lot_push.at)}</b> (${(s.last_lot_push.summary||{}).written||0} written)`:'';
     $('#syncTimes').innerHTML=
       `last sync <b>${fmtT(s.last_refresh.at||s.master.loaded_at)}</b>`
-      +` · last push <b>${fmtT(s.last_push.at)}</b>`
+      +` · last push <b>${fmtT(s.last_push.at)}</b>`+lot
       +` · pending push <b>${pend}</b>`
       +(s.failed_push?` · <span style="color:var(--bad)">failed ${s.failed_push} — re-push retries them</span>`:'');
     $('#masterCount').textContent=s.master.records.toLocaleString();
@@ -535,14 +537,29 @@ function viewParams(){
   if(state.view==='all')return 'status=all&state=all';
   return `status=all&state=${state.view}`;
 }
+/* 13-Jul meeting: no percentage scores in the register — a binary checklist.
+   ✓ field identified the master match · ✗ field differs · shown per record;
+   the drawer carries the full field-by-field checklist. */
+function matchTicks(r){
+  if(!r.master_ref&&!r.master_name)return '<span class="muted">— no match —</span>';
+  const FIELDS=['name','email','phone','address','postcode'];
+  const matched=new Set((r.matched_by||[]).map(f=>f.toLowerCase()));
+  const changed=new Set((r.changed_fields||[]).map(f=>f.toLowerCase()));
+  const alias={'town':'address','address1':'address','address2':'address','county':'address'};
+  changed.forEach(f=>{if(alias[f])changed.add(alias[f]);});
+  return `<span class="ticks" title="✓ matches the master record · ✗ differs — open the record for the full checklist">`+
+    FIELDS.map(f=>{
+      if(matched.has(f))return `<span style="color:var(--good);font-weight:700">✓</span><span class="muted" style="margin-right:6px">${f}</span>`;
+      if(changed.has(f))return `<span style="color:var(--bad);font-weight:700">✗</span><span class="muted" style="margin-right:6px">${f}</span>`;
+      return '';
+    }).join('')+`</span>`;
+}
 async function loadResults(){
   const u=`/reconcile/results?${viewParams()}&q=${encodeURIComponent(state.q)}&sort=${state.sort}&order=${state.order}&page=${state.page}&page_size=${state.page_size}`;
   let d;
-  try{d=await jget(u);}catch(e){$('#rows').innerHTML=`<tr><td colspan="8" class="muted" style="padding:20px">${esc(e.message)}</td></tr>`;$('#pageInfo').textContent='';return;}
+  try{d=await jget(u);}catch(e){$('#rows').innerHTML=`<tr><td colspan="7" class="muted" style="padding:20px">${esc(e.message)}</td></tr>`;$('#pageInfo').textContent='';return;}
   state.total=d.total;pageRows=d.rows;
   $('#rows').innerHTML=d.rows.map(r=>{
-    const conf=Math.round(r.confidence*100);
-    const mb=r.matched_by.map(f=>`<span class="fchip">${f}</span>`).join('')||'<span class="muted">—</span>';
     const cf=r.changed_fields.map(f=>`<span class="fchip">${f}</span>`).join('')||'<span class="muted">none</span>';
     const edited=r.edited?`<span class="fchip edit">edited</span>`:'';
     const invalid=r.invalid?`<span class="badge invalid" title="This record carries a value that is not a valid Odoo selection — open it to correct">⚠ invalid data</span>`:'';
@@ -553,10 +570,10 @@ async function loadResults(){
     return `<tr class="${stripe}${flash}" onclick="openDetail(${r.index},event)">
       <td onclick="event.stopPropagation()"><input type="checkbox" class="rsel" value="${r.index}" aria-label="Select ${esc(r.incoming_name)}"/></td>
       <td><span class="badge st-${r.state}">${STATE_LABELS[r.state]||r.state}</span> ${invalid} ${edited}</td>
-      <td><div class="conf" title="Match score: weighted field similarity — open the record for the field-by-field breakdown"><div class="bar"><i style="width:${conf}%"></i></div>${conf}%</div></td>
+      <td>${matchTicks(r)}</td>
       <td>${esc(r.master_name)||'<span class="muted">— no match —</span>'}${r.master_ref?` <span class="muted mono">#${esc(r.master_ref)}</span>`:''}</td>
       <td>${esc(r.incoming_name)} <span class="muted mono">#${esc(r.buyer_number)}</span></td>
-      <td>${mb}</td><td>${cf}</td>
+      <td>${cf}</td>
       <td onclick="event.stopPropagation()">${acts}</td>
     </tr>`;}).join('');
   window._justActed=null;
@@ -802,8 +819,11 @@ async function loadLots(){
       const [cls,label]=LOT_BADGE[r.status]||['',r.status];
       const odoo=r.odoo_lot_id?`#${r.odoo_lot_id} · ${esc(r.odoo_state)}${r.odoo_hammer?` · hammer €${r.odoo_hammer.toLocaleString()}`:''}`
         :'<span class="muted">— not found —</span>';
-      const buyer=r.buyer_name?`${esc(r.buyer_name)} <span class="muted mono">${Math.round(r.buyer_match*100)}%</span>
-        ${r.buyer_confident?'<span class="fchip" style="border-color:var(--good);color:var(--good)">would assign</span>':'<span class="fchip">review</span>'}`
+      const assigned=r.status==='already_imported';
+      const buyer=r.buyer_name?`${esc(r.buyer_name)}
+        ${assigned?'<span class="fchip" style="border-color:var(--good);color:var(--good)">✓ assigned</span>'
+          :r.buyer_confident?'<span class="fchip" style="border-color:var(--good);color:var(--good)">✓ matched — would assign</span>'
+          :'<span class="fchip">review</span>'}`
         :'<span class="muted">—</span>';
       return `<tr style="cursor:default">
         <td class="mono"><b>${esc(r.lot_number)||'—'}</b></td>
@@ -902,10 +922,12 @@ function matchHTML(d){
     const[mark,label,color]=verdict(f,v);
     return `<div class="evrow">${mark}<span style="min-width:130px">${NAMES[f]||f}</span>
       <span style="color:${color};font-weight:600">${label}</span>
-      <span class="pc mono" style="margin-left:auto" title="This field contributes ${Math.round(v.weight*100)}% of the overall weighting">weight ${Math.round(v.weight*100)}%</span></div>`;
+      </div>`;
   }).join('');
+  const fieldVals=Object.entries(ev.fields);
+  const nOk=fieldVals.filter(([f,v])=>v.exact||v.similarity>=0.99).length;
   return `<div class="evid"><h4>Match checklist</h4>${rows}
-    <div class="evrow evtotal"><span>Overall match</span><span style="margin-left:auto">${Math.round(d.confidence*100)}%</span></div>
+    <div class="evrow evtotal"><span>Overall</span><span style="margin-left:auto">${nOk} of ${fieldVals.length} fields match</span></div>
     ${ev.strong_id_floor_applied?`<div class="muted" style="margin-top:6px;font-size:11.5px">${esc(ev.note).replace(/confidence/gi,'match score')}</div>`:''}</div>`;
 }
 function issuesHTML(d){
