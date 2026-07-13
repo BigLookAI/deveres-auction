@@ -178,6 +178,21 @@ def plan_from_staging(entries: list[dict], source_file: str = "",
                     values[pseudo] = approved[cf]   # resolved to an id at execute time
             if "mobile" in changed:
                 _apply_mobile(values, approved.get("mobile", ""))
+            # An address rewrite carries town/county/country/postcode along:
+            # pre-clean masters often hold these inside the concatenated
+            # street2, which classification treats as equivalent-by-containment.
+            # The push replaces the address lines and that containment vanishes,
+            # so without this the operator needs a SECOND approve→push cycle
+            # for the same contact (observed on the April real data, 13-Jul).
+            if {"address1", "address2"} & set(changed):
+                for cf in ("town", "county", "country", "postcode"):
+                    if not approved.get(cf):
+                        continue
+                    pf, pseudo = PARTNER_FIELD_MAP.get(cf), LOOKUP_FIELD_MAP.get(cf)
+                    if pf and pf not in values:
+                        values[pf] = approved[cf]
+                    if pseudo and pseudo not in values:
+                        values[pseudo] = approved[cf]
             # Any remaining field with no mapping at all (currently: company) is
             # surfaced in the op reason — never silently dropped.
             unmapped = {cf: approved.get(cf, "") for cf in changed
@@ -297,9 +312,17 @@ class OdooImporter:
         import re
         name = name.strip().rstrip(".,;")   # 'Cork.' must match Odoo's 'Cork'
         cands = [name]
-        stripped = re.sub(r"^\s*(co\.?|county)\s+", "", name, flags=re.I).strip()
+        # 'Co. Wicklow', 'County Dublin', and the no-space 'CO.DUBLIN' the
+        # real April export contains — but never bare 'Co…' words like Cork
+        stripped = re.sub(r"^\s*(co\.\s*|co\s+|county\s+)", "", name, flags=re.I).strip()
         if stripped and stripped.lower() != name.lower():
             cands.append(stripped)
+        # Dublin postal districts ('Dublin 8', 'DUBLIN 6', 'Dublin 6W') are
+        # city sub-zones, not counties — the county is Dublin
+        for cand in list(cands):
+            if re.match(r"^dublin\s*\d+\s*w?$", cand, flags=re.I):
+                cands.append("Dublin")
+                break
         aliases = {"n. ireland": "Northern Ireland", "n ireland": "Northern Ireland"}
         for cand in list(cands):
             alias = aliases.get(cand.lower())

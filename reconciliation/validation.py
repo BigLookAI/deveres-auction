@@ -53,9 +53,16 @@ def _county_candidates(value: str) -> list[str]:
     punctuation) — mirrors the importer's resolution rules."""
     v = value.strip().rstrip(".,;")
     out = [v]
-    stripped = re.sub(r"^\s*(co\.?|county)\s+", "", v, flags=re.I).strip()
+    # dot may be unspaced: the real April export has 'CO.DUBLIN' — but never
+    # strip bare 'Co…' words like Cork
+    stripped = re.sub(r"^\s*(co\.\s*|co\s+|county\s+)", "", v, flags=re.I).strip()
     if stripped and stripped.lower() != v.lower():
         out.append(stripped)
+    # Dublin postal districts ('Dublin 8', 'DUBLIN 6', 'Dublin 6W') → Dublin
+    for form in list(out):
+        if re.match(r"^dublin\s*\d+\s*w?$", form, flags=re.I):
+            out.append("Dublin")
+            break
     return out
 
 
