@@ -285,6 +285,19 @@ def execute_updates(ops: list[dict], client=None, dry_run: bool = True) -> dict:
         try:
             client._execute("sor.lot", "write", [op["lot_id"]], op["values"])
             written += 1
+            # Sold-workflow decision (13-Jul): when the completion writes a
+            # buyer + sold, also record the WINNING BID so the SOR bidding
+            # model stays canonical and the evaluation history accumulates.
+            if op["values"].get("state") == "sold" and op["values"].get("buyer_id"):
+                if not client._execute("sor.bid", "search",
+                                       [["lot_id", "=", op["lot_id"]],
+                                        ["is_winning_bid", "=", True]], limit=1):
+                    client._execute("sor.bid", "create", {
+                        "lot_id": op["lot_id"],
+                        "bidder_id": op["values"]["buyer_id"],
+                        "amount": op["values"].get("hammer_price", 0.0),
+                        "bid_type": "floor", "is_winning_bid": True})
+                    op["winning_bid_created"] = True
             got = client._execute("sor.lot", "read", [op["lot_id"]],
                                   fields=list(op["values"]))[0]
             mism = {}

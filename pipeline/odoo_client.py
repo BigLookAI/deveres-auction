@@ -45,7 +45,46 @@ class OdooClient:
             raise ConnectionError(f"Odoo authentication failed for user {self.username}")
         self._models = xmlrpc.client.ServerProxy(f"{self.url}/xmlrpc/2/object")
 
+    # ── JSON-2 transport (Odoo 19's replacement for XML-RPC; removal in 22) ──
+    # Opt-in via ODOO_TRANSPORT=json2 + an API key (ODOO_API_KEY or an API-key
+    # password). Default stays XML-RPC — the meeting decision was to migrate
+    # deliberately, not mid-sale-week; this makes the switch a one-line change.
+    _JSON2_POSITIONAL = {
+        "search": ("domain",), "search_count": ("domain",),
+        "search_read": ("domain",), "read": ("ids",),
+        "write": ("ids", "vals"), "unlink": ("ids",),
+        "create": ("vals_list",), "fields_get": ("allfields",),
+        "read_group": ("domain", "fields", "groupby"),
+    }
+
+    def _execute_json2(self, model: str, method: str, *args, **kwargs) -> Any:
+        import json
+        import urllib.request
+        names = self._JSON2_POSITIONAL.get(method)
+        if names is None or len(args) > len(names):
+            raise NotImplementedError(
+                f"json2 transport: no positional mapping for {model}.{method}")
+        payload = dict(kwargs)
+        for name, value in zip(names, args):
+            if method == "create" and name == "vals_list" and isinstance(value, dict):
+                value = [value]                     # xmlrpc-create compat
+            payload[name] = value
+        req = urllib.request.Request(
+            f"{self.url}/json/2/{model}/{method}",
+            data=json.dumps(payload).encode(),
+            headers={"Content-Type": "application/json",
+                     "Authorization": f"Bearer {os.environ.get('ODOO_API_KEY') or self.password}",
+                     "X-Odoo-Database": self.db},
+            method="POST")
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            out = json.loads(resp.read().decode() or "null")
+        if method == "create" and isinstance(out, list) and len(out) == 1:
+            return out[0]                           # xmlrpc-create compat
+        return out
+
     def _execute(self, model: str, method: str, *args, **kwargs) -> Any:
+        if os.environ.get("ODOO_TRANSPORT", "").lower() == "json2":
+            return self._execute_json2(model, method, *args, **kwargs)
         self._connect()
         return self._models.execute_kw(
             self.db, self._uid, self.password,

@@ -451,23 +451,25 @@ def _build_html_viewer() -> str:
     # ── CSS (plain string — no f-string escaping needed) ──────────────────
     CSS = """
 :root {
-  --bg:      #080b18;
-  --s1:      #0c0f1f;
-  --s2:      #111428;
-  --s3:      #171b30;
-  --s4:      #1d2238;
-  --border:  #1f2540;
-  --border2: #272d4a;
-  --text:    #dde3f5;
-  --muted:   #5a6485;
-  --muted2:  #7880a8;
-  --accent:  #6366f1;
-  --acch:    #818cf8;
-  --green:   #22c55e;
-  --yellow:  #eab308;
-  --red:     #ef4444;
-  --blue:    #3b82f6;
-  --radius:  10px;
+  /* de Veres auction-house identity (13-Jul redesign): ivory paper, ink,
+     deep green + gold — matched to the reconciliation app and the hub. */
+  --bg:      #f7f4ed;
+  --s1:      #fffdf8;
+  --s2:      #f1ebdf;
+  --s3:      #ece3d2;
+  --s4:      #e6dcc6;
+  --border:  #e2dac9;
+  --border2: #cec3ab;
+  --text:    #211d15;
+  --muted:   #83795f;
+  --muted2:  #4c4433;
+  --accent:  #1e4d38;
+  --acch:    #173d2c;
+  --green:   #2e6e4e;
+  --yellow:  #96660f;
+  --red:     #9c3a38;
+  --blue:    #33627a;
+  --radius:  3px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -486,7 +488,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(99,102,241,.18) 0%, transparent 70%), var(--bg);
+  background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(168,133,59,.14) 0%, transparent 70%), var(--bg);
 }
 .login-card {
   background: var(--s1);
@@ -499,7 +501,7 @@ body {
 }
 .login-logo {
   width: 52px; height: 52px;
-  background: linear-gradient(135deg, #6366f1, #a78bfa);
+  background: var(--accent); border: 1.5px solid var(--acch);
   border-radius: 14px;
   display: flex; align-items: center; justify-content: center;
   font-size: 24px; font-weight: 900; color: #fff;
@@ -519,7 +521,7 @@ body {
   transition: all .15s; text-align: center;
 }
 .role-btn:hover { border-color: var(--accent); color: var(--text); }
-.role-btn.selected { border-color: var(--accent); background: rgba(99,102,241,.12); color: var(--acch); }
+.role-btn.selected { border-color: var(--accent); background: rgba(30,77,56,.09); color: var(--acch); }
 .role-btn .role-icon { font-size: 20px; display: block; margin-bottom: 4px; }
 .form-group { margin-bottom: 14px; }
 .form-group label { display: block; font-size: 12px; color: var(--muted2); margin-bottom: 5px; font-weight: 500; }
@@ -556,7 +558,7 @@ body {
 }
 .h-logo {
   width: 32px; height: 32px;
-  background: linear-gradient(135deg, #6366f1, #a78bfa);
+  background: var(--accent); border: 1.5px solid var(--acch);
   border-radius: 8px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
   font-size: 15px; font-weight: 900; color: #fff;
@@ -572,7 +574,7 @@ body {
   cursor: pointer; transition: all .15s; white-space: nowrap;
 }
 .tab-btn:hover { background: var(--s3); color: var(--text); }
-.tab-btn.active { background: rgba(99,102,241,.15); color: var(--acch); font-weight: 600; }
+.tab-btn.active { background: rgba(30,77,56,.10); color: var(--acch); font-weight: 600; }
 .h-right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 .user-chip {
   display: flex; align-items: center; gap: 7px;
@@ -643,11 +645,11 @@ body {
   padding: 4px 10px; font-size: 11px; border-radius: 6px;
   font-weight: 600; cursor: pointer; border: none; transition: all .15s;
 }
-.btn-accept { background: rgba(34,197,94,.15);  color: var(--green); }
+.btn-accept { background: rgba(46,110,78,.10);  color: var(--green); }
 .btn-accept:hover { background: rgba(34,197,94,.28); }
 .btn-reject { background: rgba(239,68,68,.15);  color: var(--red); }
 .btn-reject:hover { background: rgba(239,68,68,.28); }
-.btn-email  { background: rgba(99,102,241,.15); color: var(--acch); }
+.btn-email  { background: rgba(30,77,56,.10); color: var(--acch); }
 .btn-email:hover  { background: rgba(99,102,241,.28); }
 .btn-detail { background: var(--s4); color: var(--muted2); border: 1px solid var(--border2); }
 .btn-detail:hover { color: var(--text); }
@@ -659,9 +661,9 @@ body {
   border: 1px solid transparent;
 }
 .toast.show      { display: inline-flex; }
-.toast.t-success { background: rgba(34,197,94,.12);  border-color: rgba(34,197,94,.3);  color: var(--green); }
-.toast.t-error   { background: rgba(239,68,68,.12);  border-color: rgba(239,68,68,.3);  color: var(--red); }
-.toast.t-info    { background: rgba(99,102,241,.12); border-color: rgba(99,102,241,.3); color: var(--acch); }
+.toast.t-success { background: rgba(46,110,78,.09);  border-color: rgba(34,197,94,.3);  color: var(--green); }
+.toast.t-error   { background: rgba(156,58,56,.08);  border-color: rgba(239,68,68,.3);  color: var(--red); }
+.toast.t-info    { background: rgba(30,77,56,.09); border-color: rgba(30,77,56,.22); color: var(--acch); }
 
 /* ── Stats grid ── */
 .stats {
@@ -711,9 +713,9 @@ body {
   padding: 3px 9px; border-radius: 999px;
   font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .4px;
 }
-.b-approve { background: rgba(34,197,94,.12);  color: var(--green); }
-.b-review  { background: rgba(234,179,8,.12);  color: var(--yellow); }
-.b-reject  { background: rgba(239,68,68,.12);  color: var(--red); }
+.b-approve { background: rgba(46,110,78,.09);  color: var(--green); }
+.b-review  { background: rgba(150,102,15,.10);  color: var(--yellow); }
+.b-reject  { background: rgba(156,58,56,.08);  color: var(--red); }
 .b-manual  {
   background: rgba(59,130,246,.12); color: var(--blue);
   font-size: 9px; padding: 2px 6px;
@@ -817,8 +819,8 @@ body {
   font-weight: 600;
   text-transform: uppercase;
 }
-.outcome-won  { background: rgba(34,197,94,.15); color: var(--green); }
-.outcome-lost { background: rgba(239,68,68,.12);  color: var(--red); }
+.outcome-won  { background: rgba(46,110,78,.10); color: var(--green); }
+.outcome-lost { background: rgba(156,58,56,.08);  color: var(--red); }
 .flag-item { color: var(--red); font-size: 12px; margin: 5px 0; }
 .breakdown-row {
   display: flex; justify-content: space-between;
@@ -911,8 +913,8 @@ body {
   font-size: 11px; font-weight: 800; padding: 3px 8px;
   border-radius: 5px; letter-spacing: .5px; min-width: 52px; text-align: center;
 }
-.m-get    { background: rgba(34,197,94,.15);  color: var(--green); }
-.m-post   { background: rgba(99,102,241,.15); color: var(--acch); }
+.m-get    { background: rgba(46,110,78,.10);  color: var(--green); }
+.m-post   { background: rgba(30,77,56,.10); color: var(--acch); }
 .m-delete { background: rgba(239,68,68,.15);  color: var(--red); }
 .api-path { font-family: monospace; font-size: 14px; font-weight: 600; }
 .api-desc { color: var(--muted2); font-size: 13px; margin-left: auto; }

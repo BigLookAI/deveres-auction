@@ -219,3 +219,41 @@ class TestStagedBuyerFallback:
         ops = plan_updates(reconcile_lots([c], [odoo_lot()],
                                           staged_partners={"9001": 231}))
         assert ops[0]["values"]["buyer_id"] == 231
+
+
+class TestWinningBidCreation:
+    def test_completion_creates_winning_bid(self, monkeypatch):
+        monkeypatch.setenv("RECON_ALLOW_ODOO_WRITE", "1")
+        monkeypatch.setenv("RECON_LOTS_ENABLE_BUYER", "1")
+        monkeypatch.setenv("RECON_LOTS_ENABLE_SOLD", "1")
+        c = contact(odoo_id=16, conf=0.95,
+                    lots=[{"lot_number": "101", "winning_bid": "450"}])
+        ops = plan_updates(reconcile_lots([c], [odoo_lot()]))
+
+        class Cli(StubClient):
+            def _execute(self, model, method, *a, **kw):
+                self.calls.append((model, method, a))
+                if method == "read":
+                    return [{"id": 1, "hammer_price": 450.0, "buyer_id": [16, "K"],
+                             "state": "sold", "auction_result": "sold"}]
+                if (model, method) == ("sor.bid", "search"):
+                    return []          # no winning bid yet
+                return True
+        cli = Cli({})
+        out = execute_updates(ops, client=cli, dry_run=False)
+        creates = [c_ for c_ in cli.calls if c_[:2] == ("sor.bid", "create")]
+        assert len(creates) == 1
+        vals = creates[0][2][0]
+        assert vals["is_winning_bid"] is True and vals["amount"] == 450.0
+        assert out["operations"][0].get("winning_bid_created") is True
+
+    def test_hammer_only_mode_creates_no_bid(self, monkeypatch):
+        monkeypatch.setenv("RECON_ALLOW_ODOO_WRITE", "1")
+        monkeypatch.delenv("RECON_LOTS_ENABLE_BUYER", raising=False)
+        monkeypatch.delenv("RECON_LOTS_ENABLE_SOLD", raising=False)
+        c = contact(odoo_id=16, conf=0.95,
+                    lots=[{"lot_number": "101", "winning_bid": "450"}])
+        ops = plan_updates(reconcile_lots([c], [odoo_lot()]))
+        cli = StubClient({"id": 1, "hammer_price": 450.0})
+        execute_updates(ops, client=cli, dry_run=False)
+        assert not [c_ for c_ in cli.calls if c_[0] == "sor.bid"]
