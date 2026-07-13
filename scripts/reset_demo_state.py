@@ -95,6 +95,16 @@ r = subprocess.run([sys.executable, str(BASE / "scripts" / "migrate_contact_type
 tail = [l for l in r.stdout.splitlines() if "SOR Contact Type" in l]
 print(tail[0] if tail else "SOR tagging rerun")
 
+# 5. reset the demo auctions' lots to the pre-sale state (hammer 0, buyer
+#    cleared, state live) so the lot-reconciliation demo can re-run identically
+lot_ids = x("sor.lot", "search",
+            [["auction_id.name", "like", "deVeres Demo Auction%"]])
+if lot_ids:
+    x("sor.lot", "write", lot_ids,
+      {"hammer_price": 0.0, "buyer_id": False, "state": "live",
+       "auction_result": False})
+    print(f"reset {len(lot_ids)} demo lots (hammer 0, buyer cleared, state live)")
+
 # summary of the records the demo revolves around
 for ref in ("5003", "5010", "5011", "5012"):
     pid = x("res.partner", "search", [["ref", "=", ref]], limit=1)

@@ -168,3 +168,54 @@ class TestExecute:
         out = execute_updates(self._ops(), client=cli, dry_run=False)
         assert out["operations"][0]["verified"] is False
         assert "hammer_price" in out["operations"][0]["verify_mismatch"]
+
+
+class TestSuffixAndScoping:
+    def test_lot_key_forms(self):
+        from reconciliation.lots_engine import lot_key
+        assert lot_key("25", "A") == "25A"
+        assert lot_key("25A") == "25A"
+        assert lot_key("025", "a") == "25A"
+        assert lot_key(" 78 ", "B") == "78B"
+        assert lot_key("113") == "113"
+
+    def test_suffix_lot_matches_combined_bluecube_form(self):
+        c = contact(lots=[{"lot_number": "25A", "winning_bid": "900"}])
+        lot = odoo_lot(number="25"); lot["lot_suffix"] = "A"
+        r = reconcile_lots([c], [lot])
+        assert r[0].status == "ready" and r[0].odoo_lot_id == 1
+
+    def test_plain_lot_does_not_match_suffixed_sibling(self):
+        c = contact(lots=[{"lot_number": "25", "winning_bid": "100"}])
+        lot = odoo_lot(number="25"); lot["lot_suffix"] = "A"
+        r = reconcile_lots([c], [lot])
+        assert r[0].status == "missing_lot"
+
+    def test_leading_zeros_normalised(self):
+        c = contact(lots=[{"lot_number": "025", "winning_bid": "100"}])
+        r = reconcile_lots([c], [odoo_lot(number="25")])
+        assert r[0].status == "ready"
+
+
+class TestStagedBuyerFallback:
+    def test_created_contact_buyer_resolves_from_staging(self):
+        c = contact(buyer="9001", name="Testfirst Newclient", odoo_id=None, conf=0.0,
+                    lots=[{"lot_number": "101", "winning_bid": "450"}])
+        r = reconcile_lots([c], [odoo_lot()], staged_partners={"9001": 231})
+        assert r[0].buyer_partner_id == 231
+        assert r[0].buyer_confident is True
+        assert r[0].buyer_match == 1.0
+
+    def test_matched_contact_ignores_staging_map(self):
+        c = contact(odoo_id=16, conf=0.95,
+                    lots=[{"lot_number": "101", "winning_bid": "450"}])
+        r = reconcile_lots([c], [odoo_lot()], staged_partners={"9001": 999})
+        assert r[0].buyer_partner_id == 16
+
+    def test_staged_buyer_enters_plan_when_flag_on(self, monkeypatch):
+        monkeypatch.setenv("RECON_LOTS_ENABLE_BUYER", "1")
+        c = contact(buyer="9001", odoo_id=None, conf=0.0,
+                    lots=[{"lot_number": "101", "winning_bid": "450"}])
+        ops = plan_updates(reconcile_lots([c], [odoo_lot()],
+                                          staged_partners={"9001": 231}))
+        assert ops[0]["values"]["buyer_id"] == 231

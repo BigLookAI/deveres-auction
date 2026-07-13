@@ -291,6 +291,7 @@
     <div class="controls" style="margin-bottom:4px">
       <button class="btn sm" onclick="closeLots()">‹ Back to contacts</button>
       <h2 style="margin:0;font-size:17px">🔨 Lot reconciliation — auction results</h2>
+      <select id="auctionSel" aria-label="Target auction" title="Scope the import to one auction — lots in other auctions are then ignored" onchange="loadLots()"></select>
       <div class="spacer"></div>
       <button class="btn" id="lotsRefreshBtn" onclick="refreshLots()" title="Re-fetch the lots from Odoo and re-match this session's auction results">⟳ Refresh lots</button>
       <button class="btn" onclick="lotsDryRun()">👁 Preview import (dry-run)</button>
@@ -721,15 +722,21 @@ async function refreshLots(){
   b.disabled=false;b.textContent=orig;
 }
 function closeLots(){show(state.summary?'results':'upload');}
+function lotsAuctionId(){const v=$('#auctionSel')?.value;return v&&v!=='all'?`?auction_id=${v}`:'';}
 async function loadLots(){
   $('#lotRows').innerHTML='<tr><td colspan="7" class="muted" style="padding:18px">Matching lots against Odoo…</td></tr>';
   try{
-    const d=await jget('/reconcile/auction/results');
+    const d=await jget('/reconcile/auction/results'+lotsAuctionId());
     const s=d.summary,f=s.flags;
     $('#lotsFlags').innerHTML=`<b>Import scope:</b>&nbsp; Hammer price <b style="color:var(--good)">enabled</b>
       · Buyer assignment <b style="color:${f.buyer?'var(--good)':'var(--update)'}">${f.buyer?'enabled':'deferred'}</b>
       · Sold status <b style="color:${f.sold?'var(--good)':'var(--update)'}">${f.sold?'enabled':'deferred'}</b>
       ${(!f.buyer||!f.sold)?'<span class="muted">— awaiting the Odoo auction setup + admin access (designed &amp; feature-flagged, one switch to enable)</span>':''}`;
+    const sel=$('#auctionSel');
+    if(sel&&d.auctions&&sel.options.length<=1){
+      sel.innerHTML='<option value="all">All auctions</option>'
+        +d.auctions.map(a=>`<option value="${a.id}" ${d.auction_id===a.id?'selected':''}>${esc(a.name)} (${a.lots} lots)</option>`).join('');
+    }
     const K=[['ready','Ready to import'],['missing_lot','Missing lots'],['duplicate_lot','Duplicates'],
       ['conflict','Conflicts'],['already_imported','Already imported'],['no_result','No result']];
     $('#lotsKpis').innerHTML=K.map(([k,l])=>`<div class="kpi" style="cursor:default"><div class="n">${s[k]||0}</div><div class="l">${l}</div></div>`).join('');
@@ -755,7 +762,8 @@ async function loadLots(){
   }
 }
 async function lotsDryRun(){
-  try{const d=await jpost('/reconcile/auction/push',{dry_run:true});
+  try{const aid=$('#auctionSel')?.value;const scope=(aid&&aid!=='all')?{auction_id:+aid}:{};
+    const d=await jpost('/reconcile/auction/push',{dry_run:true,...scope});
     const s=d.summary;
     alert(`Lot import plan (dry-run — NO writes)\n\n${s.planned} lot(s) ready:\n`
       +d.operations.map(o=>`  Lot ${o.lot_number}: hammer €${o.winning_bid.toLocaleString()}`
@@ -767,12 +775,13 @@ async function lotsPush(){
   b.disabled=true;const orig=b.textContent;
   try{
     b.textContent='🔨 Planning…';
-    const plan=await jpost('/reconcile/auction/push',{dry_run:true});
+    const aid=$('#auctionSel')?.value;const scope=(aid&&aid!=='all')?{auction_id:+aid}:{};
+    const plan=await jpost('/reconcile/auction/push',{dry_run:true,...scope});
     const n=plan.summary.planned;
     if(!confirm(`Import ${n} auction result(s) into Odoo now?\n\nHammer prices will be set from the winning bids.`
       +`\nEstimates and reserves stay untouched. Each lot is read back to verify.`)){b.disabled=false;b.textContent=orig;return;}
     b.textContent='🔨 Importing…';
-    const d=await jpost('/reconcile/auction/push',{dry_run:false});
+    const d=await jpost('/reconcile/auction/push',{dry_run:false,...scope});
     const s=d.summary;
     const rows=d.operations.map(o=>`<tr><td class="mono">${esc(o.lot_number)}</td>
       <td class="mono">€${o.winning_bid.toLocaleString()}</td><td>${esc(o.buyer_name||'—')}</td>
@@ -795,6 +804,18 @@ async function lotsPush(){
   }catch(e){alert('Lot import failed: '+e.message);}
   b.disabled=false;b.textContent=orig;
 }
+
+/* ── county picker vocabulary (from the Odoo field metadata) ── */
+async function ensureCountyList(){
+  if(document.getElementById('countyList'))return;
+  try{
+    const m=await jget('/reconcile/odoo-metadata');
+    const dl=document.createElement('datalist');dl.id='countyList';
+    dl.innerHTML=(m.state_names||m.state_names_sample||[]).map(n=>`<option value="${esc(n)}">`).join('');
+    document.body.appendChild(dl);
+  }catch(e){}
+}
+ensureCountyList();
 
 /* ── detail drawer ── */
 let currentDetail=null, editMode=false;
@@ -933,7 +954,7 @@ function editFormHTML(d){
   const cur=f=>d.edits&&d.edits[f]!==undefined?d.edits[f]:(d.incoming[f]||'');
   const inputs=F.map(([f,l])=>`<div class="field">
       <label for="ef-${f}">${l}</label>
-      <input id="ef-${f}" data-f="${f}" value="${esc(cur(f))}" data-orig="${esc(d.incoming[f]||'')}"/>
+      <input id="ef-${f}" data-f="${f}" value="${esc(cur(f))}" data-orig="${esc(d.incoming[f]||'')}"${f==='county'?' list="countyList" placeholder="pick a valid county…"':''}/>
       <span class="orig">incoming: ${esc(d.incoming[f]||'—')}${d.master&&d.master[f]?` · Odoo: ${esc(d.master[f])}`:''}</span>
     </div>`).join('');
   const notes=`<div class="field notes"><label for="ef-notes">Notes (goes to the staging record)</label>

@@ -473,7 +473,9 @@ def odoo_metadata():
     if eng.schema is None:
         raise HTTPException(404, "No field schema loaded.")
     d = eng.schema.to_dict()
-    d["state_names_sample"] = eng.schema.state_names()[:40]
+    names = eng.schema.state_names()
+    d["state_names"] = names                 # full vocabulary (county picker)
+    d["state_names_sample"] = names[:40]     # kept for API compatibility
     return d
 
 
@@ -1088,12 +1090,24 @@ def odoo_import(payload: dict | None = None, user: str = Depends(require_editor)
 
 
 # ── Stage 2: Lot reconciliation / auction-result import (Phase 11+) ──────────
+def _staged_partner_map() -> dict:
+    """buyer_number → Odoo partner id for contacts CREATED by this session's
+    push (their identity is ours by construction — see lots_engine)."""
+    out = {}
+    for e in _get_staging().entries(_session_id(), status="pushed"):
+        if e.get("change_type") == "create" and e.get("odoo_partner_id"):
+            out[str(e.get("buyer_number") or "")] = int(e["odoo_partner_id"])
+    return out
+
+
 @router.get("/auction/results")
-def auction_results():
+def auction_results(auction_id: int | None = Query(None)):
     """Reconcile the current session's per-lot rows against the Odoo lots:
-    match by LOT NUMBER (primary key), carry the buyer match from the contact
-    engine, classify exceptions (missing/duplicate/conflict). Read-only."""
-    from reconciliation.lots_engine import fetch_lots, reconcile_lots, summarize
+    match by LOT NUMBER + suffix (primary key), carry the buyer match from the
+    contact engine, classify exceptions. Optionally scoped to one auction so
+    an import can never touch another sale's lots. Read-only."""
+    from reconciliation.lots_engine import (fetch_lots, fetch_auctions,
+                                            reconcile_lots, summarize)
     _restore_session()
     if not _state["results"]:
         raise HTTPException(404, "No reconciliation session — upload a Blue Cubes export first.")
@@ -1101,12 +1115,14 @@ def auction_results():
         raise HTTPException(503, "Odoo is not configured on this server — lot "
                                  "reconciliation needs the live lot list.")
     try:
-        lots = fetch_lots()
+        lots = fetch_lots(auction_id=auction_id)
+        auctions = fetch_auctions()
     except Exception as exc:
         raise HTTPException(502, f"Could not fetch lots from Odoo: {exc}")
-    results = reconcile_lots(_state["results"], lots)
+    results = reconcile_lots(_state["results"], lots, _staged_partner_map())
     return {"summary": summarize(results),
-            "odoo_lots": len(lots),
+            "odoo_lots": len(lots), "auction_id": auction_id,
+            "auctions": auctions,
             "results": [r.to_dict() for r in results]}
 
 
@@ -1124,9 +1140,11 @@ def auction_push(payload: dict | None = None, user: str = Depends(require_editor
     if not os.environ.get("ODOO_URL"):
         raise HTTPException(503, "Odoo is not configured on this server.")
     dry_run = bool((payload or {}).get("dry_run", True))
+    auction_id = (payload or {}).get("auction_id")
     cid = uuid.uuid4().hex[:12]
     try:
-        results = reconcile_lots(_state["results"], fetch_lots())
+        results = reconcile_lots(_state["results"], fetch_lots(auction_id=auction_id),
+                                 _staged_partner_map())
         ops = plan_updates(results)
         if not ops:
             raise HTTPException(404, "No lots are ready to import — resolve the "

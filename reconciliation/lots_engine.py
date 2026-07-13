@@ -56,20 +56,56 @@ def flags() -> dict:
 
 
 # ── Odoo side ─────────────────────────────────────────────────────────────────
-LOT_FIELDS = ["id", "lot_number", "lot_title", "state", "hammer_price",
-              "buyer_id", "auction_id"]
+LOT_FIELDS = ["id", "lot_number", "lot_suffix", "lot_title", "state",
+              "hammer_price", "buyer_id", "auction_id"]
+
+import re as _re
 
 
-def fetch_lots(client=None) -> list[dict]:
-    """Every lot in Odoo, keyed for matching by lot_number (string-normalised)."""
+def lot_key(number, suffix: str = "") -> str:
+    """Canonical matching key for a lot number. Handles the real-world suffix
+    lots the April data exposed (25A, 78B): Blue Cubes exports the combined
+    form ("25A"), Odoo stores number and suffix separately. Numeric parts are
+    compared without leading zeros; suffixes case-insensitively."""
+    raw = f"{number or ''}{suffix or ''}".strip().upper().replace(" ", "")
+    m = _re.match(r"^0*(\d+)([A-Z]*)$", raw)
+    return f"{m.group(1)}{m.group(2)}" if m else raw
+
+
+def fetch_lots(client=None, auction_id: int | None = None) -> list[dict]:
+    """Lots from Odoo — optionally scoped to ONE auction so an import can
+    never touch another sale's lots (production behaviour; unscoped remains
+    available for the cross-auction duplicate check)."""
     if client is None:
         from pipeline.odoo_client import OdooClient
         client = OdooClient()
-    rows = client._execute("sor.lot", "search_read", [],
+    domain = [["auction_id", "=", int(auction_id)]] if auction_id else []
+    rows = client._execute("sor.lot", "search_read", domain,
                            fields=LOT_FIELDS, limit=10000, order="id")
     for r in rows:
         r["lot_number"] = str(r.get("lot_number") or "").strip()
+        r["lot_suffix"] = str(r.get("lot_suffix") or "").strip()
+        r["match_key"] = lot_key(r["lot_number"], r["lot_suffix"])
     return rows
+
+
+def fetch_auctions(client=None) -> list[dict]:
+    """Auctions with lot counts — drives the UI's target-auction selector."""
+    if client is None:
+        from pipeline.odoo_client import OdooClient
+        client = OdooClient()
+    events = client._execute("sor.event", "search_read",
+                             [["event_type", "=", "auction"]],
+                             fields=["id", "name"], limit=200, order="id")
+    counts = client._execute("sor.lot", "read_group", [],
+                             ["auction_id"], ["auction_id"])
+    by_id = {}
+    for c in counts:
+        aid = (c.get("auction_id") or [None])[0]
+        if aid:
+            by_id[aid] = c.get("auction_id_count", 0)
+    return [{"id": e["id"], "name": e["name"], "lots": by_id.get(e["id"], 0)}
+            for e in events]
 
 
 # ── reconciliation ────────────────────────────────────────────────────────────
@@ -102,26 +138,37 @@ class LotResult:
             "odoo_hammer", "odoo_title", "candidates")}
 
 
-def _buyer_context(contact_result) -> dict:
-    """What the contact engine knows about this lot's buyer."""
+def _buyer_context(contact_result, staged_partners: dict | None = None) -> dict:
+    """What the contact engine knows about this lot's buyer. A brand-new
+    client created by the contact push has no master match — its partner id
+    lives in staging (odoo_partner_id on the pushed row). That identity is
+    ours by construction, so it counts as fully confident."""
     r = contact_result
     partner = (r.master or {}).get("odoo_id")
+    match = round(float(r.confidence), 4)
+    confident = bool(partner) and float(r.confidence) >= BUYER_CONFIDENCE_FLOOR
+    if not partner and staged_partners:
+        created = staged_partners.get(r.buyer_number)
+        if created:
+            partner, match, confident = created, 1.0, True
     return {
         "buyer_number": r.buyer_number,
         "buyer_name": r.incoming_name,
         "buyer_partner_id": int(partner) if partner else None,
-        "buyer_match": round(float(r.confidence), 4),
+        "buyer_match": match,
         "buyer_state": r.state.value if hasattr(r.state, "value") else str(r.state),
-        "buyer_confident": bool(partner) and float(r.confidence) >= BUYER_CONFIDENCE_FLOOR,
+        "buyer_confident": confident,
     }
 
 
-def reconcile_lots(contact_results: list, odoo_lots: list[dict]) -> list[LotResult]:
+def reconcile_lots(contact_results: list, odoo_lots: list[dict],
+                   staged_partners: dict | None = None) -> list[LotResult]:
     """Match every lot row in the session's upload against the Odoo lots."""
     by_number: dict[str, list[dict]] = {}
     for l in odoo_lots:
-        if l["lot_number"]:
-            by_number.setdefault(l["lot_number"], []).append(l)
+        key = l.get("match_key") or lot_key(l.get("lot_number"), l.get("lot_suffix", ""))
+        if key:
+            by_number.setdefault(key, []).append(l)
 
     # collect (lot row, owning contact) pairs; detect in-file duplicates
     rows: list[tuple[dict, object]] = []
@@ -129,16 +176,17 @@ def reconcile_lots(contact_results: list, odoo_lots: list[dict]) -> list[LotResu
     for r in contact_results:
         for lot in (r.lots or []):
             rows.append((lot, r))
-            n = str(lot.get("lot_number") or "").strip()
+            n = lot_key(lot.get("lot_number"))
             if n:
                 seen_bids.setdefault(n, set()).add(_num(lot.get("winning_bid")))
 
     out: list[LotResult] = []
     for lot, contact in rows:
-        number = str(lot.get("lot_number") or "").strip()
+        display = str(lot.get("lot_number") or "").strip()
+        number = lot_key(display)
         bid = _num(lot.get("winning_bid"))
-        base = dict(lot_number=number, lot_title=lot.get("lot_title") or "",
-                    winning_bid=bid, **_buyer_context(contact))
+        base = dict(lot_number=display or number, lot_title=lot.get("lot_title") or "",
+                    winning_bid=bid, **_buyer_context(contact, staged_partners))
         if not number or not bid:
             out.append(LotResult(**base, status="no_result",
                                  reason="row carries no lot number / winning bid — nothing to import"))
