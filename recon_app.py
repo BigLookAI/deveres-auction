@@ -95,9 +95,11 @@ def april_redirect():
     host:8444 to plain http, and the Funnel port is TLS-only — the plaintext
     request gets a bare 400 that renders as a black page (Fintan, 13-Jul
     7:11pm). This path rides the main https:// site, so the scheme is always
-    right, and hands over to the review endpoint explicitly."""
+    right, and hands over to the review endpoint explicitly. The review
+    endpoint lives on :8443 — the only nonstandard Funnel port Fintan's
+    network demonstrably passes (his firewall drops :8444; 13-Jul 7:19pm)."""
     from fastapi.responses import RedirectResponse as _RR
-    return _RR("https://deveres.tail915505.ts.net:8444/web/login", status_code=307)
+    return _RR("https://deveres.tail915505.ts.net:8443/web/login", status_code=307)
 
 
 @app.get("/hub", response_class=HTMLResponse)
