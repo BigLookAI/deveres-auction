@@ -16,7 +16,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 BACKUP_ZIP=${1:?usage: restore.sh /path/to/odoo_backup.zip}
-DB=deveres
+DB=${DEVERES_TEST_DB:-deveres}      # e.g. deveres_april for a side-by-side restore
 ADMIN_PASSWORD=${DEVERES_TEST_ADMIN_PASSWORD:-DeveresTest2026!}
 PSQL="docker exec -i deveres-odoo-test-db psql -U odoo -v ON_ERROR_STOP=1"
 
@@ -52,11 +52,12 @@ HASH=$(docker compose run --rm --no-deps -T odoo python3 -c \
 $PSQL -d $DB -c "UPDATE res_users SET password = '$HASH' WHERE login = 'admin'" >/dev/null
 
 echo "→ Syncing schema (columns for code-defined stored fields missing in the dump)"
-docker compose run --rm -T --entrypoint python3 odoo - <<'PYEOF' 2>&1 | grep -E "schema-added|schema sync" || true
+docker compose run --rm -T -e RESTORE_DB="$DB" --entrypoint python3 odoo - <<'PYEOF' 2>&1 | grep -E "schema-added|schema sync" || true
+import os
 import odoo
 from odoo.modules.registry import Registry
 odoo.tools.config.parse_config(['-c', '/etc/odoo/odoo.conf'])
-reg = Registry('deveres')
+reg = Registry(os.environ["RESTORE_DB"])
 with reg.cursor() as cr:
     env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {})
     todo = []

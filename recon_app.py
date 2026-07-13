@@ -45,11 +45,17 @@ def landing():
     import os
     viewer_user = os.environ.get("RECON_VIEWER_USER", "")
     viewer_pass = os.environ.get("RECON_VIEWER_PASS", "")
+    demo_db = os.environ.get("ODOO_DB", "").startswith("deveres_demo")
     if viewer_user:
         cred_note = (f"Read-only access: <code>{viewer_user}</code> / "
                      f"<code>{viewer_pass}</code> — review actions need the admin login.")
-    else:
+    elif demo_db:
         cred_note = ("Login: <code>admin@deveres.ie</code> / <code>Admin2026!</code>")
+    else:
+        # Connected to a real/realistic client dataset: shareable demo
+        # credentials must never be printed on a public page.
+        cred_note = ("Access is restricted while the platform is connected to "
+                     "client data — credentials are issued directly by Cimelium.")
     return HTMLResponse("""<!doctype html>
 <html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
