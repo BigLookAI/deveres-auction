@@ -26,13 +26,14 @@ report compares the combined name, so the split never changes an outcome.
 from __future__ import annotations
 
 import logging
+import re
 import time
 
 log = logging.getLogger("reconcile.odoo")
 
 PARTNER_FETCH_FIELDS = [
     "id", "name", "ref", "email", "phone", "street", "street2",
-    "city", "zip", "state_id", "country_id", "is_company",
+    "city", "zip", "state_id", "country_id", "is_company", "comment",
 ]
 
 FETCH_BATCH = 1000
@@ -77,7 +78,21 @@ def partner_to_canonical(p: dict) -> dict:
         "county":     _rel_name(p.get("state_id")),
         "country":    _rel_name(p.get("country_id")),
         "postcode":   _text(p.get("zip")),
+        # The importer records counties it could NOT map to a res.country.state
+        # (e.g. Northern Irish counties — base Odoo ships no GB states) in the
+        # partner comment. Surface that marker so classification knows the
+        # county has already been handled as far as Odoo allows — otherwise
+        # the same record re-flags as an update on every upload, forever.
+        "_unresolved_county": _unresolved_county(p.get("comment")),
     }
+
+
+_UNRESOLVED_COUNTY_RE = re.compile(r"county/state=([^,<]+)")
+
+
+def _unresolved_county(comment) -> str:
+    m = _UNRESOLVED_COUNTY_RE.search(str(comment or ""))
+    return m.group(1).strip() if m else ""
 
 
 def fetch_partners(client=None, batch: int = FETCH_BATCH) -> list[dict]:

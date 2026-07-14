@@ -166,3 +166,33 @@ class TestFullAddressBlockWrite:
         entry["approved"]["phone"] = "851404274"
         v = plan_from_staging([entry])[0].values
         assert "city" not in v and "street" not in v
+
+
+class TestConvergenceTails:
+    """The two 14-Jul non-converging tails from the live April run."""
+
+    def test_dublin_postal_district_county_is_equivalent(self):
+        from reconciliation import normalize as N
+        assert N.county_key("Dublin 4") == N.county_key("Dublin")
+        assert N.county_key("DUBLIN 6W") == N.county_key("Dublin (IE)")
+        assert N.county_key("Co.Dublin") == N.county_key("Dublin")
+        assert N.county_key("Cork") != N.county_key("Dublin")  # no mangling
+
+    def test_unresolved_county_marker_converges(self):
+        from reconciliation.classify import diff_fields
+        from reconciliation.odoo_master import partner_to_canonical
+        mas = partner_to_canonical({
+            "id": 9, "name": "Paula Britton", "ref": "79383",
+            "email": "p@example.test", "phone": "", "is_company": False,
+            "street": "5 Main St", "street2": False, "city": "Enniskillen",
+            "zip": "BT74", "state_id": False, "country_id": [101, "Ireland"],
+            "comment": "<p>Unresolved location values (set manually): "
+                       "county/state=Co. Fermanagh</p>"})
+        d = {x.field: x for x in diff_fields(
+            {"county": "Co. Fermanagh", "town": "Enniskillen",
+             "email": "p@example.test"}, mas)}
+        assert d["county"].status.value == "equivalent"
+        # a DIFFERENT county than the noted one still surfaces
+        d2 = {x.field: x for x in diff_fields(
+            {"county": "Tyrone", "email": "p@example.test"}, mas)}
+        assert d2["county"].status.value == "new_info"

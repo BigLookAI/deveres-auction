@@ -127,6 +127,15 @@ def diff_fields(inc: dict, mas: dict) -> list[FieldDiff]:
             # concatenation is not equivalent to the field being populated —
             # Odoo forms, filters and reports read the field, not the blob.
             # Treat it as NEW_INFO so the push fills city/state properly.
+            if field == "county" and not cur and ino and \
+                    N.county_key(ino) == N.county_key(mas.get("_unresolved_county", "")):
+                # Already pushed once and Odoo has no matching state (e.g.
+                # Northern Irish counties) — the importer noted it in the
+                # partner comment for manual handling. Nothing more the sync
+                # can do: EQUIVALENT, so the record converges.
+                diffs.append(FieldDiff(field, label, cur, ino,
+                                       DiffStatus.EQUIVALENT, False))
+                continue
             if field in ("town", "county") and not cur:
                 pass                                    # fall through → NEW_INFO
             else:

@@ -184,7 +184,8 @@ def normalize_address(*parts: str) -> str:
     return " ".join(toks)
 
 
-_COUNTY_PREFIX = re.compile(r"^\s*(co\.?|county)\s+", re.I)
+_COUNTY_PREFIX = re.compile(r"^\s*(co\.\s*|co\s+|county\s+)", re.I)
+_DUBLIN_DISTRICT = re.compile(r"^dublin\s*\d+\s*w?$", re.I)
 _COUNTY_COUNTRY_SUFFIX = re.compile(r"\s*\([a-z]{2}\)\s*$", re.I)
 
 
@@ -195,6 +196,10 @@ def county_key(s: str) -> str:
     suffix, then address-normalize what remains."""
     s = _COUNTY_COUNTRY_SUFFIX.sub("", (s or "").strip())
     s = _COUNTY_PREFIX.sub("", s)
+    # Dublin postal districts ('Dublin 4', 'DUBLIN 6W') are city sub-zones —
+    # as a COUNTY they all mean Dublin (14-Jul convergence fix)
+    if _DUBLIN_DISTRICT.match(s.strip()):
+        s = "Dublin"
     return normalize_address(s)
 
 
