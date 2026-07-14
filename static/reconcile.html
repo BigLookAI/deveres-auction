@@ -334,6 +334,7 @@
     <div class="tablewrap">
       <table>
         <thead><tr>
+          <th style="width:26px"><input type="checkbox" id="lotSelAll" aria-label="Select all importable lots" title="Select every lot that is ready to import"/></th>
           <th>Lot №</th><th>Blue Cubes title</th><th>Winning bid</th>
           <th>Odoo lot</th><th>Buyer (from contact engine)</th><th>Status</th><th>Detail</th>
         </tr></thead>
@@ -802,6 +803,19 @@ const LOT_BADGE={ready:['st-update_ready','Ready'],missing_lot:['st-rejected','M
   duplicate_lot:['st-needs_review','Duplicate'],conflict:['st-needs_review','Conflict'],
   already_imported:['st-pushed_to_odoo','Imported'],no_result:['st-existing_ok','No result']};
 function openLots(){show('lots');loadLots();}
+/* ── lot row selection (14-Jul): import individual/multiple lots ── */
+function lotSel(){return [...document.querySelectorAll('.lotsel:checked')].map(c=>c.value);}
+function updateLotBtn(){
+  const n=lotSel().length;
+  $('#lotsPushBtn').textContent=n?`🔨 Import hammer prices (${n} selected)`:'🔨 Import hammer prices';
+  const all=document.querySelectorAll('.lotsel');
+  $('#lotSelAll').checked=all.length>0&&n===all.length;
+}
+$('#lotRows').addEventListener('change',e=>{if(e.target.classList?.contains('lotsel'))updateLotBtn();});
+$('#lotSelAll').onclick=function(){
+  document.querySelectorAll('.lotsel').forEach(c=>c.checked=this.checked);updateLotBtn();
+};
+
 async function refreshLots(){
   const b=$('#lotsRefreshBtn');if(b.disabled)return;
   b.disabled=true;const orig=b.textContent;b.textContent='⟳ Refreshing…';
@@ -812,7 +826,7 @@ async function refreshLots(){
 function closeLots(){show(state.summary?'results':'upload');}
 function lotsAuctionId(){const v=$('#auctionSel')?.value;return v&&v!=='all'?`?auction_id=${v}`:'';}
 async function loadLots(){
-  $('#lotRows').innerHTML='<tr><td colspan="7" class="muted" style="padding:18px">Matching lots against Odoo…</td></tr>';
+  $('#lotRows').innerHTML='<tr><td colspan="8" class="muted" style="padding:18px">Matching lots against Odoo…</td></tr>';
   try{
     const d=await jget('/reconcile/auction/results'+lotsAuctionId());
     const s=d.summary,f=s.flags;
@@ -838,7 +852,11 @@ async function loadLots(){
           :r.buyer_confident?'<span class="fchip" style="border-color:var(--good);color:var(--good)">✓ matched — would assign</span>'
           :'<span class="fchip">review</span>'}`
         :'<span class="muted">—</span>';
+      const selbox=r.status==='ready'
+        ?`<input type="checkbox" class="lotsel" value="${esc(r.lot_number)}" aria-label="Select lot ${esc(r.lot_number)}"/>`
+        :'';
       return `<tr style="cursor:default">
+        <td onclick="event.stopPropagation()">${selbox}</td>
         <td class="mono"><b>${esc(r.lot_number)||'—'}</b></td>
         <td>${esc(r.lot_title)||'<span class="muted">—</span>'}</td>
         <td class="mono">${r.winning_bid?('€'+r.winning_bid.toLocaleString()):'—'}</td>
@@ -846,14 +864,16 @@ async function loadLots(){
         <td>${buyer}</td>
         <td><span class="badge ${cls}">${label}</span></td>
         <td class="muted" style="max-width:320px;font-size:11.5px">${esc(r.reason)}</td></tr>`;
-    }).join('')||'<tr><td colspan="7" class="muted" style="padding:18px">No lot rows in this upload.</td></tr>';
+    }).join('')||'<tr><td colspan="8" class="muted" style="padding:18px">No lot rows in this upload.</td></tr>';
+    $('#lotSelAll').checked=false;updateLotBtn();
   }catch(e){
-    $('#lotRows').innerHTML=`<tr><td colspan="7" class="muted" style="padding:18px">${esc(e.message)}</td></tr>`;
+    $('#lotRows').innerHTML=`<tr><td colspan="8" class="muted" style="padding:18px">${esc(e.message)}</td></tr>`;
     $('#lotsFlags').innerHTML='';$('#lotsKpis').innerHTML='';
   }
 }
 async function lotsDryRun(){
   try{const aid=$('#auctionSel')?.value;const scope=(aid&&aid!=='all')?{auction_id:+aid}:{};
+    const sel=lotSel();if(sel.length)scope.lot_numbers=sel;
     const d=await jpost('/reconcile/auction/push',{dry_run:true,...scope});
     const s=d.summary;
     alert(`Lot import plan (dry-run — NO writes)\n\n${s.planned} lot(s) ready:\n`
@@ -867,9 +887,12 @@ async function lotsPush(){
   try{
     b.textContent='🔨 Planning…';
     const aid=$('#auctionSel')?.value;const scope=(aid&&aid!=='all')?{auction_id:+aid}:{};
+    const sel=lotSel();if(sel.length)scope.lot_numbers=sel;
     const plan=await jpost('/reconcile/auction/push',{dry_run:true,...scope});
     const n=plan.summary.planned;
-    if(!confirm(`Import ${n} auction result(s) into Odoo now?\n\nHammer prices will be set from the winning bids.`
+    if(!confirm(`Import ${n} auction result(s) into Odoo now?`
+      +(sel.length?`\n(your selection: ${sel.length} lot(s))`:'')
+      +`\n\nHammer prices will be set from the winning bids.`
       +`\nEstimates and reserves stay untouched. Each lot is read back to verify.`)){b.disabled=false;b.textContent=orig;return;}
     b.textContent='🔨 Importing…';
     const d=await jpost('/reconcile/auction/push',{dry_run:false,...scope});
@@ -893,7 +916,7 @@ async function lotsPush(){
     toast(s.error?`⚠ Lot import: ${s.error} error(s)`:`✅ ${s.written} hammer price(s) imported · ${s.verified} verified`);
     loadLots();loadSync();
   }catch(e){alert('Lot import failed: '+e.message);}
-  b.disabled=false;b.textContent=orig;
+  b.disabled=false;updateLotBtn();
 }
 
 /* ── county picker vocabulary (from the Odoo field metadata) ── */

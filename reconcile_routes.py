@@ -1225,11 +1225,20 @@ def auction_push(payload: dict | None = None, user: str = Depends(require_editor
         raise HTTPException(503, "Odoo is not configured on this server.")
     dry_run = bool((payload or {}).get("dry_run", True))
     auction_id = (payload or {}).get("auction_id")
+    lot_numbers = (payload or {}).get("lot_numbers") or []
     cid = uuid.uuid4().hex[:12]
     try:
         results = reconcile_lots(_state["results"], fetch_lots(auction_id=auction_id),
                                  _staged_partner_map())
         ops = plan_updates(results)
+        if lot_numbers:
+            # Operator selected specific rows (14-Jul): import ONLY those.
+            from reconciliation.lots_engine import lot_key
+            keys = {lot_key(str(n)) for n in lot_numbers}
+            ops = [o for o in ops if lot_key(str(o["lot_number"])) in keys]
+            if not ops:
+                raise HTTPException(404, "None of the selected lots are ready "
+                                         "to import.")
         if not ops:
             raise HTTPException(404, "No lots are ready to import — resolve the "
                                      "exceptions first (missing/duplicate/conflict).")
