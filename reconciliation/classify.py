@@ -87,6 +87,24 @@ def _address_block_tokens(mas: dict) -> set[str]:
     return toks
 
 
+def _incoming_block_tokens(inc: dict) -> set[str]:
+    """Tokens of the incoming record's DEDICATED address fields — used to
+    decide whether a master street2 blob is fully redundant."""
+    toks = set(N.normalize_address(
+        *[inc.get(f, "") or "" for f in ("address1", "town", "postcode")]).split())
+    toks |= set(N.county_key(inc.get("county", "") or "").split())
+    toks |= set(N.normalize_address(inc.get("country", "") or "").split())
+    return {t for t in toks if t}
+
+
+def street2_redundant(cur: str, inc: dict) -> bool:
+    """True when every token of the master's street2 already lives in the
+    incoming dedicated fields (town/county/postcode/street/country) — i.e.
+    the blob duplicates structured data and can be cleared."""
+    toks = set(N.normalize_address(cur or "").split())
+    return bool(toks) and toks <= _incoming_block_tokens(inc)
+
+
 def diff_fields(inc: dict, mas: dict) -> list[FieldDiff]:
     diffs: list[FieldDiff] = []
     mas_addr_tokens = _address_block_tokens(mas)
@@ -147,7 +165,15 @@ def diff_fields(inc: dict, mas: dict) -> list[FieldDiff]:
         if cur == ino:
             status, sig = DiffStatus.UNCHANGED, False
         elif not ino:
-            status, sig = DiffStatus.MISSING, False          # incoming blank → never overwrite
+            # Incoming blank normally never overwrites — EXCEPT a street2
+            # blob whose every token now lives in the dedicated fields
+            # (Fionnuala #79198: 'Greystones, Wicklow' vs Town=Greystones,
+            # County=Wicklow). That is duplicated data, not information —
+            # flag it so the push clears it and Odoo mirrors Final Approved.
+            if field == "address2" and street2_redundant(cur, inc):
+                status, sig = DiffStatus.CHANGED, True
+            else:
+                status, sig = DiffStatus.MISSING, False      # never overwrite
         elif not cur:
             status, sig = DiffStatus.NEW_INFO, field in SIGNIFICANT_FIELDS
         elif _norm(field, cur) == _norm(field, ino):

@@ -196,3 +196,55 @@ class TestConvergenceTails:
         d2 = {x.field: x for x in diff_fields(
             {"county": "Tyrone", "email": "p@example.test"}, mas)}
         assert d2["county"].status.value == "new_info"
+
+
+class TestRedundantStreet2Clearing:
+    """14-Jul (Fionnuala Dooley #79198): Final Approved showed Address 2
+    empty, but Odoo kept the 'Greystones, Wicklow' blob — its content now
+    lives in City/State. A fully-redundant street2 is flagged and cleared;
+    a street2 holding unique information is never touched."""
+
+    INC = {"first_name": "Fionnuala", "last_name": "Dooley",
+           "email": "fd59@example.test", "phone": "0879198258",
+           "address1": "13 La Touche Close", "address2": "",
+           "town": "Greystones", "county": "Wicklow",
+           "postcode": "A63 DC64", "country": "Ireland"}
+
+    def _mas(self, street2):
+        from reconciliation.odoo_master import partner_to_canonical
+        return partner_to_canonical({
+            "id": 7, "name": "Fionnuala Dooley", "ref": "79198",
+            "email": "fd59@example.test", "phone": "0879198258",
+            "is_company": False, "street": "13 La Touche Close",
+            "street2": street2, "city": "Greystones",
+            "state_id": [111, "Wicklow (IE)"], "zip": "A63 DC64",
+            "country_id": [101, "Ireland"], "comment": False})
+
+    def test_redundant_blob_is_flagged_for_clearing(self):
+        from reconciliation.classify import diff_fields
+        d = {x.field: x for x in diff_fields(self.INC, self._mas("Greystones, Wicklow"))}
+        assert d["address2"].status.value == "changed" and d["address2"].significant
+
+    def test_unique_street2_is_never_overwritten(self):
+        from reconciliation.classify import diff_fields
+        d = {x.field: x for x in diff_fields(self.INC, self._mas("Apartment 4B"))}
+        assert d["address2"].status.value == "missing"
+
+    def test_plan_clears_redundant_street2(self):
+        entry = {"change_type": "update", "master_ref": "79198",
+                 "name": "Fionnuala Dooley", "changed_fields": ["address2"],
+                 "edited_fields": [], "approved_by": "t", "approved_at": "t",
+                 "original": {"odoo_id": 7, "address2": "Greystones, Wicklow"},
+                 "approved": dict(self.INC)}
+        v = plan_from_staging([entry])[0].values
+        assert v["street2"] is False               # explicit clear
+        assert v["city"] == "Greystones"
+
+    def test_plan_keeps_unique_street2(self):
+        entry = {"change_type": "update", "master_ref": "79198",
+                 "name": "Fionnuala Dooley", "changed_fields": ["town"],
+                 "edited_fields": [], "approved_by": "t", "approved_at": "t",
+                 "original": {"odoo_id": 7, "address2": "Apartment 4B"},
+                 "approved": dict(self.INC)}
+        v = plan_from_staging([entry])[0].values
+        assert "street2" not in v

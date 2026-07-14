@@ -197,6 +197,15 @@ def plan_from_staging(entries: list[dict], source_file: str = "",
                         values[pf] = approved[cf]
                     if pseudo and pseudo not in values:
                         values[pseudo] = approved[cf]
+                # Approved Address 2 is EMPTY and the master's street2 blob is
+                # fully redundant vs the dedicated fields being written →
+                # CLEAR it (never clears unique information: any token not
+                # covered keeps the field untouched).
+                if not approved.get("address2") and "street2" not in values:
+                    from .classify import street2_redundant
+                    mas2 = ((e.get("original") or {}).get("address2") or "").strip()
+                    if mas2 and street2_redundant(mas2, approved):
+                        values["street2"] = False
             # Any remaining field with no mapping at all (currently: company) is
             # surfaced in the op reason — never silently dropped.
             unmapped = {cf: approved.get(cf, "") for cf in changed
