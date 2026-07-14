@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Extend the base module's invoice header to add lot fields alongside the event field.
+         BUG-06: sor_event_id moved from sor_event_info group (below notebook) into header_left_group;
+         sor_lot_ids follows it in the same header group. -->
+    <record id="account_move_view_form_sor_auction_house_bridge" model="ir.ui.view">
+        <field name="name">account.move.view.form.sor.auction.house.bridge</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="sor_buyer_invoice.account_move_view_form_sor_buyer_invoice"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group[@id='header_left_group']/field[@name='sor_event_id']" position="after">
+                <field name="sor_lot_ids" readonly="1" widget="many2many_tags"
+                       invisible="move_type not in ('out_invoice', 'out_refund', 'out_receipt')"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="sor_non_commercial_product_template_form_view" model="ir.ui.view">
+        <field name="name">sor.non.commercial.product.template.form</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+
+            <!-- Declare suppression booleans so the view parser can resolve them in invisible expressions -->
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="is_can_be_sold_suppressed" invisible="1"/>
+                <field name="is_sale_price_suppressed" invisible="1"/>
+                <field name="is_sales_tab_suppressed" invisible="1"/>
+                <field name="is_prices_tab_suppressed" invisible="1"/>
+            </xpath>
+
+            <!-- Can be Sold toggle (hides checkbox and label together) -->
+            <xpath expr="//span[@name='sale_option']" position="attributes">
+                <attribute name="invisible">is_can_be_sold_suppressed</attribute>
+            </xpath>
+
+            <!-- Sales Price label -->
+            <xpath expr="//label[@for='list_price']" position="attributes">
+                <attribute name="invisible">is_sale_price_suppressed</attribute>
+            </xpath>
+
+            <!-- Sales Price field + UOM -->
+            <xpath expr="//div[@name='list_price_uom']" position="attributes">
+                <attribute name="invisible">is_sale_price_suppressed</attribute>
+            </xpath>
+
+            <!-- Sales tab -->
+            <xpath expr="//page[@name='sales']" position="attributes">
+                <attribute name="invisible">is_sales_tab_suppressed</attribute>
+            </xpath>
+
+            <!-- Prices tab — override invisible to also check our suppression rule.
+                 Preserves the original "not sale_ok" condition while adding our rule-driven suppression.
+                 This ensures the tab is hidden in all UI modes (not just developer mode). -->
+            <xpath expr="//page[@name='sales_price']" position="attributes">
+                <attribute name="invisible">is_prices_tab_suppressed or not sale_ok</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- List view: set Sales Price column as opt-in (hidden by default) for non-commercial
+         deployments. column_invisible cannot reference per-record computed fields in Odoo 19
+         (evaluated once at ListRenderer level, before record data is available). Using
+         optional="hide" is the correct pattern: column is absent from the list by default;
+         users who need to see prices can enable it via the column toggler. This is marked
+         is_static=True in the rules documentation because the opt-in state is installation-
+         level, not per-rule-toggle. -->
+    <record id="sor_non_commercial_product_template_list_view" model="ir.ui.view">
+        <field name="name">sor.non.commercial.product.template.list</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+
+            <xpath expr="//field[@name='list_price']" position="attributes">
+                <attribute name="optional">hide</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+    <!-- Kanban view: suppress Price line for non-commercial deployments.
+         Injects is_sale_price_suppressed into the card data, then uses t-if
+         to hide the <span> containing the list_price field. -->
+    <record id="sor_non_commercial_product_template_kanban_view" model="ir.ui.view">
+        <field name="name">sor.non.commercial.product.template.kanban</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_kanban_view"/>
+        <field name="arch" type="xml">
+
+            <!-- Load suppression boolean into every kanban card -->
+            <xpath expr="//field[@name='categ_id']" position="after">
+                <field name="is_sale_price_suppressed"/>
+            </xpath>
+
+            <!-- Hide "Price: X" span -->
+            <xpath expr="//span[field[@name='list_price']]" position="attributes">
+                <attribute name="t-if">!record.is_sale_price_suppressed.raw_value</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

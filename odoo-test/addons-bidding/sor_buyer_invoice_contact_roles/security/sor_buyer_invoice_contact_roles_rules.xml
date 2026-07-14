@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Override Odoo 19's core partner company rule so art-world contacts
+             (partner_share=True, company_id=False) remain visible to internal
+             users. Without this, related fields traversing partner_id
+             (e.g. partner_ref → partner_id.ref on account.move) silently return
+             empty for art-world contacts restricted by the partner visibility rule.
+             In Odoo 19, the relevant rule is base.res_partner_rule; the rule
+             base.res_partner_rule_private_employee does not exist in Odoo 19.
+             The override uses explicit 'in' semantics to ensure contacts with
+             company_id=False are always visible to internal users. -->
+        <record id="base.res_partner_rule" model="ir.rule">
+            <field name="domain_force">
+                ['|', ('partner_share', '=', False),
+                 '|', ('company_id', '=', False),
+                      ('company_id', 'in', company_ids)]
+            </field>
+        </record>
+    </data>
+</odoo>

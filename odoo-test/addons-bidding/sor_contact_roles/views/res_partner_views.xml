@@ -1,0 +1,587 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Contact Types Assignment -->
+        <record id="view_partner_form_inherit_contact_types" model="ir.ui.view">
+            <field name="name">res.partner.form.inherit.sor_contact_roles.contact_types</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='category_id']" position="after">
+                    <field name="contact_types" widget="many2many_tags" options="{'no_create': True}"/>
+                    <field name="show_subtypes" invisible="1"/>
+                    <field name="contact_subtypes" invisible="1"/>
+                    <field name="staff_subtype_ids"
+                           string="Sub-Types"
+                           widget="many2many_tags"
+                           options="{'no_create': True}"
+                           invisible="not show_subtypes"
+                           domain="[('parent_type_id', 'in', contact_types), ('code', 'not in', ['bidder', 'buyer', 'consignor', 'donor', 'lender'])]"
+                           placeholder="Select sub-types (e.g., Artist, ...)"/>
+                    <field name="activity_earned_subtype_ids"
+                           string="Earned Roles"
+                           widget="many2many_tags"
+                           readonly="1"
+                           invisible="not activity_earned_subtype_ids"/>
+                    <!-- Helper fields for attrs (invisible) -->
+                    <field name="has_creator_type" invisible="1"/>
+                    <field name="has_contact_type" invisible="1"/>
+                    <field name="is_contact" invisible="1"/>
+                    <field name="is_consignor" invisible="1"/>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Social Media Views (separate definitions) -->
+        <record id="view_sor_contact_social_media_tree" model="ir.ui.view">
+            <field name="name">sor.contact.social.media.tree</field>
+            <field name="model">sor.contact.social.media</field>
+            <field name="arch" type="xml">
+                <list string="Social Media Profiles">
+                    <field name="platform"/>
+                    <field name="handle"/>
+                    <field name="url" readonly="1"/>
+                    <field name="active"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="view_sor_contact_social_media_form" model="ir.ui.view">
+            <field name="name">sor.contact.social.media.form</field>
+            <field name="model">sor.contact.social.media</field>
+            <field name="arch" type="xml">
+                <form string="Social Media Profile">
+                    <group>
+                        <field name="partner_id" invisible="1"/>
+                        <field name="platform"/>
+                        <field name="handle" placeholder="username or URL"/>
+                        <field name="url" readonly="1"/>
+                        <field name="active"/>
+                    </group>
+                </form>
+            </field>
+        </record>
+
+        <!-- Creator Information Section -->
+        <record id="view_partner_form_inherit_creator_fields" model="ir.ui.view">
+            <field name="name">res.partner.form.inherit.sor_contact_roles.creator_fields</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//notebook" position="inside">
+                    <page string="Creator Information" 
+                          invisible="not has_creator_type">
+                        <group>
+                            <group>
+                                <field name="biography" placeholder="Enter biography of the creator/artist..."/>
+                                <field name="birth_year" placeholder="e.g. 1945"/>
+                                <field name="death_year" placeholder="e.g. 2001"/>
+                                <field name="nationality"/>
+                                <field name="creator_website" placeholder="https://example.com"/>
+                            </group>
+                        </group>
+                        <group string="Social Media">
+                            <field name="social_media_ids" nolabel="1"/>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Hide Individual/Company toggle on SOR-managed contacts (Story 02) -->
+        <record id="view_partner_form_inherit_company_toggle" model="ir.ui.view">
+            <field name="name">res.partner.form.inherit.sor_contact_roles.company_toggle</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//field[@name='company_type'][@widget='radio']" position="attributes">
+                    <attribute name="invisible">is_contact or has_creator_type</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Hide Contacts tab on person records (Gap 04) -->
+        <record id="view_partner_form_inherit_contacts_tab_visibility" model="ir.ui.view">
+            <field name="name">res.partner.form.inherit.sor_contact_roles.contacts_tab_visibility</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//page[@name='contact_addresses']" position="attributes">
+                    <attribute name="invisible">not is_company</attribute>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Contact Information Section -->
+        <record id="view_partner_form_inherit_customer_fields" model="ir.ui.view">
+            <field name="name">res.partner.form.inherit.sor_contact_roles.customer_fields</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_partner_form"/>
+            <field name="arch" type="xml">
+                <xpath expr="//notebook" position="inside">
+                    <page string="Contact Information"
+                          invisible="not has_contact_type">
+                        <group>
+                            <group>
+                                <field name="collection_focus" placeholder="Describe collection focus and interests..."/>
+                                <field name="preferred_artist_ids"
+                                       widget="many2many_tags"
+                                       options="{'no_create': True}"
+                                       domain="[('is_creator', '=', True)]"
+                                       placeholder="Select preferred artists/creators..."/>
+                            </group>
+                        </group>
+                    </page>
+                </xpath>
+            </field>
+        </record>
+
+        <!-- Contact Type-Specific List Views -->
+        
+        <!-- Artists List View -->
+        <record id="view_partner_tree_artists" model="ir.ui.view">
+            <field name="name">res.partner.tree.artists</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <list string="Artists" decoration-muted="not active">
+                    <field name="name"/>
+                    <field name="biography" invisible="1"/>
+                    <field name="email"/>
+                    <field name="phone"/>
+                    <field name="nationality" optional="show"/>
+                    <field name="birth_year" optional="hide"/>
+                    <field name="creator_website" optional="hide"/>
+                    <field name="contact_types" widget="many2many_tags" optional="hide"/>
+                    <field name="creator_subtypes" widget="many2many_tags"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="action_partner_artists" model="ir.actions.act_window">
+            <field name="name">Artists</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('is_creator', '=', True)]</field>
+            <field name="context">{'search_default_active': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first artist!
+                </p>
+                <p>
+                    Artists are contacts with the Creator contact type or Artist sub-type.
+                </p>
+            </field>
+        </record>
+
+        <record id="action_partner_artists_view_list" model="ir.actions.act_window.view">
+            <field name="sequence">1</field>
+            <field name="view_mode">list</field>
+            <field name="view_id" ref="view_partner_tree_artists"/>
+            <field name="act_window_id" ref="action_partner_artists"/>
+        </record>
+
+        <!-- Contacts List View (top-level Contact role list) -->
+        <record id="view_partner_tree_contacts" model="ir.ui.view">
+            <field name="name">res.partner.tree.contacts</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <list string="Contacts" decoration-muted="not active">
+                    <field name="name"/>
+                    <field name="email"/>
+                    <field name="phone"/>
+                    <field name="contact_types" widget="many2many_tags" optional="hide"/>
+                    <field name="contact_role_subtypes" widget="many2many_tags"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Collectors List View -->
+        <record id="view_partner_tree_collectors" model="ir.ui.view">
+            <field name="name">res.partner.tree.collectors</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <list string="Collectors" decoration-muted="not active">
+                    <field name="name"/>
+                    <field name="email"/>
+                    <field name="phone"/>
+                    <field name="collection_focus" invisible="1"/>
+                    <field name="preferred_artist_ids" widget="many2many_tags" optional="hide"/>
+                    <field name="contact_types" widget="many2many_tags" optional="hide"/>
+                    <field name="contact_role_subtypes" widget="many2many_tags"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="action_partner_collectors" model="ir.actions.act_window">
+            <field name="name">Contacts</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('is_contact', '=', True)]</field>
+            <field name="context">{'search_default_active': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No contacts with a Contact role yet!
+                </p>
+                <p>
+                    Contacts are partners with the Contact parent type or a Contact sub-type (Bidder, Buyer, Consignor, Donor, Lender).
+                </p>
+            </field>
+        </record>
+
+        <!-- Advisors List View -->
+        <record id="view_partner_tree_advisors" model="ir.ui.view">
+            <field name="name">res.partner.tree.advisors</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <list string="Advisors" decoration-muted="not active">
+                    <field name="name"/>
+                    <field name="email"/>
+                    <field name="phone"/>
+                    <field name="contact_types" widget="many2many_tags" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="action_partner_advisors" model="ir.actions.act_window">
+            <field name="name">All Contacts by Type</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('contact_types', '!=', False)]</field>
+            <field name="context">{'search_default_active': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    No contacts with assigned types yet!
+                </p>
+                <p>
+                    Contacts are partners with one or more contact types assigned.
+                </p>
+            </field>
+        </record>
+
+        <!-- Consignors List View -->
+        <record id="view_partner_tree_consignors" model="ir.ui.view">
+            <field name="name">res.partner.tree.consignors</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <list string="Consignors" decoration-muted="not active">
+                    <field name="name"/>
+                    <field name="email"/>
+                    <field name="phone"/>
+                    <field name="contact_types" widget="many2many_tags" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="action_partner_consignors" model="ir.actions.act_window">
+            <field name="name">Consignors</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('contact_types.code', '=', 'consignor')]</field>
+            <field name="context">{'search_default_active': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first consignor!
+                </p>
+                <p>
+                    Consignors are auction sellers.
+                </p>
+            </field>
+        </record>
+
+        <!-- Bidders List View -->
+        <record id="view_partner_tree_bidders" model="ir.ui.view">
+            <field name="name">res.partner.tree.bidders</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <list string="Bidders" decoration-muted="not active">
+                    <field name="name"/>
+                    <field name="email"/>
+                    <field name="phone"/>
+                    <field name="contact_types" widget="many2many_tags" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="action_partner_bidders" model="ir.actions.act_window">
+            <field name="name">Bidders</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('is_bidder', '=', True)]</field>
+            <field name="context">{'search_default_active': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first bidder!
+                </p>
+                <p>
+                    Bidders are auction participants.
+                </p>
+            </field>
+        </record>
+
+        <!-- Donors List View -->
+        <record id="view_partner_tree_donors" model="ir.ui.view">
+            <field name="name">res.partner.tree.donors</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <list string="Donors" decoration-muted="not active">
+                    <field name="name"/>
+                    <field name="email"/>
+                    <field name="phone"/>
+                    <field name="contact_types" widget="many2many_tags" optional="hide"/>
+                </list>
+            </field>
+        </record>
+
+        <record id="action_partner_donors" model="ir.actions.act_window">
+            <field name="name">Donors</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">list,form</field>
+            <field name="domain">[('is_donor', '=', True)]</field>
+            <field name="context">{'search_default_active': 1}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first donor!
+                </p>
+                <p>
+                    Donors are museum contributors.
+                </p>
+            </field>
+        </record>
+
+        <!-- Menu Items -->
+        <menuitem id="menu_contacts_by_type"
+                  name="Contacts by Type"
+                  parent="contacts.menu_contacts"
+                  sequence="100"/>
+
+        <menuitem id="menu_contacts_creators"
+                  name="Creators"
+                  parent="menu_contacts_by_type"
+                  action="action_partner_artists"
+                  sequence="10"/>
+
+        <menuitem id="menu_contacts_customers"
+                  name="Contacts"
+                  parent="menu_contacts_by_type"
+                  action="action_partner_collectors"
+                  sequence="20"/>
+
+        <menuitem id="menu_contacts_advisors"
+                  name="All by Type"
+                  parent="menu_contacts_by_type"
+                  action="action_partner_advisors"
+                  sequence="30"/>
+
+        <menuitem id="menu_contacts_other_roles"
+                  name="Other Roles"
+                  parent="menu_contacts_by_type"
+                  sequence="40"/>
+
+        <menuitem id="menu_contacts_consignors"
+                  name="Consignors"
+                  parent="menu_contacts_other_roles"
+                  action="action_partner_consignors"
+                  sequence="10"/>
+
+        <menuitem id="menu_contacts_bidders"
+                  name="Bidders"
+                  parent="menu_contacts_other_roles"
+                  action="action_partner_bidders"
+                  sequence="20"/>
+
+        <menuitem id="menu_contacts_donors"
+                  name="Donors"
+                  parent="menu_contacts_other_roles"
+                  action="action_partner_donors"
+                  sequence="30"/>
+
+        <!-- Enhanced Search View -->
+        <record id="view_partner_search_inherit_contact_types" model="ir.ui.view">
+            <field name="name">res.partner.search.inherit.sor_contact_roles</field>
+            <field name="model">res.partner</field>
+            <field name="inherit_id" ref="base.view_res_partner_filter"/>
+            <field name="arch" type="xml">
+                <!-- Add contact type fields to search -->
+                <field name="category_id" position="after">
+                    <field name="contact_types" string="Contact Type"/>
+                    <field name="contact_subtypes" string="Sub-Type"/>
+                    <field name="biography" string="Biography"/>
+                    <field name="collection_focus" string="Collection Focus"/>
+                </field>
+                
+                <!-- Add filters for contact types -->
+                <xpath expr="//filter[@name='inactive']" position="after">
+                    <separator/>
+                    <filter string="Creators" name="filter_creators" domain="[('is_creator', '=', True)]"/>
+                    <filter string="Artists" name="filter_artists" domain="[('is_artist', '=', True)]"/>
+                    <filter string="Contacts" name="filter_contacts" domain="[('is_contact', '=', True)]"/>
+                    <filter string="Bidders" name="filter_bidders" domain="[('is_bidder', '=', True)]"/>
+                    <filter string="Consignors" name="filter_consignors" domain="[('is_consignor', '=', True)]"/>
+                    <filter string="Donors" name="filter_donors" domain="[('is_donor', '=', True)]"/>
+                    <separator/>
+                </xpath>
+                
+                <!-- Add group-by options -->
+                <group name="group_by" position="inside">
+                    <filter name="group_by_company_id" string="Company" context="{'group_by': 'company_id'}"/>
+                    <filter name="group_contact_type" string="Contact Type" context="{'group_by': 'contact_types'}"/>
+                    <filter name="group_subtype" string="Sub-Type" context="{'group_by': 'contact_subtypes'}"/>
+                    <separator/>
+                </group>
+            </field>
+        </record>
+
+        <!-- Kanban View: Contacts by Type (Creative Visual Display) -->
+        <record id="view_partner_kanban_by_contact_type" model="ir.ui.view">
+            <field name="name">res.partner.kanban.by.contact.type</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <kanban class="o_kanban_mobile" default_group_by="contact_types" sample="1" 
+                        create="0" quick_create="0">
+                    <field name="name"/>
+                    <field name="avatar_128"/>
+                    <field name="email"/>
+                    <field name="phone"/>
+                    <field name="is_company"/>
+                    <field name="active"/>
+                    <field name="contact_types"/>
+                    <field name="contact_subtypes"/>
+                    <field name="is_creator"/>
+                    <field name="is_contact"/>
+                    <field name="biography"/>
+                    <field name="collection_focus"/>
+                    <templates>
+                        <t t-name="card">
+                            <div class="oe_kanban_card oe_kanban_global_click o_kanban_record_has_image_fill">
+                                <div class="o_kanban_image_fill_left position-relative" style="width: 100px; min-width: 100px;">
+                                    <field name="avatar_128" widget="image" class="w-100 h-100" 
+                                           options="{'img_class': 'object-fit-cover'}" 
+                                           alt="Contact"/>
+                                    <div class="position-absolute top-0 end-0 p-1">
+                                        <span t-if="!record.active.raw_value" class="badge bg-danger text-white">Archived</span>
+                                    </div>
+                                </div>
+                                <div class="oe_kanban_details flex-grow-1 ps-3">
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <strong class="oe_kanban_list_title text-truncate">
+                                            <field name="name"/>
+                                        </strong>
+                                    </div>
+                                    
+                                    <!-- Contact Type Badges -->
+                                    <div class="mb-2">
+                                        <field name="contact_types" widget="many2many_tags" 
+                                               options="{'color_field': 'color', 'no_create': True}"/>
+                                    </div>
+                                    
+                                    <div t-if="record.contact_subtypes.raw_value" class="mb-2">
+                                        <field name="contact_subtypes" widget="many2many_tags" 
+                                               options="{'color_field': 'color', 'no_create': True}"/>
+                                    </div>
+                                    
+                                    <!-- Contact Info -->
+                                    <div class="text-muted small">
+                                        <div t-if="record.email.raw_value" class="d-flex align-items-center mb-1 text-truncate">
+                                            <i class="fa fa-envelope me-2 text-primary" title="Email"></i>
+                                            <field name="email"/>
+                                        </div>
+                                        <div t-if="record.phone.raw_value" class="d-flex align-items-center mb-1">
+                                            <i class="fa fa-phone me-2 text-primary" title="Phone"></i>
+                                            <field name="phone"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Creator-specific info -->
+                                    <div t-if="record.is_creator.raw_value and record.biography.raw_value" 
+                                         class="border-top pt-2 mt-2">
+                                        <div class="text-truncate small text-muted" 
+                                             t-att-title="record.biography.raw_value">
+                                            <i class="fa fa-book me-1 text-info" title="Biography"></i>
+                                            <field name="biography" widget="text"/>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Contact-specific info -->
+                                    <div t-if="record.is_contact.raw_value and record.collection_focus.raw_value"
+                                         class="border-top pt-2 mt-2">
+                                        <div class="text-truncate small text-muted"
+                                             t-att-title="record.collection_focus.raw_value">
+                                            <i class="fa fa-palette me-1 text-success" title="Collection Focus"></i>
+                                            <field name="collection_focus" widget="text"/>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </templates>
+                </kanban>
+            </field>
+        </record>
+
+        <!-- Action: Contacts by Type (Kanban) -->
+        <record id="action_partner_kanban_by_type" model="ir.actions.act_window">
+            <field name="name">Contacts by Type</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">kanban,list,form</field>
+            <field name="view_id" ref="view_partner_kanban_by_contact_type"/>
+            <field name="context">{'search_default_active': 1, 'group_by': 'contact_types'}</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Create your first contact!
+                </p>
+                <p>
+                    View all contacts organized by their contact types in a visual Kanban board.
+                </p>
+            </field>
+        </record>
+
+        <!-- Dashboard/Statistics View: Contact Type Overview -->
+        <record id="view_partner_dashboard_contact_types" model="ir.ui.view">
+            <field name="name">res.partner.dashboard.contact.types</field>
+            <field name="model">res.partner</field>
+            <field name="arch" type="xml">
+                <list string="Contact Type Statistics" sample="1">
+                    <field name="name" invisible="1"/>
+                </list>
+            </field>
+        </record>
+
+        <!-- Action: Contact Type Dashboard -->
+        <record id="action_partner_dashboard_contact_types" model="ir.actions.act_window">
+            <field name="name">Contact Type Dashboard</field>
+            <field name="res_model">res.partner</field>
+            <field name="view_mode">graph,pivot,kanban</field>
+            <field name="context">{
+                'group_by': ['contact_types', 'contact_subtypes'],
+                'search_default_active': 1
+            }</field>
+            <field name="help" type="html">
+                <p class="o_view_nocontent_smiling_face">
+                    Analyze contact distribution!
+                </p>
+                <p>
+                    View statistics and analytics for contacts grouped by contact types.
+                </p>
+            </field>
+        </record>
+
+        <!-- Override contacts action to group by company by default -->
+        <record id="contacts.action_contacts" model="ir.actions.act_window">
+            <field name="context">{'default_is_company': True, 'search_default_group_by_company_id': 1}</field>
+        </record>
+
+        <!-- Update menu to include Kanban view -->
+        <menuitem id="menu_contacts_by_type_kanban"
+                  name="By Type (Kanban)"
+                  parent="menu_contacts_by_type"
+                  action="action_partner_kanban_by_type"
+                  sequence="5"/>
+
+        <menuitem id="menu_contacts_dashboard"
+                  name="Dashboard"
+                  parent="menu_contacts_by_type"
+                  action="action_partner_dashboard_contact_types"
+                  sequence="100"/>
+    </data>
+</odoo>
+

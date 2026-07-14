@@ -1,0 +1,331 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sor_business_model
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-04-15 21:06+0000\n"
+"PO-Revision-Date: 2026-04-15 21:06+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sor_business_model
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+msgid ""
+"* Statically suppressed — this element type does not support the\n"
+"                        runtime toggle. The Suppressed checkbox above does not affect it.\n"
+"                        The suppression is applied when the module is installed and is\n"
+"                        only reversed by removing the module or running a module upgrade\n"
+"                        after changing the data."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__res_company__business_model__auction_house
+msgid "Auction House"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_res_company__business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_res_config_settings__business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__business_model
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_config_settings_view
+msgid "Business Model"
+msgstr ""
+
+#. module: sor_business_model
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+msgid "Business Model Rule"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model,name:sor_business_model.model_sor_business_model_rule_manifestation
+msgid "Business Model Rule UI Manifestation"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.actions.act_window,name:sor_business_model.action_sor_business_model_rules
+#: model:ir.ui.menu,name:sor_business_model.menu_sor_business_model_rules
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_list
+msgid "Business Model Rules"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model,name:sor_business_model.model_sor_business_model_rule
+msgid "Business Model Suppression Rule"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__sor_business_model_rule__field_key__can_be_purchased
+msgid "Can be Purchased"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__sor_business_model_rule__field_key__can_be_sold
+msgid "Can be Sold"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model,name:sor_business_model.model_res_company
+msgid "Companies"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model,name:sor_business_model.model_res_config_settings
+msgid "Config Settings"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__sor_business_model_rule__field_key__cost_field
+msgid "Cost"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__create_uid
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__create_date
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__description
+msgid "Description"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,help:sor_business_model.field_res_company__business_model
+#: model:ir.model.fields,help:sor_business_model.field_res_config_settings__business_model
+msgid ""
+"Determines which commercial fee infrastructure is active for this company. "
+"Non-Commercial suppresses all pricing UI. Primary Market Gallery uses "
+"consignment revenue splits. Secondary Market Gallery uses vendor commission "
+"on resale. Auction House uses buyer's premium and seller's fee structures."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_product_template__display_name
+#: model:ir.model.fields,field_description:sor_business_model.field_res_company__display_name
+#: model:ir.model.fields,field_description:sor_business_model.field_res_config_settings__display_name
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__display_name
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_product_product__effective_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_product_template__effective_business_model
+msgid "Effective Business Model"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__field_key
+msgid "Element"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__field_code
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__element_key
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+msgid "Element Key"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__element_name
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+msgid "Element Name"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__ui_element_type
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+msgid "Element Type"
+msgstr ""
+
+#. module: sor_business_model
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_list
+msgid "Feature"
+msgstr ""
+
+#. module: sor_business_model
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_config_settings_view
+msgid ""
+"Governs which commerce fields are suppressed for products in this company."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__has_static_manifestation
+msgid "Has Static Manifestation"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,help:sor_business_model.field_sor_business_model_rule_manifestation__element_name
+msgid ""
+"Human-readable name of this specific UI element (e.g. 'Can be Sold Toggle', "
+"'Sales Price Column')."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_product_template__id
+#: model:ir.model.fields,field_description:sor_business_model.field_res_company__id
+#: model:ir.model.fields,field_description:sor_business_model.field_res_config_settings__id
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__id
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__id
+msgid "ID"
+msgstr ""
+
+#. module: sor_business_model
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+msgid "Identity"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__manifestation_count
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_list
+msgid "Instances"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__write_uid
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__write_date
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: sor_business_model
+#: model_terms:ir.actions.act_window,help:sor_business_model.action_sor_business_model_rules
+msgid "No business model rules yet."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__res_company__business_model__non_commercial
+msgid "Non-Commercial"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,help:sor_business_model.field_sor_business_model_rule_manifestation__ui_location
+msgid ""
+"Odoo UI path where this suppression is applied (e.g. 'Product Template Form "
+"> Sales Tab')."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,help:sor_business_model.field_sor_business_model_rule_manifestation__element_key
+msgid ""
+"Odoo's own technical identifier for this element — the field name, page "
+"name, or span name targeted by the suppression XPath (e.g. 'list_price', "
+"'sales', 'sale_ok')."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__sor_business_model_rule__field_key__sale_price_tab
+msgid "Prices Tab"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__res_company__business_model__primary_market_gallery
+msgid "Primary Market Gallery"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model,name:sor_business_model.model_product_template
+msgid "Product"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__sor_business_model_rule__field_key__purchase_tab
+msgid "Purchase Tab"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__rule_id
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+msgid "Rule"
+msgstr ""
+
+#. module: sor_business_model
+#: model_terms:ir.actions.act_window,help:sor_business_model.action_sor_business_model_rules
+msgid ""
+"Rules are installed automatically by business model bridge modules.\n"
+"                Uncheck <strong>Suppressed</strong> on a rule to temporarily re-enable\n"
+"                that element for debugging. Refresh the page after toggling."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__sor_business_model_rule__field_key__sale_price_field
+msgid "Sales Price"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__sor_business_model_rule__field_key__sales_tab
+msgid "Sales Tab"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields.selection,name:sor_business_model.selection__res_company__business_model__secondary_market_gallery
+msgid "Secondary Market Gallery"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__is_static
+msgid "Statically Suppressed"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__active
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_list
+msgid "Suppressed"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,help:sor_business_model.field_sor_business_model_rule__field_code
+msgid ""
+"Technical key identifying this suppressible element (e.g. 'sales_tab')."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,help:sor_business_model.field_sor_business_model_rule_manifestation__ui_element_type
+msgid ""
+"Type of UI element, per Odoo nomenclature (e.g. 'Form Tab', 'Toggle', "
+"'Field', 'List Column', 'Kanban Span')."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule_manifestation__ui_location
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+msgid "UI Location"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,field_description:sor_business_model.field_sor_business_model_rule__manifestation_ids
+#: model_terms:ir.ui.view,arch_db:sor_business_model.sor_business_model_rule_view_form
+msgid "UI Manifestations"
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,help:sor_business_model.field_sor_business_model_rule_manifestation__is_static
+msgid ""
+"When True, this suppression is applied at the module level and is not "
+"affected by the parent rule's Suppressed toggle at runtime."
+msgstr ""
+
+#. module: sor_business_model
+#: model:ir.model.fields,help:sor_business_model.field_sor_business_model_rule__active
+msgid "When checked, this field is suppressed for the given business model."
+msgstr ""

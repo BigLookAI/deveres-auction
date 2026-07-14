@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Set buyers_premium_pct on all demo sold lots.
+             This file loads after sor_commercial_auction_house (a parent of this bridge),
+             which adds the buyers_premium_pct field to sor.lot and creates the 25% tier.
+             sor_lotting demo creates lots before sor_commercial_auction_house is installed,
+             so the field is not available there.
+
+             Spring Sale 2024 (SS2024) — lots 51 and 52 -->
+        <record id="sor_lotting.demo_lot_sold_01" model="sor.lot">
+            <field name="buyers_premium_pct">25.0</field>
+        </record>
+
+        <record id="sor_lotting.demo_lot_sold_02" model="sor.lot">
+            <field name="buyers_premium_pct">25.0</field>
+        </record>
+
+        <!-- Important Irish Art 2026 (A133) — lots 201, 202, 203 -->
+        <record id="sor_lotting.demo_lot_sold_03" model="sor.lot">
+            <field name="buyers_premium_pct">25.0</field>
+        </record>
+
+        <record id="sor_lotting.demo_lot_sold_04" model="sor.lot">
+            <field name="buyers_premium_pct">25.0</field>
+        </record>
+
+        <record id="sor_lotting.demo_lot_sold_05" model="sor.lot">
+            <field name="buyers_premium_pct">25.0</field>
+        </record>
+    </data>
+</odoo>

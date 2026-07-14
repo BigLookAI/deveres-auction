@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Product field suppression rules for auction_house business model.
+     Mirrors element_keys from sor_business_model_non_commercial, keyed to auction_house.
+     Commercial product fields (Sales Price, Can be Sold, Sales tab) are suppressed
+     because commercial terms in an auction house live on Lot records, not on products. -->
+<odoo>
+    <data noupdate="1">
+
+        <record id="rule_auction_house_can_be_sold" model="sor.business.model.rule">
+            <field name="business_model">auction_house</field>
+            <field name="field_key">can_be_sold</field>
+            <field name="active" eval="True"/>
+            <field name="description">Auction House: hide Can be Sold toggle</field>
+        </record>
+
+        <record id="rule_auction_house_sale_price" model="sor.business.model.rule">
+            <field name="business_model">auction_house</field>
+            <field name="field_key">sale_price_field</field>
+            <field name="active" eval="True"/>
+            <field name="description">Auction House: hide Sales Price field</field>
+        </record>
+
+        <record id="rule_auction_house_sales_tab" model="sor.business.model.rule">
+            <field name="business_model">auction_house</field>
+            <field name="field_key">sales_tab</field>
+            <field name="active" eval="True"/>
+            <field name="description">Auction House: hide Sales tab</field>
+        </record>
+
+        <record id="rule_auction_house_sale_price_tab" model="sor.business.model.rule">
+            <field name="business_model">auction_house</field>
+            <field name="field_key">sale_price_tab</field>
+            <field name="active" eval="True"/>
+            <field name="description">Auction House: hide Prices tab</field>
+        </record>
+
+    </data>
+</odoo>

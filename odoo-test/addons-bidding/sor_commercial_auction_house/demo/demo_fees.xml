@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Set company business model to auction_house for the auction scenario -->
+        <record id="base.main_company" model="res.company">
+            <field name="business_model">auction_house</field>
+        </record>
+
+        <!-- Fee defaults for auction house -->
+        <record id="demo_fee_sellers_commission" model="sor.fee.default">
+            <field name="fee_type">sellers_commission</field>
+            <field name="rate_pct">15.0</field>
+        </record>
+
+        <record id="demo_fee_withdrawal" model="sor.fee.default">
+            <field name="fee_type">withdrawal_fee</field>
+            <field name="rate_pct">5.0</field>
+        </record>
+
+        <!-- Buyer's premium tiers: 25% up to 50k, 20% above -->
+        <record id="demo_premium_tier_low" model="sor.buyers.premium.tier">
+            <field name="threshold_from">0.0</field>
+            <field name="rate_pct">25.0</field>
+            <field name="sequence">10</field>
+        </record>
+
+        <record id="demo_premium_tier_high" model="sor.buyers.premium.tier">
+            <field name="threshold_from">50000.0</field>
+            <field name="rate_pct">20.0</field>
+            <field name="sequence">20</field>
+        </record>
+
+        <!-- Fixed Charge lines on already-sold demo lots (System Testing addition,
+             Auction Refinements 01, Story 3). AC 2 locks Fixed Charge lines to
+             Draft-state lots in the UI (readonly="state != 'draft'"), so no fixed
+             charge can be added through the browser to any sold demo lot. These
+             lines are written directly via ORM at demo-load time — not subject to
+             the view's readonly attribute — so a PO at Show & Tell can view an
+             already-sold lot's (read-only) Fees tab and the corresponding Vendor
+             Settlement to see the deduction already reflected in its computed
+             total, with no data entry required. -->
+        <record id="demo_fixed_charge_sold_01" model="sor.lot.fixed.charge">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_01"/>
+            <field name="charge_type_id" ref="sor_fixed_charge_type_restoration"/>
+            <field name="amount">200.0</field>
+        </record>
+
+        <record id="demo_fixed_charge_sold_02" model="sor.lot.fixed.charge">
+            <field name="lot_id" ref="sor_lotting.demo_lot_sold_02"/>
+            <field name="charge_type_id" ref="sor_fixed_charge_type_framing"/>
+            <field name="amount">150.0</field>
+        </record>
+    </data>
+</odoo>

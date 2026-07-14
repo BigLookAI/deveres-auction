@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Buyer Invoices smart button on sor.event form.
+         Visible for any event type whenever at least one invoice is linked. -->
+    <record id="sor_event_view_form_buyer_invoice_button" model="ir.ui.view">
+        <field name="name">sor.event.view.form.buyer.invoice.button</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <!-- sor_events base view provides the button_box div — inject into it. -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button
+                    class="oe_stat_button"
+                    type="object"
+                    name="action_view_buyer_invoices"
+                    icon="fa-file-text-o"
+                    invisible="invoice_count == 0">
+                    <field name="invoice_count" widget="statinfo" string="Buyer Invoices"/>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

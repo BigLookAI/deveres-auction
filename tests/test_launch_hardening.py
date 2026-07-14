@@ -127,3 +127,42 @@ class TestAddressRewriteCarriesLocation:
         ops = plan_from_staging([self._entry(["phone"])])
         assert "city" not in ops[0].values
         assert "__state_name" not in ops[0].values
+
+
+class TestFullAddressBlockWrite:
+    """14-Jul (Eileen Costelloe #81012): only postcode+country were NEW_INFO,
+    so the push landed just zip+country — leaving city/state empty and the
+    'Dublin 6W NP48' blob inside street2. ANY address-family change now
+    writes the whole approved block, so Odoo matches the Final Approved
+    column field-for-field in one pass."""
+
+    def _entry(self, changed):
+        return {"change_type": "update", "master_ref": "81012",
+                "name": "Eileen Costelloe", "changed_fields": changed,
+                "edited_fields": [], "approved_by": "t", "approved_at": "t",
+                "original": {"odoo_id": 13599},
+                "approved": {"first_name": "Eileen", "last_name": "Costelloe",
+                             "address1": "32 cypress Park",
+                             "address2": "Templeogue", "town": "Dublin",
+                             "county": "Dublin", "postcode": "d6w np48",
+                             "country": "Ireland"}}
+
+    def test_postcode_only_change_writes_whole_block(self):
+        ops = plan_from_staging([self._entry(["postcode", "country"])])
+        v = ops[0].values
+        assert v["zip"] == "d6w np48"
+        assert v["street"] == "32 cypress Park"
+        assert v["street2"] == "Templeogue"        # blob normalised away
+        assert v["city"] == "Dublin"
+        assert v["__state_name"] == "Dublin"
+        assert v["__country_name"] == "Ireland"
+
+    def test_town_only_change_also_writes_whole_block(self):
+        v = plan_from_staging([self._entry(["town"])])[0].values
+        assert v["city"] == "Dublin" and v["street2"] == "Templeogue"
+
+    def test_non_address_change_untouched(self):
+        entry = self._entry(["phone"])
+        entry["approved"]["phone"] = "851404274"
+        v = plan_from_staging([entry])[0].values
+        assert "city" not in v and "street" not in v

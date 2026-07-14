@@ -178,14 +178,18 @@ def plan_from_staging(entries: list[dict], source_file: str = "",
                     values[pseudo] = approved[cf]   # resolved to an id at execute time
             if "mobile" in changed:
                 _apply_mobile(values, approved.get("mobile", ""))
-            # An address rewrite carries town/county/country/postcode along:
-            # pre-clean masters often hold these inside the concatenated
-            # street2, which classification treats as equivalent-by-containment.
-            # The push replaces the address lines and that containment vanishes,
-            # so without this the operator needs a SECOND approve→push cycle
-            # for the same contact (observed on the April real data, 13-Jul).
-            if {"address1", "address2"} & set(changed):
-                for cf in ("town", "county", "country", "postcode"):
+            # Any address-family change writes the WHOLE approved address
+            # block (street, street2, city, zip, state, country). Pre-clean
+            # masters hold town/county/postcode inside a concatenated street2;
+            # writing only the individually-changed fields leaves records
+            # half-normalised (street2 keeps the blob, city/state stay empty —
+            # Eileen Costelloe #81012, 14-Jul screenshots). Approved values
+            # are the operator-reviewed truth: land them field-for-field, in
+            # one pass. Empty approved fields are never written (no deletes).
+            _ADDR_FAMILY = ("address1", "address2", "town", "county",
+                            "postcode", "country")
+            if set(_ADDR_FAMILY) & set(changed):
+                for cf in _ADDR_FAMILY:
                     if not approved.get(cf):
                         continue
                     pf, pseudo = PARTNER_FIELD_MAP.get(cf), LOOKUP_FIELD_MAP.get(cf)

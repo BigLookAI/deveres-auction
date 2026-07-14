@@ -115,7 +115,11 @@ class TestAddressBlockEquivalence:
     street2. Values already present anywhere in the master's address block are
     formatting, not change (the 83-updates-that-were-really-0 finding, 3-Jul)."""
 
-    def test_subset_of_concatenated_street2_is_equivalent(self):
+    def test_empty_dedicated_county_field_is_new_info_not_containment(self):
+        """14-Jul 'sync perfectly': a county buried in the street2 blob is
+        NOT equivalent to the state field being populated — Odoo reads the
+        field. The record must classify as an update that fills state_id.
+        (address1/address2 line-shuffling stays containment-equivalent.)"""
         from reconciliation.classify import classify
         from reconciliation.matching import score_pair
         mas = partner_to_canonical(_partner(
@@ -127,8 +131,11 @@ class TestAddressBlockEquivalence:
                "town": "Bray", "county": "Dublin", "postcode": "A63 XY12",
                "country": "Ireland"}
         cls, rec, conf, mb, diffs, m, why = classify(inc, score_pair(inc, mas))
-        assert cls.value == "retain", [
-            (d.field, d.status.value) for d in diffs if d.significant]
+        d = {x.field: x for x in diffs}
+        assert cls.value == "update"
+        assert d["county"].status.value == "new_info" and d["county"].significant
+        # the address LINES themselves are still containment-equivalent
+        assert d["address2"].status.value == "equivalent"
 
     def test_genuinely_new_county_still_diffs(self):
         from reconciliation.classify import diff_fields

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Set company business model to non_commercial for the collection scenario -->
+        <record id="base.main_company" model="res.company">
+            <field name="business_model">non_commercial</field>
+        </record>
+    </data>
+</odoo>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Suppress the Sales & Purchase tab on the Contact form when the active
+         company has a non_commercial business model (sales_tab rule is active).
+         Runtime-toggleable: unchecking the sales_tab rule in Settings → Technical
+         → SOR → Business Model Rules restores the tab after a page refresh. -->
+    <record id="view_partner_form_sales_tab_suppress" model="ir.ui.view">
+        <field name="name">res.partner.form.sales.tab.suppress.non_commercial</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Inject suppression boolean so the JS client loads it -->
+            <xpath expr="//field[@name='name']" position="before">
+                <field name="is_sales_purchases_tab_suppressed" invisible="1"/>
+            </xpath>
+
+            <!-- Hide the Sales & Purchase tab -->
+            <xpath expr="//page[@name='sales_purchases']" position="attributes">
+                <attribute name="invisible">is_sales_purchases_tab_suppressed</attribute>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

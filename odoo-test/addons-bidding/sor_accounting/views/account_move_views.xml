@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        ReceiptSelector calls useService('lazy_session') — a service owned by point_of_sale.
+        Without POS installed this crashes every account.move form render. Replace with the
+        standard radio widget: same radio-button UX, no POS dependency. ReceiptSelector
+        extends RadioField so this is a clean drop-in substitution.
+    -->
+    <record id="account_move_form_receipt_selector_fix" model="ir.ui.view">
+        <field name="name">account.move.form.receipt.selector.fix</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <!-- priority 15: must run before sor_buyer_invoice (priority 16) which removes the span
+             containing move_type. Validation applies XPaths in priority order, so this view
+             finds receipt_selector in the base arch before the span is removed. -->
+        <field name="priority" eval="15"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='move_type'][@widget='receipt_selector']" position="attributes">
+                <attribute name="widget">radio</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Artists / Creators -->
+        <record id="demo_artist_maeve" model="res.partner">
+            <field name="name">Maeve Kelly</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_creator'))]"/>
+            <field name="contact_subtypes" eval="[(4, ref('sor_contact_roles.sor_contact_type_artist'))]"/>
+        </record>
+
+        <record id="demo_artist_ciaran" model="res.partner">
+            <field name="name">Ciarán Walsh</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_creator'))]"/>
+            <field name="contact_subtypes" eval="[(4, ref('sor_contact_roles.sor_contact_type_artist'))]"/>
+        </record>
+
+        <record id="demo_artist_roisin" model="res.partner">
+            <field name="name">Róisín Byrne</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_creator'))]"/>
+            <field name="contact_subtypes" eval="[(4, ref('sor_contact_roles.sor_contact_type_artist'))]"/>
+        </record>
+
+        <record id="demo_artist_sean" model="res.partner">
+            <field name="name">Seán Murphy</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_creator'))]"/>
+            <field name="contact_subtypes" eval="[(4, ref('sor_contact_roles.sor_contact_type_artist'))]"/>
+        </record>
+
+        <!-- Collectors -->
+        <record id="demo_collector_john" model="res.partner">
+            <field name="name">John O'Sullivan</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
+        </record>
+
+        <record id="demo_collector_bridget" model="res.partner">
+            <field name="name">Bridget Moore</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
+        </record>
+
+        <record id="demo_collector_thomas" model="res.partner">
+            <field name="name">Thomas Brennan</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
+        </record>
+
+        <!-- Institutions -->
+        <record id="demo_institution_national_gallery" model="res.partner">
+            <field name="name">National Gallery of Ireland</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
+        </record>
+
+        <record id="demo_institution_rha" model="res.partner">
+            <field name="name">Royal Hibernian Academy</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
+        </record>
+
+        <record id="demo_institution_imma" model="res.partner">
+            <field name="name">Irish Museum of Modern Art</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
+        </record>
+
+        <!-- Dealers -->
+        <record id="demo_dealer_william" model="res.partner">
+            <field name="name">William Jameson</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
+        </record>
+
+        <record id="demo_dealer_patricia" model="res.partner">
+            <field name="name">Patricia Ahern</field>
+            <field name="is_company" eval="False"/>
+            <field name="contact_types" eval="[(4, ref('sor_contact_roles.sor_contact_type_contact'))]"/>
+        </record>
+    </data>
+</odoo>

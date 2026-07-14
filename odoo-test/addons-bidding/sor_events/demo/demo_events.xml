@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Past event: closed auction/exhibition from 6 months ago -->
+        <record id="demo_event_past" model="sor.event">
+            <field name="name">Spring Sale 2024</field>
+            <field name="event_type">auction</field>
+            <field name="date_start" eval="(datetime.now() - timedelta(days=180)).strftime('%Y-%m-%d 10:00:00')"/>
+            <field name="date_end" eval="(datetime.now() - timedelta(days=175)).strftime('%Y-%m-%d 18:00:00')"/>
+            <field name="status">closed</field>
+        </record>
+
+        <!-- Upcoming event: published auction 1 month from now -->
+        <record id="demo_event_upcoming" model="sor.event">
+            <field name="name">Autumn Sale 2025</field>
+            <field name="event_type">auction</field>
+            <field name="date_start" eval="(datetime.now() + timedelta(days=30)).strftime('%Y-%m-%d 10:00:00')"/>
+            <field name="date_end" eval="(datetime.now() + timedelta(days=31)).strftime('%Y-%m-%d 18:00:00')"/>
+            <field name="status">published</field>
+        </record>
+
+        <!-- Recently closed event: ready for invoice generation (no invoices yet).
+             Three sold lots with winning bids — use "Generate Buyer Invoices" to test. -->
+        <record id="demo_event_invoiceable" model="sor.event">
+            <field name="name">Important Irish Art 2026</field>
+            <field name="event_type">auction</field>
+            <field name="date_start" eval="(datetime.now() - timedelta(days=15)).strftime('%Y-%m-%d 10:00:00')"/>
+            <field name="date_end" eval="(datetime.now() - timedelta(days=14)).strftime('%Y-%m-%d 20:00:00')"/>
+            <field name="status">closed</field>
+        </record>
+    </data>
+</odoo>

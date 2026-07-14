@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Update sold lots with buyer_id and passed lots with consignor_id.
+             This file belongs in the bridge (sor_lotting_contact_roles) because it
+             references records from both parent modules — sor_lotting lots and
+             sor_contact_roles demo partners. The bridge depends on both parents, so
+             both sets of demo data are loaded before this file runs.
+
+             buyer_id on sold lots matches the winning bidder from demo_bids.xml;
+             consignor_id on passed lots uses distinct demo dealer contacts.
+
+             Required for Item 2b UAT scenarios: ≥ 2 distinct buyers on sold lots
+             and ≥ 2 distinct consignors on passed lots for Mark as Collected testing.
+
+             consignor_id on sold lots 01/02 (Spring Sale 2024 / SS2024) — added at
+             System Testing (Auction Refinements 01) so action_generate_vendor_settlements
+             (sor_auction_documents), which filters on `state in ('sold','passed') and
+             consignor_id`, has a ready-to-execute scenario with 2 distinct consignors for
+             Story 3 (Fixed Charges And VSS Deduction). No sold lot previously had
+             consignor_id set, so "Generate Vendor Settlements" produced zero VSS records
+             against demo data. Lots 03/04/05 (Important Irish Art 2026 / A133) are left
+             untouched — that event's demo data is dedicated to the buyer invoice
+             (buyer_id) scenario. -->
+
+        <record id="sor_lotting.demo_lot_sold_01" model="sor.lot">
+            <field name="consignor_id" ref="sor_contact_roles.demo_dealer_william"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_sold_02" model="sor.lot">
+            <field name="consignor_id" ref="sor_contact_roles.demo_dealer_patricia"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_sold_03" model="sor.lot">
+            <field name="buyer_id" ref="sor_contact_roles.demo_collector_john"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_sold_04" model="sor.lot">
+            <field name="buyer_id" ref="sor_contact_roles.demo_collector_thomas"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_sold_05" model="sor.lot">
+            <field name="buyer_id" ref="sor_contact_roles.demo_collector_john"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_passed_01" model="sor.lot">
+            <field name="consignor_id" ref="sor_contact_roles.demo_dealer_william"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_passed_02" model="sor.lot">
+            <field name="consignor_id" ref="sor_contact_roles.demo_dealer_patricia"/>
+        </record>
+    </data>
+</odoo>

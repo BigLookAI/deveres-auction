@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_inherit_auction_docs" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.sor.auction.docs</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="base_setup.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <!-- business_model declared by sor_business_model — no redeclaration needed.
+                 Placed after the fee schedules block from sor_commercial_auction_house. -->
+            <xpath expr="//block[@name='sor_fee_schedules_container']" position="after">
+                <block title="Auction Documents: Margin Scheme" name="sor_auction_documents_container"
+                       invisible="business_model != 'auction_house'">
+                    <setting string="VAT Margin Scheme"
+                             help="Default margin scheme flag for new lots. Can be overridden per lot."
+                             class="col-lg-12">
+                        <field name="vat_margin_scheme"/>
+                    </setting>
+                    <setting string="Auction VAT Notice"
+                             help="Statutory notice text printed on buyer invoices when VAT Margin Scheme is enabled. Leave empty to suppress the notice block."
+                             class="col-lg-12">
+                        <field name="auction_vat_notice" nolabel="1"/>
+                    </setting>
+                </block>
+                <block title="Auction Documents: Pre-Sale Advice Content" name="sor_psa_content_container"
+                       invisible="business_model != 'auction_house'">
+                    <setting string="Top"
+                             help="Rendered above the lot table on Pre-Sale Advice documents."
+                             class="col-lg-12">
+                        <field name="psa_content_top" nolabel="1"/>
+                    </setting>
+                    <setting string="Bottom"
+                             help="Rendered below the lot table on Pre-Sale Advice documents (e.g. sale terms)."
+                             class="col-lg-12">
+                        <field name="psa_content_bottom" nolabel="1"/>
+                    </setting>
+                </block>
+                <block title="Auction Documents: Post-Sale Advice Content" name="sor_posa_content_container"
+                       invisible="business_model != 'auction_house'">
+                    <setting string="Top"
+                             help="Rendered above the results table on Post-Sale Advice documents."
+                             class="col-lg-12">
+                        <field name="posa_content_top" nolabel="1"/>
+                    </setting>
+                    <setting string="Bottom"
+                             help="Rendered below the results table on Post-Sale Advice documents (e.g. sale terms)."
+                             class="col-lg-12">
+                        <field name="posa_content_bottom" nolabel="1"/>
+                    </setting>
+                </block>
+                <block title="Auction Documents: Vendor Settlement Content" name="sor_vss_content_container"
+                       invisible="business_model != 'auction_house'">
+                    <setting string="Top"
+                             help="Rendered above the lot table on Vendor Settlement Statements."
+                             class="col-lg-12">
+                        <field name="vss_content_top" nolabel="1"/>
+                    </setting>
+                    <setting string="Bottom"
+                             help="Rendered below the lot table on Vendor Settlement Statements (e.g. bank details, sale terms)."
+                             class="col-lg-12">
+                        <field name="vss_content_bottom" nolabel="1"/>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

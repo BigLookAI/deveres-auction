@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- "Generate Buyer Invoices" button on the auction event form.
+         Gated on invoice_pending_count — hidden when all buyers are already invoiced. -->
+    <record id="sor_event_view_form_generate_invoice_button" model="ir.ui.view">
+        <field name="name">sor.event.view.form.generate.invoice.button</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Pending count declared so invisible expression resolves; button is paired
+                 with the count field as adjacent readonly display (dynamic button string
+                 attributes are not supported in Odoo 19 view XML). -->
+            <xpath expr="//header" position="inside">
+                <field name="invoice_pending_count" invisible="1"/>
+                <div class="d-flex align-items-center gap-1"
+                     invisible="event_type != 'auction' or invoice_pending_count == 0">
+                    <button
+                        name="action_generate_buyer_invoices"
+                        type="object"
+                        string="Generate Buyer Invoices"
+                        class="btn-primary"/>
+                    <field name="invoice_pending_count" nolabel="1" readonly="1"
+                               widget="badge"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

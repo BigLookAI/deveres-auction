@@ -1,0 +1,251 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sor_buyer_invoice_auction_house
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-07-11 13:09+0000\n"
+"PO-Revision-Date: 2026-07-11 13:09+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/account_move.py:0
+msgid ""
+"%(sent)d Buyer Invoice(s) sent, %(skipped)d skipped — no email on file. See "
+"the chatter on each skipped record for details."
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/account_move.py:0
+msgid "%d Buyer Invoice(s) sent."
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/sor_event.py:0
+msgid "%d buyer invoice(s) generated."
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:mail.template,body_html:sor_buyer_invoice_auction_house.mail_template_sor_buyer_invoice_bulk
+msgid ""
+"<div>\n"
+"                    <p>Dear <t t-out=\"object.partner_id.name\"/>,</p>\n"
+"                    <p>Please find your buyer invoice attached.</p>\n"
+"                </div>\n"
+"            "
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice_auction_house.report_invoice_document_sor_auction_house_bridge
+msgid "<strong>Invoice Total</strong>"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice_auction_house.report_invoice_document_sor_auction_house_bridge
+msgid "<strong>Total Buyer's Premium</strong>"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice_auction_house.report_invoice_document_sor_auction_house_bridge
+msgid "<strong>Total Hammer</strong>"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model,name:sor_buyer_invoice_auction_house.model_account_chart_template
+msgid "Account Chart Template"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/sor_event.py:0
+msgid "All buyer invoices have already been generated for this auction."
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/account_move.py:0
+msgid "Bulk Send"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/account_move.py:0
+msgid "Buyer Invoice not sent: %s has no email on file."
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:mail.template,subject:sor_buyer_invoice_auction_house.mail_template_sor_buyer_invoice_bulk
+msgid "Buyer Invoice — {{ object.sor_event_id.name or object.name }}"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:mail.template,name:sor_buyer_invoice_auction_house.mail_template_sor_buyer_invoice_bulk
+msgid "Buyer Invoice: Bulk Sending"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/sor_event.py:0
+msgid "Buyer Invoices"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model.fields.selection,name:sor_buyer_invoice_auction_house.selection__account_move_line__sor_line_type__buyers_premium
+msgid "Buyer's Premium"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_move_line__sor_buyers_premium_pct
+msgid "Buyer's Premium %"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice_auction_house.report_invoice_document_sor_auction_house_bridge
+msgid "Buyer's premium"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model,name:sor_buyer_invoice_auction_house.model_res_company
+msgid "Companies"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice_auction_house.report_invoice_document_sor_auction_house_bridge
+msgid "Description"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_chart_template__display_name
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_move__display_name
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_move_line__display_name
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_res_company__display_name
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_sor_event__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice_auction_house.sor_event_view_form_generate_invoice_button
+msgid "Generate Buyer Invoices"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model.fields.selection,name:sor_buyer_invoice_auction_house.selection__account_move_line__sor_line_type__hammer
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice_auction_house.report_invoice_document_sor_auction_house_bridge
+msgid "Hammer"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_chart_template__id
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_move__id
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_move_line__id
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_res_company__id
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_sor_event__id
+msgid "ID"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_sor_event__invoice_pending_count
+msgid "Invoice Pending Count"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model,name:sor_buyer_invoice_auction_house.model_account_move
+msgid "Journal Entry"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model,name:sor_buyer_invoice_auction_house.model_account_move_line
+msgid "Journal Item"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_move_line__sor_lot_id
+msgid "Lot"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice_auction_house.report_invoice_document_sor_auction_house_bridge
+msgid "Lot no"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_bank_statement_line__sor_lot_ids
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_move__sor_lot_ids
+msgid "Lots"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/sor_event.py:0
+msgid "No Auction Sales journal found for company %s."
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/account_move.py:0
+msgid "No buyer invoices selected."
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/sor_event.py:0
+msgid "No sold lots with a buyer recorded for this auction."
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/sor_event.py:0
+msgid "No winning bids found for this auction."
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model,name:sor_buyer_invoice_auction_house.model_sor_event
+msgid "SOR Event"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.model.fields,field_description:sor_buyer_invoice_auction_house.field_account_move_line__sor_line_type
+msgid "SOR Line Type"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:ir.actions.server,name:sor_buyer_invoice_auction_house.action_server_bulk_send_buyer_invoice
+msgid "Send to Buyers"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model:mail.template,description:sor_buyer_invoice_auction_house.mail_template_sor_buyer_invoice_bulk
+msgid "Sent to buyers with their Buyer Invoice attached (bulk send)"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/account_move.py:0
+msgid "Unknown"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice_auction_house.report_invoice_document_sor_auction_house_bridge
+msgid "VAT"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#: model_terms:ir.ui.view,arch_db:sor_buyer_invoice_auction_house.report_invoice_document_sor_auction_house_bridge
+msgid "VAT on hammer"
+msgstr ""
+
+#. module: sor_buyer_invoice_auction_house
+#. odoo-python
+#: code:addons/sor_buyer_invoice_auction_house/models/sor_event.py:0
+msgid "sor_event_id"
+msgstr ""

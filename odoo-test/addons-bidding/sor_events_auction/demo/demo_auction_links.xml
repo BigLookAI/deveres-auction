@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Set sale_number on past events.  sale_number is the {auction_code} component
+             of the {sequential}/{auction_code} invoice number format. -->
+        <record id="sor_events.demo_event_past" model="sor.event">
+            <field name="sale_number">SS2024</field>
+        </record>
+
+        <record id="sor_events.demo_event_invoiceable" model="sor.event">
+            <field name="sale_number">A133</field>
+        </record>
+
+        <!-- Assign sold and passed lots to Spring Sale 2024 (SS2024).
+             Uses full external ID notation to update records created by sor_lotting. -->
+        <record id="sor_lotting.demo_lot_sold_01" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_past"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_sold_02" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_past"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_passed_01" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_past"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_passed_02" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_past"/>
+        </record>
+
+        <!-- Assign catalogued lots to the upcoming auction event -->
+        <record id="sor_lotting.demo_lot_catalogued_01" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_upcoming"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_catalogued_02" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_upcoming"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_catalogued_03" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_upcoming"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_catalogued_04" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_upcoming"/>
+        </record>
+
+        <!-- Assign the three new sold lots to Important Irish Art 2026 (A133).
+             John wins lots 201 + 203 (one consolidated invoice, two lines).
+             Thomas wins lot 202 (separate invoice, one line). -->
+        <record id="sor_lotting.demo_lot_sold_03" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_invoiceable"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_sold_04" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_invoiceable"/>
+        </record>
+
+        <record id="sor_lotting.demo_lot_sold_05" model="sor.lot">
+            <field name="auction_id" ref="sor_events.demo_event_invoiceable"/>
+        </record>
+    </data>
+</odoo>

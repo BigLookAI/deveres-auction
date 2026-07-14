@@ -1,0 +1,816 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* sor_contact_roles
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-06-15 09:40+0000\n"
+"PO-Revision-Date: 2026-06-15 09:40+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_kanban_by_contact_type
+msgid "<i class=\"fa fa-book me-1 text-info\" title=\"Biography\"/>"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_kanban_by_contact_type
+msgid "<i class=\"fa fa-envelope me-2 text-primary\" title=\"Email\"/>"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_kanban_by_contact_type
+msgid "<i class=\"fa fa-palette me-1 text-success\" title=\"Collection Focus\"/>"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_kanban_by_contact_type
+msgid "<i class=\"fa fa-phone me-2 text-primary\" title=\"Phone\"/>"
+msgstr ""
+
+#. module: sor_contact_roles
+#. odoo-python
+#: code:addons/sor_contact_roles/models/sor_contact_type.py:0
+msgid "A contact type cannot be its own parent."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__active
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__active
+msgid "Active"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_tree_advisors
+msgid "Advisors"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.actions.act_window,name:sor_contact_roles.action_partner_advisors
+msgid "All Contacts by Type"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_advisors
+msgid "All by Type"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_dashboard_contact_types
+msgid "Analyze contact distribution!"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_kanban_by_contact_type
+msgid "Archived"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:sor.contact.type,name:sor_contact_roles.sor_contact_type_artist
+msgid "Artist"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.actions.act_window,name:sor_contact_roles.action_partner_artists
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_tree_artists
+msgid "Artists"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_artists
+msgid "Artists are contacts with the Creator contact type or Artist sub-type."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__contact_types
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__contact_types
+msgid ""
+"Assign one or more contact types (e.g. Creator + Contact). Sub-types will "
+"appear in a separate field below when parent types are selected."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:sor.contact.type,description:sor_contact_roles.sor_contact_type_bidder
+msgid "Auction participant"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:sor.contact.type,description:sor_contact_roles.sor_contact_type_consignor
+msgid "Auction seller"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:sor.contact.type,name:sor_contact_roles.sor_contact_type_bidder
+msgid "Bidder"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.actions.act_window,name:sor_contact_roles.action_partner_bidders
+#: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_bidders
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_tree_bidders
+msgid "Bidders"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_bidders
+msgid "Bidders are auction participants."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__biography
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__biography
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+msgid "Biography"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__biography
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__biography
+msgid "Biography of the creator/artist."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__birth_year
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__birth_year
+msgid "Birth Year"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__birth_year
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__birth_year
+msgid "Birth year of the creator/artist."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:sor.contact.type,name:sor_contact_roles.sor_contact_type_buyer
+msgid "Buyer"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_by_type_kanban
+msgid "By Type (Kanban)"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_sor_contact_type__type_category
+msgid "Category to group contact types and their sub-types."
+msgstr ""
+
+#. module: sor_contact_roles
+#. odoo-python
+#: code:addons/sor_contact_roles/models/sor_contact_type.py:0
+msgid ""
+"Circular reference detected in contact type hierarchy. A contact type cannot"
+" be its own parent or ancestor."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__code
+msgid "Code"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__collection_focus
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__collection_focus
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+msgid "Collection Focus"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_tree_collectors
+msgid "Collectors"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__color
+msgid "Color Index"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_sor_contact_type__color
+msgid ""
+"Color for Kanban view grouping. 0=No color, 1=Red, 2=Orange, 3=Yellow, "
+"4=Light Blue, 5=Dark Purple, 6=Salmon Pink, 7=Medium Blue, 8=Dark Blue, "
+"9=Fuchsia, 10=Green, 11=Purple"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__company_id
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+msgid "Company"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:sor.contact.type,name:sor_contact_roles.sor_contact_type_consignor
+msgid "Consignor"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.actions.act_window,name:sor_contact_roles.action_partner_consignors
+#: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_consignors
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_tree_consignors
+msgid "Consignors"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_consignors
+msgid "Consignors are auction sellers."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model,name:sor_contact_roles.model_res_partner
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__partner_id
+#: model:ir.model.fields.selection,name:sor_contact_roles.selection__sor_contact_type__type_category__contact
+#: model:sor.contact.type,name:sor_contact_roles.sor_contact_type_contact
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_kanban_by_contact_type
+msgid "Contact"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_customer_fields
+msgid "Contact Information"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__contact_role_subtypes
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__contact_role_subtypes
+msgid "Contact Sub-Types"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+msgid "Contact Type"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.actions.act_window,name:sor_contact_roles.action_partner_dashboard_contact_types
+msgid "Contact Type Dashboard"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_dashboard_contact_types
+msgid "Contact Type Statistics"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__contact_types
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__contact_types
+msgid "Contact Types"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_sor_contact_social_media__partner_id
+msgid "Contact this social media profile belongs to."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.constraint,message:sor_contact_roles.constraint_sor_contact_type_code_uniq
+msgid "Contact type code must be unique."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.actions.act_window,name:sor_contact_roles.action_partner_collectors
+#: model:ir.actions.act_window,name:sor_contact_roles.action_sor_contacts
+#: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_customers
+#: model:ir.ui.menu,name:sor_contact_roles.menu_sor_contacts
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_tree_contacts
+msgid "Contacts"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_advisors
+msgid "Contacts are partners with one or more contact types assigned."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_sor_contacts
+msgid ""
+"Contacts are partners with the Contact parent type assigned\n"
+"                (collectors, buyers, donors, and other transactional contacts)."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_collectors
+msgid ""
+"Contacts are partners with the Contact parent type or a Contact sub-type "
+"(Bidder, Buyer, Consignor, Donor, Lender)."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.actions.act_window,name:sor_contact_roles.action_partner_kanban_by_type
+#: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_by_type
+msgid "Contacts by Type"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_artists
+msgid "Create your first artist!"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_bidders
+msgid "Create your first bidder!"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_consignors
+msgid "Create your first consignor!"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_kanban_by_type
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_sor_contacts
+msgid "Create your first contact!"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_sor_creators
+msgid "Create your first creator!"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_donors
+msgid "Create your first donor!"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__create_uid
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__create_date
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields.selection,name:sor_contact_roles.selection__sor_contact_type__type_category__creator
+#: model:sor.contact.type,name:sor_contact_roles.sor_contact_type_creator
+msgid "Creator"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_creator_fields
+msgid "Creator Information"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__creator_subtypes
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__creator_subtypes
+msgid "Creator Sub-Types"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.actions.act_window,name:sor_contact_roles.action_sor_creators
+#: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_creators
+#: model:ir.ui.menu,name:sor_contact_roles.menu_sor_creators
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+msgid "Creators"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_sor_creators
+msgid ""
+"Creators are contacts with the Creator parent type assigned\n"
+"                (artists, makers, and other creative contributors)."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_dashboard
+msgid "Dashboard"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__death_year
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__death_year
+msgid "Death Year"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__death_year
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__death_year
+msgid "Death year of the creator/artist. Leave blank for living artists."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_customer_fields
+msgid "Describe collection focus and interests..."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__description
+msgid "Description"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__collection_focus
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__collection_focus
+msgid "Description of collection focus and interests."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__display_name
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__display_name
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__display_name
+msgid "Display Name"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:sor.contact.type,name:sor_contact_roles.sor_contact_type_donor
+msgid "Donor"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.actions.act_window,name:sor_contact_roles.action_partner_donors
+#: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_donors
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_tree_donors
+msgid "Donors"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_donors
+msgid "Donors are museum contributors."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_contact_types
+msgid "Earned Roles"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_creator_fields
+msgid "Enter biography of the creator/artist..."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields.selection,name:sor_contact_roles.selection__sor_contact_social_media__platform__facebook
+msgid "Facebook"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__url
+msgid "Full URL"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_sor_contact_social_media__url
+msgid "Full URL to the social media profile."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__handle
+msgid "Handle/Username"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__has_contact_type
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__has_contact_type
+msgid "Has Contact Type"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__has_creator_type
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__has_creator_type
+msgid "Has Creator Type"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__id
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__id
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__id
+msgid "ID"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields.selection,name:sor_contact_roles.selection__sor_contact_social_media__platform__instagram
+msgid "Instagram"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__is_artist
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__is_artist
+msgid "Is Artist"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__is_bidder
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__is_bidder
+msgid "Is Bidder"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__is_consignor
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__is_consignor
+msgid "Is Consignor"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__is_contact
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__is_contact
+msgid "Is Contact"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__is_creator
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__is_creator
+msgid "Is Creator"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__is_donor
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__is_donor
+msgid "Is Donor"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__write_uid
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__write_date
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:sor.contact.type,name:sor_contact_roles.sor_contact_type_lender
+msgid "Lender"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields.selection,name:sor_contact_roles.selection__sor_contact_social_media__platform__linkedin
+msgid "LinkedIn"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:sor.contact.type,description:sor_contact_roles.sor_contact_type_donor
+msgid "Museum contributor"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__name
+msgid "Name"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__nationality
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__nationality
+msgid "Nationality"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__nationality
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__nationality
+msgid "Nationality of the creator/artist."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_collectors
+msgid "No contacts with a Contact role yet!"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_advisors
+msgid "No contacts with assigned types yet!"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields.selection,name:sor_contact_roles.selection__sor_contact_social_media__platform__other
+#: model:ir.model.fields.selection,name:sor_contact_roles.selection__sor_contact_type__type_category__other
+msgid "Other"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.ui.menu,name:sor_contact_roles.menu_contacts_other_roles
+msgid "Other Roles"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__parent_type_id
+msgid "Parent Type"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_sor_contact_type__parent_type_id
+msgid ""
+"Parent contact type for sub-types (e.g., Artist is a sub-type of Creator)."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_social_media__platform
+msgid "Platform"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__preferred_artist_ids
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__preferred_artist_ids
+msgid "Preferred Artists"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__preferred_artist_ids
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__preferred_artist_ids
+msgid "Preferred artists/creators in the collection."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model,name:sor_contact_roles.model_sor_contact_social_media
+msgid "SOR Contact Social Media"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model,name:sor_contact_roles.model_sor_contact_type
+msgid "SOR Contact Type"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_customer_fields
+msgid "Select preferred artists/creators..."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__contact_subtypes
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__contact_subtypes
+msgid ""
+"Select specific sub-types for the selected parent contact types. This field "
+"appears when Creator or Contact is selected."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_contact_types
+msgid "Select sub-types (e.g., Artist, ...)"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__sequence
+msgid "Sequence"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__show_subtypes
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__show_subtypes
+msgid "Show Sub-Types"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__social_media_ids
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__social_media_ids
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_creator_fields
+msgid "Social Media"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_sor_contact_social_media_form
+msgid "Social Media Profile"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_sor_contact_social_media_tree
+msgid "Social Media Profiles"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_sor_contact_social_media__platform
+msgid "Social media platform or website."
+msgstr ""
+
+#. module: sor_contact_roles
+#. odoo-python
+#: code:addons/sor_contact_roles/models/sor_contact_social_media.py:0
+msgid ""
+"Social media profile with platform '%(platform)s' and handle '%(handle)s' "
+"already exists for this contact."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__social_media_ids
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__social_media_ids
+msgid "Social media profiles for this creator/artist."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__staff_subtype_ids
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__staff_subtype_ids
+msgid "Staff-Assignable Sub-Types"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_search_inherit_contact_types
+msgid "Sub-Type"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__contact_subtypes
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__contact_subtypes
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__child_ids
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_contact_types
+msgid "Sub-Types"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_sor_contact_type__child_ids
+msgid "Sub-types of this contact type."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__activity_earned_subtype_ids
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__activity_earned_subtype_ids
+msgid "System-Assigned Roles"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__show_subtypes
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__show_subtypes
+msgid "Technical field to control visibility of sub-types field."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__has_contact_type
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__has_contact_type
+msgid ""
+"Technical field: True if contact has Contact type or any Contact sub-type."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__has_creator_type
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__has_creator_type
+msgid ""
+"Technical field: True if contact has Creator type or any Creator sub-type."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_sor_contact_type__code
+msgid ""
+"Technical identifier used for computed helper fields and domains (e.g. "
+"'creator', 'contact', 'bidder')."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields.selection,name:sor_contact_roles.selection__sor_contact_social_media__platform__twitter
+msgid "Twitter/X"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_sor_contact_type__type_category
+msgid "Type Category"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_sor_contact_social_media__active
+msgid "Uncheck to archive this social media profile."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_sor_contact_social_media__handle
+msgid "Username, handle, or URL for this social media profile."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_kanban_by_type
+msgid ""
+"View all contacts organized by their contact types in a visual Kanban board."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.actions.act_window,help:sor_contact_roles.action_partner_dashboard_contact_types
+msgid "View statistics and analytics for contacts grouped by contact types."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_partner__creator_website
+#: model:ir.model.fields,field_description:sor_contact_roles.field_res_users__creator_website
+#: model:ir.model.fields.selection,name:sor_contact_roles.selection__sor_contact_social_media__platform__website
+msgid "Website"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model:ir.model.fields,help:sor_contact_roles.field_res_partner__creator_website
+#: model:ir.model.fields,help:sor_contact_roles.field_res_users__creator_website
+msgid "Website URL of the creator/artist."
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_partner_form_inherit_creator_fields
+msgid "https://example.com"
+msgstr ""
+
+#. module: sor_contact_roles
+#: model_terms:ir.ui.view,arch_db:sor_contact_roles.view_sor_contact_social_media_form
+msgid "username or URL"
+msgstr ""

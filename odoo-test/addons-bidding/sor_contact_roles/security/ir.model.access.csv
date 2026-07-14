@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_sor_contact_type_user,sor.contact.type user,model_sor_contact_type,base.group_user,1,0,0,0
+access_sor_contact_type_system,sor.contact.type system,model_sor_contact_type,base.group_system,1,1,1,1
+access_sor_contact_social_media_user,sor.contact.social.media user,model_sor_contact_social_media,base.group_user,1,1,1,1
+access_sor_contact_social_media_system,sor.contact.social.media system,model_sor_contact_social_media,base.group_system,1,1,1,1
+

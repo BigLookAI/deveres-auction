@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_sor_pre_sale_advice" model="ir.actions.report">
+        <field name="name">Pre-Sale Advice</field>
+        <field name="model">sor.pre.sale.advice</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">sor_auction_documents.report_sor_pre_sale_advice</field>
+        <field name="report_file">sor_auction_documents.report_sor_pre_sale_advice</field>
+        <field name="print_report_name">'Pre-Sale Advice - %s' % object.name</field>
+    </record>
+
+    <template id="report_sor_pre_sale_advice">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="doc">
+                <t t-call="web.external_layout">
+                    <div class="page">
+                        <h4>Pre-Sale Advice (<t t-out="doc.name"/>)</h4>
+
+                        <!-- Consignor and event details -->
+                        <div class="row mb-4">
+                            <div class="col-6">
+                                <t t-if="doc.consignor_id.ref">
+                                    <strong>Seller Reference:</strong>
+                                    <t t-out="doc.consignor_id.ref"/><br/>
+                                </t>
+                                <t t-out="doc.consignor_id.name"/><br/>
+                                <t t-if="doc.consignor_id.street">
+                                    <t t-out="doc.consignor_id.street"/><br/>
+                                </t>
+                                <t t-if="doc.consignor_id.street2">
+                                    <t t-out="doc.consignor_id.street2"/><br/>
+                                </t>
+                                <t t-if="doc.consignor_id.city">
+                                    <t t-out="doc.consignor_id.city"/>
+                                </t>
+                                <t t-if="doc.consignor_id.state_id">
+                                    <t t-if="doc.consignor_id.city">, </t>
+                                    <t t-out="doc.consignor_id.state_id.name"/>
+                                </t>
+                                <t t-if="doc.consignor_id.zip">
+                                    <t t-if="doc.consignor_id.city or doc.consignor_id.state_id">, </t>
+                                    <t t-out="doc.consignor_id.zip"/>
+                                </t>
+                                <t t-if="doc.consignor_id.vat">
+                                    <br/><strong>VAT:</strong> <t t-out="doc.consignor_id.vat"/>
+                                </t>
+                            </div>
+                            <div class="col-6">
+                                <strong>Sale:</strong>
+                                <t t-out="doc.event_id.name"/>
+                                <t t-if="doc.event_id.sale_number">
+                                    (<t t-out="doc.event_id.sale_number"/>)
+                                </t>
+                                <t t-if="doc.event_id.date_end">
+                                    <br/>
+                                    <strong>End Date:</strong>
+                                    <t t-out="doc.event_id.date_end" t-options="{'widget': 'date'}"/>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Top content block -->
+                        <t t-if="doc.company_id.psa_content_top">
+                            <div class="mb-4">
+                                <t t-out="doc.company_id.psa_content_top"/>
+                            </div>
+                        </t>
+
+                        <!-- Lot table: Lot No | Receipt No. | Description | Reserve | Estimate -->
+                        <table class="table table-sm table-bordered">
+                            <thead>
+                                <tr>
+                                    <th class="text-center">Lot No.</th>
+                                    <th>Receipt No.</th>
+                                    <th>Description</th>
+                                    <th class="text-end">Reserve</th>
+                                    <th class="text-end">Estimate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="doc.lot_ids.sorted('lot_number')" t-as="lot">
+                                    <tr>
+                                        <td class="text-center"><t t-out="lot.lot_number or ''"/></td>
+                                        <td><t t-out="lot.sor_receipt_number or ''"/></td>
+                                        <td>
+                                            <t t-if="lot.product_id">
+                                                <t t-out="lot.product_id.name"/>
+                                            </t>
+                                            <t t-if="not lot.product_id and lot.lot_description">
+                                                <t t-out="lot.lot_description"/>
+                                            </t>
+                                        </td>
+                                        <td class="text-end">
+                                            <t t-out="lot.reserve_price"
+                                               t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
+                                        </td>
+                                        <td class="text-end">
+                                            <t t-out="lot.estimate_low"
+                                               t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
+                                            –
+                                            <t t-out="lot.estimate_high"
+                                               t-options="{'widget': 'monetary', 'display_currency': lot.currency_id}"/>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+
+                        <!-- Bottom content block -->
+                        <t t-if="doc.company_id.psa_content_bottom">
+                            <div class="mt-4">
+                                <t t-out="doc.company_id.psa_content_bottom"/>
+                            </div>
+                        </t>
+
+                    </div>
+                </t>
+            </t>
+        </t>
+    </template>
+</odoo>

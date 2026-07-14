@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Document generation section on the auction event form.
+         Buttons are positioned in the form body (before the notebook), not in the
+         header — generation is a data operation, not a lifecycle state transition.
+         Each button is gated on its pending count so it disappears when all documents
+         are already generated.
+         is_commercial, event_type, and the three pending count fields must be declared
+         in the arch for Odoo 19 FormArchParser to resolve invisible expressions. -->
+    <record id="view_sor_event_form_inherit_auction_docs_buttons" model="ir.ui.view">
+        <field name="name">sor.event.form.inherit.auction.docs.buttons</field>
+        <field name="model">sor.event</field>
+        <field name="inherit_id" ref="sor_events.sor_event_view_form"/>
+        <field name="arch" type="xml">
+            <!-- Declare fields needed for invisible expressions in this view -->
+            <xpath expr="//header/field[@name='status']" position="before">
+                <field name="is_commercial" invisible="1"/>
+                <field name="psa_pending_count" invisible="1"/>
+                <field name="posa_pending_count" invisible="1"/>
+                <field name="vss_pending_count" invisible="1"/>
+            </xpath>
+            <!-- Generation buttons section — outside the header, after the notebook.
+                 Each button is paired with its pending count field (badge widget)
+                 so the user sees how many documents will be generated before clicking.
+                 Dynamic button string attributes are not supported in Odoo 19 view XML;
+                 the count is rendered as an adjacent badge field instead. -->
+            <xpath expr="//sheet/notebook" position="after">
+                <div name="sor_doc_generation_section"
+                     class="d-flex gap-3 flex-wrap mt-2 mb-2"
+                     invisible="not is_commercial or event_type != 'auction'">
+                    <div class="d-flex align-items-center gap-1"
+                         invisible="psa_pending_count == 0 or status in ('closed', 'archived')">
+                        <button name="action_generate_pre_sale_advices"
+                                string="Generate Pre-Sale Advices"
+                                type="object"
+                                class="btn-secondary"/>
+                        <field name="psa_pending_count" nolabel="1" readonly="1"
+                               widget="badge"/>
+                    </div>
+                    <div class="d-flex align-items-center gap-1"
+                         invisible="posa_pending_count == 0 or status not in ('active', 'closed')">
+                        <button name="action_generate_post_sale_advices"
+                                string="Generate Post-Sale Advices"
+                                type="object"
+                                class="btn-secondary"/>
+                        <field name="posa_pending_count" nolabel="1" readonly="1"
+                               widget="badge"/>
+                    </div>
+                    <div class="d-flex align-items-center gap-1"
+                         invisible="vss_pending_count == 0 or status not in ('active', 'closed')">
+                        <button name="action_generate_vendor_settlements"
+                                string="Generate Vendor Settlements"
+                                type="object"
+                                class="btn-secondary"/>
+                        <field name="vss_pending_count" nolabel="1" readonly="1"
+                               widget="badge"/>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

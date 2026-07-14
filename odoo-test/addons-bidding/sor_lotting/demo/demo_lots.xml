@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data>
+        <!-- Consumable products for lot demo data.
+             sor_lotting loads at position ~41/64; stock (which adds is_storable to
+             product.template) loads at position ~49/64. is_storable is therefore
+             not available here — plain consumables satisfy product_id required field. -->
+        <record id="demo_product_lot_01" model="product.template">
+            <field name="name">Untitled Oil on Canvas</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_02" model="product.template">
+            <field name="name">Coastal Landscape</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_03" model="product.template">
+            <field name="name">Abstract Composition No. 7</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_04" model="product.template">
+            <field name="name">Bronze Figure Study</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_05" model="product.template">
+            <field name="name">Still Life with Flowers</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_06" model="product.template">
+            <field name="name">West of Ireland No. 2</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_07" model="product.template">
+            <field name="name">Portrait of a Woman</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_08" model="product.template">
+            <field name="name">Landscape Study</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_09" model="product.template">
+            <field name="name">Architectural Fragment</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_10" model="product.template">
+            <field name="name">Abstract No. 14</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_11" model="product.template">
+            <field name="name">Garden Scene with Figures</field>
+            <field name="type">consu</field>
+        </record>
+        <record id="demo_product_lot_12" model="product.template">
+            <field name="name">Nocturne Dublin Bay</field>
+            <field name="type">consu</field>
+        </record>
+
+        <!-- Draft lots (3) — not yet assigned to any event -->
+        <record id="demo_lot_draft_01" model="sor.lot">
+            <field name="lot_number">1</field>
+            <field name="product_id" ref="demo_product_lot_01"/>
+            <field name="estimate_low">1500.0</field>
+            <field name="estimate_high">2000.0</field>
+            <field name="reserve_price">1200.0</field>
+            <field name="state">draft</field>
+        </record>
+
+        <record id="demo_lot_draft_02" model="sor.lot">
+            <field name="lot_number">2</field>
+            <field name="product_id" ref="demo_product_lot_02"/>
+            <field name="estimate_low">3000.0</field>
+            <field name="estimate_high">4500.0</field>
+            <field name="reserve_price">2500.0</field>
+            <field name="state">draft</field>
+        </record>
+
+        <record id="demo_lot_draft_03" model="sor.lot">
+            <field name="lot_number">3</field>
+            <field name="product_id" ref="demo_product_lot_03"/>
+            <field name="estimate_low">8000.0</field>
+            <field name="estimate_high">12000.0</field>
+            <field name="reserve_price">7000.0</field>
+            <field name="state">draft</field>
+        </record>
+
+        <!-- Catalogued lots (4) — assigned to upcoming event in demo_auction_links.xml -->
+        <record id="demo_lot_catalogued_01" model="sor.lot">
+            <field name="lot_number">101</field>
+            <field name="product_id" ref="demo_product_lot_04"/>
+            <field name="estimate_low">5000.0</field>
+            <field name="estimate_high">7000.0</field>
+            <field name="reserve_price">4500.0</field>
+            <field name="state">catalogued</field>
+        </record>
+
+        <record id="demo_lot_catalogued_02" model="sor.lot">
+            <field name="lot_number">102</field>
+            <field name="product_id" ref="demo_product_lot_05"/>
+            <field name="estimate_low">1200.0</field>
+            <field name="estimate_high">1800.0</field>
+            <field name="reserve_price">1000.0</field>
+            <field name="state">catalogued</field>
+        </record>
+
+        <record id="demo_lot_catalogued_03" model="sor.lot">
+            <field name="lot_number">103</field>
+            <field name="product_id" ref="demo_product_lot_06"/>
+            <field name="estimate_low">2500.0</field>
+            <field name="estimate_high">3500.0</field>
+            <field name="reserve_price">2000.0</field>
+            <field name="state">catalogued</field>
+        </record>
+
+        <record id="demo_lot_catalogued_04" model="sor.lot">
+            <field name="lot_number">104</field>
+            <field name="product_id" ref="demo_product_lot_07"/>
+            <field name="estimate_low">6000.0</field>
+            <field name="estimate_high">9000.0</field>
+            <field name="reserve_price">5500.0</field>
+            <field name="state">catalogued</field>
+        </record>
+
+        <!-- Sold lots (2) — assigned to Spring Sale 2024 in demo_auction_links.xml.
+             hammer_price matches the winning bid in demo_bids.xml. -->
+        <record id="demo_lot_sold_01" model="sor.lot">
+            <field name="lot_number">51</field>
+            <field name="product_id" ref="demo_product_lot_08"/>
+            <field name="estimate_low">3000.0</field>
+            <field name="estimate_high">5000.0</field>
+            <field name="reserve_price">2800.0</field>
+            <field name="hammer_price">4800.0</field>
+            <field name="state">sold</field>
+        </record>
+
+        <record id="demo_lot_sold_02" model="sor.lot">
+            <field name="lot_number">52</field>
+            <field name="product_id" ref="demo_product_lot_09"/>
+            <field name="estimate_low">8000.0</field>
+            <field name="estimate_high">12000.0</field>
+            <field name="reserve_price">7500.0</field>
+            <field name="hammer_price">11000.0</field>
+            <field name="state">sold</field>
+        </record>
+
+        <!-- Sold lots (3) — assigned to Important Irish Art 2026 in demo_auction_links.xml.
+             Two buyers: John wins lots 201 and 203 (one invoice, two lines);
+             Thomas wins lot 202 (separate invoice, one line).
+             hammer_price matches winning bids in demo_bids.xml.
+             buyer_id is set in sor_lotting_contact_roles demo (bridge owns cross-module refs).
+             buyers_premium_pct (25%) set in sor_buyer_invoice_auction_house demo — that
+             module loads after sor_commercial_auction_house adds the field to sor.lot.
+             Reuse existing demo products: product_type may default to 'artwork' when
+             sor_artwork is installed, so new product.template creation would require a
+             creator_id. Existing products already have a valid product_type from their
+             own demo load (before sor_artwork's default_get was active). -->
+        <record id="demo_lot_sold_03" model="sor.lot">
+            <field name="lot_number">201</field>
+            <field name="product_id" ref="demo_product_lot_10"/>
+            <field name="estimate_low">5000.0</field>
+            <field name="estimate_high">7000.0</field>
+            <field name="reserve_price">4500.0</field>
+            <field name="hammer_price">6200.0</field>
+            <field name="state">sold</field>
+        </record>
+
+        <record id="demo_lot_sold_04" model="sor.lot">
+            <field name="lot_number">202</field>
+            <field name="product_id" ref="demo_product_lot_11"/>
+            <field name="estimate_low">3000.0</field>
+            <field name="estimate_high">4500.0</field>
+            <field name="reserve_price">2800.0</field>
+            <field name="hammer_price">3800.0</field>
+            <field name="state">sold</field>
+        </record>
+
+        <record id="demo_lot_sold_05" model="sor.lot">
+            <field name="lot_number">203</field>
+            <field name="product_id" ref="demo_product_lot_12"/>
+            <field name="estimate_low">8000.0</field>
+            <field name="estimate_high">12000.0</field>
+            <field name="reserve_price">7500.0</field>
+            <field name="hammer_price">9500.0</field>
+            <field name="state">sold</field>
+        </record>
+
+        <!-- Passed lots (2) — assigned to past event in demo_auction_links.xml.
+             consignor_id is set in sor_lotting_contact_roles demo (bridge owns cross-module refs). -->
+        <record id="demo_lot_passed_01" model="sor.lot">
+            <field name="lot_number">53</field>
+            <field name="product_id" ref="demo_product_lot_10"/>
+            <field name="estimate_low">4000.0</field>
+            <field name="estimate_high">6000.0</field>
+            <field name="reserve_price">3500.0</field>
+            <field name="state">passed</field>
+        </record>
+
+        <record id="demo_lot_passed_02" model="sor.lot">
+            <field name="lot_number">54</field>
+            <field name="product_id" ref="demo_product_lot_11"/>
+            <field name="estimate_low">900.0</field>
+            <field name="estimate_high">1500.0</field>
+            <field name="reserve_price">800.0</field>
+            <field name="state">passed</field>
+        </record>
+
+        <!-- Withdrawn lot (1) -->
+        <record id="demo_lot_withdrawn_01" model="sor.lot">
+            <field name="lot_number">55</field>
+            <field name="product_id" ref="demo_product_lot_12"/>
+            <field name="estimate_low">15000.0</field>
+            <field name="estimate_high">20000.0</field>
+            <field name="reserve_price">13000.0</field>
+            <field name="state">withdrawn</field>
+        </record>
+
+        <!-- Fallback-only draft lot (1) — no product_id; uses lot_title for description.
+             Demonstrates the QWeb fallback chain when sor_base (vertical module) is absent. -->
+        <record id="demo_lot_fallback_01" model="sor.lot">
+            <field name="lot_number">99</field>
+            <field name="lot_title">Unsigned Work — Attribution Pending</field>
+            <field name="estimate_low">500.0</field>
+            <field name="estimate_high">800.0</field>
+            <field name="state">draft</field>
+        </record>
+    </data>
+</odoo>

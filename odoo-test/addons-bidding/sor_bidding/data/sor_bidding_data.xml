@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+        The Bidder contact type (code='bidder') is seeded by sor_contact_roles
+        in sor_contact_type_data.xml (XMLID: sor_contact_roles.sor_contact_type_bidder).
+        No additional data records are required from this bridge.
+    -->
+</odoo>

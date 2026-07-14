@@ -120,11 +120,21 @@ def diff_fields(inc: dict, mas: dict) -> list[FieldDiff]:
             # combined address block, nothing new is being said — EQUIVALENT,
             # never an update. (A genuinely new town/county/street still diffs
             # normally: its tokens are absent from the block.)
-            ino_tokens = set((_norm(field, ino) or "").split())
-            if ino_tokens and ino_tokens <= mas_addr_tokens:
-                diffs.append(FieldDiff(field, label, cur, ino,
-                                       DiffStatus.EQUIVALENT, False))
-                continue
+            #
+            # EXCEPTION (14-Jul, "sync perfectly"): town/county map to
+            # DEDICATED Odoo fields (city / state_id). When that field is
+            # EMPTY on the master, a value buried inside the street2
+            # concatenation is not equivalent to the field being populated —
+            # Odoo forms, filters and reports read the field, not the blob.
+            # Treat it as NEW_INFO so the push fills city/state properly.
+            if field in ("town", "county") and not cur:
+                pass                                    # fall through → NEW_INFO
+            else:
+                ino_tokens = set((_norm(field, ino) or "").split())
+                if ino_tokens and ino_tokens <= mas_addr_tokens:
+                    diffs.append(FieldDiff(field, label, cur, ino,
+                                           DiffStatus.EQUIVALENT, False))
+                    continue
         if cur == ino:
             status, sig = DiffStatus.UNCHANGED, False
         elif not ino:
