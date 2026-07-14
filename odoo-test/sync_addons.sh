@@ -6,12 +6,15 @@
 # part of the assembly (e.g. sor_bidding) must not be present on the addons
 # path at all, otherwise Odoo pulls them in on the next registry update.
 #
-#   ./sync_addons.sh assemblies/deveres_april.yaml [path-to-SOR-repo]
+#   ./sync_addons.sh assemblies/deveres_april.yaml [path-to-SOR-repo] [dest-dir]
+#   dest-dir defaults to ./addons; the bidding stack uses ./addons-bidding so
+#   sor_bidding's code never sits on the client-parity addons path.
 set -euo pipefail
 
 ASSEMBLY=${1:?usage: sync_addons.sh <assembly.yaml> [sor-repo-path]}
 ASSEMBLY="$(cd "$(dirname "$ASSEMBLY")" && pwd)/$(basename "$ASSEMBLY")"
 SOR_REPO=${2:-"$HOME/Documents/Cimelium/BL-Odoo-System-of-Record"}
+DEST=${3:-addons}
 cd "$(dirname "$0")"
 [ -d "$SOR_REPO/addons" ] || { echo "No addons/ in $SOR_REPO"; exit 1; }
 
@@ -31,13 +34,14 @@ PY
 )
 [ -n "$MODULES" ] || { echo "No modules parsed from $ASSEMBLY"; exit 1; }
 
-echo "→ Removing existing sor_* modules from ./addons"
-find ./addons -maxdepth 1 -type d -name 'sor_*' -exec rm -rf {} +
+mkdir -p "./$DEST"
+echo "→ Removing existing sor_* modules from ./$DEST"
+find "./$DEST" -maxdepth 1 -type d -name 'sor_*' -exec rm -rf {} +
 
 echo "→ Copying assembly modules from $SOR_REPO ($(git -C "$SOR_REPO" rev-parse --short HEAD))"
 for m in $MODULES; do
   [ -d "$SOR_REPO/addons/$m" ] || { echo "  ✗ $m missing in SOR repo"; exit 1; }
-  rsync -a --exclude '__pycache__' "$SOR_REPO/addons/$m/" "./addons/$m/"
+  rsync -a --exclude '__pycache__' "$SOR_REPO/addons/$m/" "./$DEST/$m/"
   echo "  ✓ $m"
 done
 
@@ -47,6 +51,6 @@ done
   echo "Modules synced from BL-Odoo-System-of-Record @ $(git -C "$SOR_REPO" rev-parse HEAD)"
   echo "per assembly $(basename "$ASSEMBLY") on $(date -u +%Y-%m-%dT%H:%M:%SZ) by sync_addons.sh."
   echo "Only assembly modules are present BY DESIGN (auto_install containment)."
-} > ./addons/README.md
+} > "./$DEST/README.md"
 
-echo "✓ $(echo "$MODULES" | wc -l | tr -d ' ') modules synced"
+echo "✓ $(echo "$MODULES" | wc -l | tr -d ' ') modules synced into $DEST"

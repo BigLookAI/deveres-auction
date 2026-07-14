@@ -1,0 +1,42 @@
+# deVeres BIDDING SANDBOX — SOR Assembly Profile
+# ================================================
+# The whiteboard plan (14-Jul): bring BIDDING into Odoo on synthetic data —
+# SOR Bidding module, bids drive the hammer, a PAST auction carrying full
+# bidding history and an UPCOMING auction as separate datasets, and the
+# Bidder Evaluation app reading it all live.
+#
+# This stack = the client v1.1 stack PLUS sor_bidding. It must run from its
+# OWN addons directory (odoo-test/addons-bidding) and its OWN container:
+# sor_bidding is auto_install, so its code must never sit on the addons path
+# of the client-parity databases (deveres_demo / deveres_april).
+
+assembly: deveres_bidding
+version: "1.0"
+
+target:
+  db: deveres_bidding
+  container: deveres-odoo-bidding
+  addons_path: "/mnt/extra-addons,/usr/lib/python3/dist-packages/odoo/addons"
+  db_host: db
+  db_port: 5432
+  db_user: odoo
+  db_password: odoo_test_2026
+
+install:
+  - sor_technical_menu
+  - sor_contact_roles
+  - sor_business_model
+  - sor_events
+  - sor_lotting
+  - sor_auction_documents
+  - sor_accounting
+  - sor_buyer_invoice
+  - sor_bidding
+
+expect_auto:
+  - sor_business_model_non_commercial
+  - sor_events_auction
+  - sor_commercial_auction_house
+  - sor_lotting_contact_roles
+  - sor_buyer_invoice_auction_house
+  - sor_buyer_invoice_contact_roles

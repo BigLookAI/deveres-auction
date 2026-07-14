@@ -26,8 +26,8 @@ DB = os.environ.get("ODOO_DB", "deveres_demo")
 USER = os.environ.get("ODOO_USERNAME", "admin")
 PWD = os.environ.get("ODOO_PASSWORD", "admin")
 
-if not DB.startswith("deveres_demo"):
-    sys.exit(f"refusing: ODOO_DB={DB!r} is not the demo database")
+if not (DB.startswith("deveres_demo") or DB.startswith("deveres_bidding")):
+    sys.exit(f"refusing: ODOO_DB={DB!r} is not a synthetic sandbox database")
 
 UPCOMING = "deVeres Demo Auction — September 2026"
 ARTISTS = ["Séamus Ó Colmáin", "Aoibhinn Walsh", "Deirdre Ní Bhriain",
@@ -54,6 +54,35 @@ def main() -> None:
         return models.execute_kw(DB, uid, PWD, model, method, list(a), kw)
 
     rng = random.Random(20260713)
+
+    # 0. a PAST auction with results (whiteboard 14-Jul: past + future =
+    #    different data). On the demo db sold lots come from reconciliation
+    #    pushes; on a fresh bidding sandbox nothing is sold yet — close the
+    #    July auction deterministically: ~60% of lots sold to seeded partners
+    #    at a hammer between the estimates. Idempotent: skips if sales exist.
+    if not x("sor.lot", "search", [["state", "=", "sold"]], limit=1):
+        past = x("sor.event", "search",
+                 [["name", "like", "deVeres Demo Auction — July%"]], limit=1)
+        if past:
+            plots = x("sor.lot", "search_read",
+                      [["auction_id", "=", past[0]], ["state", "!=", "withdrawn"]],
+                      fields=["id", "lot_number", "estimate_low", "estimate_high"],
+                      order="id")
+            buyers = x("res.partner", "search",
+                       [["is_company", "=", False],
+                        ["email", "like", "@example.test"]], limit=400)
+            closed = 0
+            for l in plots:
+                if rng.random() > 0.6 or not buyers:
+                    continue
+                low = float(l.get("estimate_low") or 300)
+                high = float(l.get("estimate_high") or low * 1.8)
+                hammer = round(rng.uniform(low * 0.9, high * 1.1) / 10) * 10
+                x("sor.lot", "write", [l["id"]],
+                  {"hammer_price": hammer, "buyer_id": rng.choice(buyers),
+                   "state": "sold", "auction_result": "sold"})
+                closed += 1
+            print(f"past auction id {past[0]}: {closed} lots closed as sold")
 
     # 1. upcoming auction + lots
     ev = x("sor.event", "search", [["name", "=", UPCOMING]], limit=1)

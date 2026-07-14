@@ -59,7 +59,27 @@ services:
       - deveres-odoo-april-data:/var/lib/odoo
       - ./addons:/mnt/extra-addons:ro
       - ./odoo-april.conf:/etc/odoo/odoo.conf:ro
+  # BIDDING sandbox — opt-in (docker compose --profile bidding up -d).
+  # Own addons dir (includes auto_install sor_bidding — must never reach the
+  # client-parity mounts) + own volume. Tailnet-only; not funneled.
+  odoo-bidding:
+    image: odoo:19
+    container_name: deveres-odoo-bidding
+    profiles: ["bidding"]
+    depends_on:
+      db:
+        condition: service_healthy
+    ports: ["8074:8069"]
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo_test_2026
+    volumes:
+      - deveres-odoo-bidding-data:/var/lib/odoo
+      - ./addons-bidding:/mnt/extra-addons:ro
+      - ./odoo-bidding.conf:/etc/odoo/odoo.conf:ro
 volumes:
   deveres-odoo-test-db:
   deveres-odoo-test-data:
   deveres-odoo-april-data:
+  deveres-odoo-bidding-data:

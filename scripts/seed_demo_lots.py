@@ -39,8 +39,8 @@ TITLES = ["Irish Landscape, oil on canvas", "Georgian Silver Teapot", "Bronze Fi
           "Still Life with Fruit", "Connemara Marble Clock", "Botanical Watercolour",
           "First-Edition Volume", "Regency Card Table", "Stained Glass Panel"]
 
-if not DB.startswith("deveres_demo"):
-    sys.exit(f"refusing: ODOO_DB={DB!r} is not the demo database")
+if not (DB.startswith("deveres_demo") or DB.startswith("deveres_bidding")):
+    sys.exit(f"refusing: ODOO_DB={DB!r} is not a synthetic sandbox database")
 
 
 def main() -> None:

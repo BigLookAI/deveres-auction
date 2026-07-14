@@ -73,7 +73,16 @@ def _lot_from_record(rec: dict, auction_dates: dict) -> Lot:
 def load_from_odoo(client=None) -> tuple[list[Lot], list[BidderProfile], list[Lot]]:
     if client is None:
         from .odoo_client import OdooClient
-        client = OdooClient()
+        import os
+        # The bidder's Odoo may differ from the reconciliation app's target
+        # (14-Jul: recon → the April client db; bidding history lives in the
+        # dedicated deveres_bidding sandbox). BIDDER_ODOO_* wins when set.
+        client = OdooClient(
+            url=os.environ.get("BIDDER_ODOO_URL"),
+            db=os.environ.get("BIDDER_ODOO_DB"),
+            username=os.environ.get("BIDDER_ODOO_USERNAME"),
+            password=os.environ.get("BIDDER_ODOO_PASSWORD"),
+        )
 
     events = client._execute("sor.event", "search_read",
                              [["event_type", "=", "auction"]],
