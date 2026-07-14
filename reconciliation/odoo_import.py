@@ -206,6 +206,23 @@ def plan_from_staging(entries: list[dict], source_file: str = "",
                     mas2 = ((e.get("original") or {}).get("address2") or "").strip()
                     if mas2 and street2_redundant(mas2, approved):
                         values["street2"] = False
+            # Fields the reviewer EXPLICITLY edited to EMPTY are deliberate
+            # clears — Final Approved is the contract (14-Jul: Eileen's
+            # Address 2 edited to '—' still left the old blob in street2).
+            # The never-write-empty guard protects against ACCIDENTAL blanks
+            # from the source file; it must not override an operator edit.
+            for cf in (e.get("edited_fields") or []):
+                if approved.get(cf):
+                    continue                    # edited to a value — handled above
+                pf = PARTNER_FIELD_MAP.get(cf)
+                if pf:
+                    values[pf] = False
+                elif cf == "county":
+                    values["state_id"] = False
+                    values.pop("__state_name", None)
+                elif cf == "country":
+                    values["country_id"] = False
+                    values.pop("__country_name", None)
             # Any remaining field with no mapping at all (currently: company) is
             # surfaced in the op reason — never silently dropped.
             unmapped = {cf: approved.get(cf, "") for cf in changed

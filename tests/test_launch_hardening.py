@@ -248,3 +248,36 @@ class TestRedundantStreet2Clearing:
                  "approved": dict(self.INC)}
         v = plan_from_staging([entry])[0].values
         assert "street2" not in v
+
+
+class TestExplicitEditToEmpty:
+    """14-Jul (Eileen #81012, operator test): Address 2 EDITED to empty must
+    clear street2 in Odoo — Final Approved is the contract; the
+    never-write-empty guard only protects against accidental source blanks."""
+
+    def _entry(self):
+        return {"change_type": "update", "master_ref": "81012",
+                "name": "Eileen Costelloe",
+                "changed_fields": ["town", "county", "postcode", "country"],
+                "edited_fields": ["address2", "town"],
+                "approved_by": "t", "approved_at": "t",
+                "original": {"odoo_id": 13599,
+                             "address2": "Templeogue, Dublin 6W NP48"},
+                "approved": {"first_name": "Eileen", "last_name": "Costelloe",
+                             "address1": "32 cypress Park", "address2": "",
+                             "town": "Templeogue", "county": "Dublin",
+                             "postcode": "d6w np48", "country": "Ireland"}}
+
+    def test_edited_empty_address2_clears_street2(self):
+        v = plan_from_staging([self._entry()])[0].values
+        assert v["street2"] is False
+        assert v["city"] == "Templeogue"
+        assert v["__state_name"] == "Dublin"
+
+    def test_edited_empty_county_clears_state(self):
+        e = self._entry()
+        e["edited_fields"] = ["county"]
+        e["approved"]["county"] = ""
+        e["approved"]["address2"] = "Templeogue"
+        v = plan_from_staging([e])[0].values
+        assert v["state_id"] is False and "__state_name" not in v
