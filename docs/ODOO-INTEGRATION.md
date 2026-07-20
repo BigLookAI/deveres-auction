@@ -167,3 +167,21 @@ Root causes fixed on 6-Jul: the demo Odoo had **no SOR modules** (Assembly
 never applied) and the shared demo login had Odoo 19's read-only contact
 access (`base.group_user`) — Contact Creation (`base.group_partner_manager`)
 is now granted, and every listed field verified editable as that user.
+
+## 8. JSON-2 transport — verified (20-Jul-2026)
+
+Odoo 19 logs XML-RPC as deprecated ("removal scheduled in Odoo 22"). The
+client already implements the replacement: set `ODOO_TRANSPORT=json2` (plus
+an API key in `ODOO_API_KEY` or as the password) and every call goes to
+`POST {url}/json/2/{model}/{method}` with a Bearer header — a one-line
+`.env` switch, no code change.
+
+Verified end-to-end on the local sandbox (Odoo 19, `deveres_demo`):
+`search_read`/`read`/`write`/`create`/`fields_get`/`read_group` all pass via
+the app's kwargs calling convention (positional args are limited to the
+mapped names in `pipeline/odoo_client.py:_JSON2_POSITIONAL`); the full app
+ran against it cleanly — master reload of 216 partners took **77 ms vs
+479 ms** over XML-RPC (~6×), and the lots endpoints reconcile identically.
+
+Decision unchanged: default stays XML-RPC for the live sale; flip
+`ODOO_TRANSPORT=json2` for the stable/hosted version.

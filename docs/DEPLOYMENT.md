@@ -79,6 +79,18 @@ Health checks: `GET :8003/health` (no auth) → `{"status":"ok","product":"conta
   lifecycle fields default from the classification).
 * **After a live Odoo push**: reversal is an Odoo-side operation (the audit
   log + staging rows record exactly what was written, per partner id).
+* **Odoo databases (DGX, added 20-Jul-2026)**: nightly cron at 02:30 runs
+  `~/Cimelium/scripts/backup_odoo_databases.sh` — `pg_dump -Fc` of
+  `deveres_april`, `deveres_bidding`, `deveres_demo` (container
+  `deveres-odoo-test-db`) and the SOR `odoo` DB (container `odoo-postgres`)
+  into `~/Cimelium/backups/odoo/`, TOC-verified per dump, 14-day retention.
+  Before that date the Odoo databases (including the real April data) had
+  **no** backup — the pre-existing 02:00 job covers only the host-postgres
+  `campaigns`/`hero_gallery` DBs. Restore:
+  `docker exec -i deveres-odoo-test-db pg_restore -U odoo -d <db> --clean < dump`.
+  Note: Odoo file attachments live in the containers' data volumes
+  (`/var/lib/odoo` filestore), not the DB — include them if attachments are
+  ever used in production.
 
 ## 7. Clean Odoo environment rebuild (production launch, 13-Jul-2026)
 

@@ -46,7 +46,7 @@ Blue Cube Export → Reconciliation Engine → Review → Approval → Staging �
 ```bash
 ./setup.sh                     # one-time: venv + deps
 ./run.sh                       # http://localhost:8003 → open /reconcile
-python3 -m pytest tests -q     # 247 tests
+python3 -m pytest tests -q     # 258 tests
 ```
 
 Login (HTTP Basic, override via `RECON_USER`/`RECON_PASS`):
