@@ -85,13 +85,18 @@ def test_empty_bidder_rejects():
 def test_review_zone():
     """Bidder with moderate engagement — 1 win from 8 bids (12.5% win rate), some recent bids."""
     lots = [make_lot(f"L{i}", reserve=2000) for i in range(1, 6)]   # high reserve → few bids qualify
+
+    # dynamic timestamps — recency scoring decays from "now", so fixed dates rot below REVIEW_THRESHOLD
+    def days_back(days):
+        return (datetime.now(timezone.utc) - timedelta(days=days)).strftime("%Y-%m-%dT10:00:00Z")
+
     bids = [
-        make_bid("B1", "L1", 1500, "lost", "2025-06-01T10:00:00Z"),
-        make_bid("B2", "L2", 1800, "lost", "2025-08-01T10:00:00Z"),
-        make_bid("B3", "L3", 2100, "won",  "2025-10-01T10:00:00Z", hammer=2100),
-        make_bid("B4", "L4", 1600, "lost", "2026-01-01T10:00:00Z"),
-        make_bid("B5", "L5", 1700, "lost", "2026-03-01T10:00:00Z"),
-        make_bid("B6", "L1", 1900, "lost", "2026-04-15T10:00:00Z"),
+        make_bid("B1", "L1", 1500, "lost", days_back(400)),
+        make_bid("B2", "L2", 1800, "lost", days_back(340)),
+        make_bid("B3", "L3", 2100, "won",  days_back(280), hammer=2100),
+        make_bid("B4", "L4", 1600, "lost", days_back(190)),
+        make_bid("B5", "L5", 1700, "lost", days_back(130)),
+        make_bid("B6", "L1", 1900, "lost", days_back(90)),
     ]
     profile = BidderProfile(bidder_id="BDR-MED", name="Medium Bidder",
                             email="medium@test.ie", bids=bids)
