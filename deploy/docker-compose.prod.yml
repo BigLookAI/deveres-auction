@@ -1,0 +1,76 @@
+# deVeres — production stack (single EC2 host, AWS).
+# Reconciliation app + Odoo 19 + PostgreSQL 15, all private on a docker
+# network; only the app port is published and it sits behind the host firewall
+# (security group locked to client office IPs). See deploy/AWS-DEPLOYMENT.md.
+#
+#   docker compose -f deploy/docker-compose.prod.yml up -d
+#
+# Secrets come from deploy/.env.prod (NOT committed). Required keys:
+#   POSTGRES_PASSWORD, ODOO_ADMIN_PASSWD, ODOO_API_KEY,
+#   RECON_USER, RECON_PASS, RECON_VIEWER_USER, RECON_VIEWER_PASS
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: deveres-db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set in .env.prod}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    restart: unless-stopped
+    # no ports: — database is never reachable from outside the docker network
+
+  odoo:
+    image: odoo:19
+    container_name: deveres-odoo
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ../odoo-test/addons:/mnt/extra-addons:ro
+      - ./odoo.prod.conf:/etc/odoo/odoo.conf:ro
+    # no ports: — Odoo UI reached only via the app host / SSH tunnel, not public
+    restart: unless-stopped
+
+  recon:
+    build:
+      context: ..
+      dockerfile: Dockerfile.recon
+    image: deveres-recon:latest
+    container_name: deveres-recon
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      ODOO_URL: "http://odoo:8069"
+      ODOO_DB: "${ODOO_DB:-odoo_deveres}"
+      ODOO_USERNAME: "${ODOO_USERNAME:-admin}"
+      ODOO_PASSWORD: "${ODOO_API_KEY:?set in .env.prod}"
+      ODOO_API_KEY: "${ODOO_API_KEY}"
+      ODOO_TRANSPORT: "${ODOO_TRANSPORT:-xmlrpc}"
+      RECON_MASTER_SOURCE: "odoo"
+      RECON_ALLOW_ODOO_WRITE: "${RECON_ALLOW_ODOO_WRITE:-0}"
+      RECON_USER: "${RECON_USER:?}"
+      RECON_PASS: "${RECON_PASS:?}"
+      RECON_VIEWER_USER: "${RECON_VIEWER_USER:-}"
+      RECON_VIEWER_PASS: "${RECON_VIEWER_PASS:-}"
+    volumes:
+      - recon-output:/app/output
+    ports:
+      - "127.0.0.1:8003:8003"   # bound to loopback; nginx/SG fronts the public edge
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  odoo-data:
+  recon-output:

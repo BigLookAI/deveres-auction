@@ -1,0 +1,40 @@
+# deVeres — Contact Reconciliation (Product 1) production image.
+# Separate from Dockerfile (bidder-eval, api.py) — the two products ship
+# independently (2-Jul separation decision). Runs on x86_64 and ARM64.
+#
+#   docker build -f Dockerfile.recon -t deveres-recon:latest .
+#   docker run -p 8003:8003 --env-file .env deveres-recon:latest
+
+FROM python:3.13-slim AS builder
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
+
+FROM python:3.13-slim
+LABEL org.opencontainers.image.title="deVeres Contact Reconciliation"
+LABEL org.opencontainers.image.description="Blue Cubes -> match -> review -> staging -> gated Odoo push"
+LABEL org.opencontainers.image.source="https://github.com/BigLookAI/deveres-auction"
+WORKDIR /app
+COPY --from=builder /install /usr/local
+
+# Reconciliation deliverable: app + engine + UI + the pipeline.odoo_client it
+# reuses for transport. scripts/ and tests/fixtures/ are used at runtime by the
+# sample-csv endpoint and the seed/verify tooling.
+COPY recon_app.py reconcile_routes.py ./
+COPY reconciliation/ ./reconciliation/
+COPY pipeline/odoo_client.py pipeline/models.py ./pipeline/
+COPY static/ ./static/
+COPY scripts/ ./scripts/
+COPY tests/fixtures/ ./tests/fixtures/
+RUN touch pipeline/__init__.py && mkdir -p output
+
+EXPOSE 8003
+# Liveness only — the landing page needs no Odoo/master. Readiness (Odoo
+# connected + master loaded) is /reconcile/health, checked by the deploy runbook
+# after env is wired, not by the container probe (which would false-fail before
+# ODOO_* is set).
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://localhost:8003/')" || exit 1
+
+ENV PYTHONUNBUFFERED=1 PYTHONDONTWRITEBYTECODE=1
+CMD ["uvicorn", "recon_app:app", "--host", "0.0.0.0", "--port", "8003", "--log-level", "info"]

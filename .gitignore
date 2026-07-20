@@ -60,3 +60,9 @@ logs/
 # Internal / private docs
 *.docx
 *.pptx
+
+# deploy pack (added 20-Jul)
+deploy/.env.prod
+!deploy/.env.prod.example
+deploy/aws/.terraform/
+deploy/aws/*.tfstate*
